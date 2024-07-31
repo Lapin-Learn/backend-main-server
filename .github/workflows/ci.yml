@@ -18,12 +18,11 @@ jobs:
         with:
           fetch-depth: 0
 
-      # Cache node_modules
       - uses: actions/setup-node@v3
         with:
           node-version: 20
-          cache: 'pnpm'
-
+          
+      - run: npm install -g pnpm
       - run: pnpm install
       - run: pnpm run build
       - run: pnpm run test
