@@ -4,6 +4,7 @@ on:
   pull_request:
     branches:
       - develop
+      - main
 
 permissions:
   actions: read
@@ -17,15 +18,11 @@ jobs:
         with:
           fetch-depth: 0
 
-      # Cache node_modules
       - uses: actions/setup-node@v3
         with:
           node-version: 20
-          cache: 'pnpm'
-
-      - run: pnpm install -g @nrwl/cli
-      - uses: nrwl/nx-set-shas@v4
-
+          
+      - run: npm install -g pnpm
       - run: pnpm install
       - run: pnpm run build
       - run: pnpm run test
