@@ -4,6 +4,7 @@ on:
   pull_request:
     branches:
       - develop
+      - main
 
 permissions:
   actions: read
@@ -22,9 +23,6 @@ jobs:
         with:
           node-version: 20
           cache: 'pnpm'
-
-      - run: pnpm install -g @nrwl/cli
-      - uses: nrwl/nx-set-shas@v4
 
       - run: pnpm install
       - run: pnpm run build
