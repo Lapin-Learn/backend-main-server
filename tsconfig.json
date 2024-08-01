@@ -36,12 +36,6 @@
       "@app/dtos/*": [
         "libs/dtos/src/*"
       ],
-      "@app/constants": [
-        "libs/constants/src"
-      ],
-      "@app/constants/*": [
-        "libs/constants/src/*"
-      ],
       "@app/utils": [
         "libs/utils/src"
       ],

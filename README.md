@@ -45,6 +45,20 @@ $ pnpm run start:dev
 $ pnpm run start:prod
 ```
 
+### Migration
+
+```bash
+# create migration files
+typeorm migration:create apps/main-api/src/migrations/<fileName>
+
+# run migrations
+# unix
+bash ./scripts/migration.sh main-api
+
+# win
+./scripts/migration.bat main-api
+```
+
 ## Test
 
 ```bash
