@@ -1,22 +1,29 @@
 import { MigrationInterface, QueryRunner, Table } from "typeorm";
 
-export class AddTableAccounts1722523780696 implements MigrationInterface {
+export class AddTableLevels1722572170260 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`);
     await queryRunner.createTable(
       new Table({
-        name: "accounts",
+        name: "levels",
         columns: [
           {
             name: "id",
-            type: "uuid",
+            type: "int",
             isPrimary: true,
             isGenerated: true,
-            generationStrategy: "uuid",
+            generationStrategy: "increment",
+          },
+          {
+            name: "xp",
+            type: "int",
+            isNullable: false,
+            default: 0,
           },
         ],
       })
     );
+
+    await queryRunner.query(`ALTER SEQUENCE levels_id_seq RESTART WITH 1`);
   }
 
   public async down(): Promise<void> {
