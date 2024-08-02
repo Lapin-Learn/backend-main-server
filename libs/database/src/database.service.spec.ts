@@ -128,7 +128,6 @@ describe("Test create new user", () => {
       },
     });
 
-    console.log(foundAccount);
     expect(foundAccount).toEqual(account);
 
     const foundLearnerProfile = await learnerProfileRepository.findOne({
@@ -138,7 +137,6 @@ describe("Test create new user", () => {
         streak: true,
       },
     });
-    console.log(foundLearnerProfile);
     expect(foundLearnerProfile).toEqual(learnerProfile);
   });
 });
