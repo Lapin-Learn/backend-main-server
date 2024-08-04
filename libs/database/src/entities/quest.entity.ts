@@ -1,7 +1,8 @@
 import { IQuest } from "@app/types/interfaces";
-import { BaseEntity, Column, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn } from "typeorm";
+import { BaseEntity, Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 import { Action } from "./action.entity";
 import { IntervalTypeEnum } from "@app/types/enums";
+import { Mission } from "./mission.entity";
 
 @Entity({ name: "quests" })
 export class Quest extends BaseEntity implements IQuest {
@@ -26,7 +27,11 @@ export class Quest extends BaseEntity implements IQuest {
   @Column({ name: "types", type: "enum", enum: IntervalTypeEnum, nullable: false })
   types: IntervalTypeEnum;
 
-  @OneToOne(() => Action)
+  // Relations
+  @ManyToOne(() => Action, (action) => action.id)
   @JoinColumn({ name: "action_id", referencedColumnName: "id" })
   action: Action;
+
+  @OneToMany(() => Mission, (mission) => mission.quest)
+  missions: Mission[];
 }

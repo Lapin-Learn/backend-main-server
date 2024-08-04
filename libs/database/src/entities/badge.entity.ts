@@ -1,5 +1,5 @@
 import { IBadge } from "@app/types/interfaces";
-import { BaseEntity, Column, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn } from "typeorm";
+import { BaseEntity, Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 import { Action } from "./action.entity";
 
 @Entity({ name: "badges" })
@@ -19,7 +19,8 @@ export class Badge extends BaseEntity implements IBadge {
   @Column({ name: "requirements", type: "int", nullable: false, default: 0 })
   requirements: number;
 
-  @OneToOne(() => Action)
+  // Relations
+  @ManyToOne(() => Action, (action) => action.id)
   @JoinColumn({ name: "action_id", referencedColumnName: "id" })
   action: Action;
 }
