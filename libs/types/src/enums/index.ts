@@ -1,2 +1,5 @@
 export * from "./action-name.enum";
 export * from "./interval-type.enum";
+export * from "./role.enum";
+export * from "./gender.enum";
+export * from "./rank.enum";
