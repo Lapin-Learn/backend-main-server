@@ -1,10 +1,11 @@
-import { MissionTypeEnum } from "../enum";
+import { IntervalTypeEnum } from "../enums";
 import { IQuest } from "./quest.interface";
 
 export interface IMission {
   id: string;
-  missionType: MissionTypeEnum;
+  types: IntervalTypeEnum;
+  questId: string;
 
   // Relations
-  readonly questId: IQuest;
+  readonly quest: IQuest;
 }

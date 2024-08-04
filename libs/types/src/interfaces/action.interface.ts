@@ -1,6 +1,6 @@
-import { ActionNameEnum } from "../enum";
+import { ActionNameEnum } from "../enums";
 
 export interface IAction {
-  id: string;
+  id: number;
   name: ActionNameEnum;
 }

@@ -8,10 +8,10 @@ export class AddTableAction1722578436060 implements MigrationInterface {
         columns: [
           {
             name: "id",
-            type: "uuid",
+            type: "number",
             isPrimary: true,
             isGenerated: true,
-            generationStrategy: "uuid",
+            generationStrategy: "increment",
           },
           {
             name: "name",

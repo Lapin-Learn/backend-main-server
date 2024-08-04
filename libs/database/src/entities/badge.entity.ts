@@ -13,10 +13,13 @@ export class Badge extends BaseEntity implements IBadge {
   @Column({ name: "description", type: "text", nullable: false })
   description: string;
 
-  @Column({ name: "requirements", type: "int", nullable: false })
+  @Column({ name: "action_id", type: "uuid", nullable: false })
+  actionId: string;
+
+  @Column({ name: "requirements", type: "int", nullable: false, default: 0 })
   requirements: number;
 
   @OneToOne(() => Action)
   @JoinColumn({ name: "action_id", referencedColumnName: "id" })
-  actionId: Action;
+  action: Action;
 }

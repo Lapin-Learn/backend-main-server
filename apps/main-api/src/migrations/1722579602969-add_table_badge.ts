@@ -27,6 +27,7 @@ export class AddTableBadge1722579602969 implements MigrationInterface {
             name: "requirements",
             type: "int",
             isNullable: false,
+            default: 0,
           },
           {
             name: "action_id",

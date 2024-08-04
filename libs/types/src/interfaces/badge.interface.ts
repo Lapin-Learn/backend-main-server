@@ -4,8 +4,9 @@ export interface IBadge {
   id: string;
   name: string;
   description: string;
+  actionId: string;
   requirements: number;
 
   // Relations
-  readonly actionId: IAction;
+  readonly action: IAction;
 }

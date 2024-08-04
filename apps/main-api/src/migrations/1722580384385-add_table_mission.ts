@@ -14,7 +14,7 @@ export class AddTableMission1722580384385 implements MigrationInterface {
             generationStrategy: "uuid",
           },
           {
-            name: "mission_type",
+            name: "types",
             type: "enum",
             enum: ["daily", "monthly"],
             isNullable: false,
