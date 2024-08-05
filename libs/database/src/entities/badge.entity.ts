@@ -14,7 +14,7 @@ export class Badge extends BaseEntity implements IBadge {
   @Column({ name: "description", type: "text", nullable: false })
   description: string;
 
-  @Column({ name: "action_id", type: "uuid", nullable: false })
+  @Column({ name: "action_id", type: "int", nullable: false })
   actionId: string;
 
   @Column({ name: "requirements", type: "int", nullable: false, default: 0 })

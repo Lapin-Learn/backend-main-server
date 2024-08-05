@@ -38,7 +38,7 @@ export class Account extends BaseEntity implements IAccount {
   @Column({ name: "gender", type: "enum", enum: GenderEnum, nullable: true, default: null })
   gender: GenderEnum;
 
-  @Column({ name: "learner_profile_id", type: "varchar", length: 36, nullable: true, default: null })
+  @Column({ name: "learner_profile_id", type: "uuid", nullable: true, default: null })
   learnerProfileId: string;
 
   @CreateDateColumn({ name: "created_at", type: "timestamp", nullable: false, default: () => "CURRENT_TIMESTAMP" })
