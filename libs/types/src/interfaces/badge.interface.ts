@@ -1,4 +1,5 @@
 import { IAction } from "./action.interface";
+import { IProfileBadge } from "./profile-badge.interface";
 
 export interface IBadge {
   id: string;
@@ -9,4 +10,5 @@ export interface IBadge {
 
   // Relations
   readonly action: IAction;
+  readonly profileBadges: IProfileBadge[];
 }

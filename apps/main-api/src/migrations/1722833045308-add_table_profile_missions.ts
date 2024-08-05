@@ -1,10 +1,10 @@
 import { MigrationInterface, QueryRunner, Table } from "typeorm";
 
-export class AddTableQuest1722579985537 implements MigrationInterface {
+export class AddTableProfileMissions1722833045308 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.createTable(
       new Table({
-        name: "quests",
+        name: "profile_missions",
         columns: [
           {
             name: "id",
@@ -14,46 +14,35 @@ export class AddTableQuest1722579985537 implements MigrationInterface {
             generationStrategy: "uuid",
           },
           {
-            name: "name",
-            type: "varchar",
-            length: "255",
-            isNullable: false,
-          },
-          {
-            name: "description",
-            type: "text",
-            isNullable: false,
-          },
-          {
-            name: "requirements",
-            type: "int",
-            isNullable: false,
-            default: 0,
-          },
-          {
-            name: "rewards",
-            type: "int",
-            isNullable: false,
-            default: 0,
-          },
-          {
-            name: "action_id",
+            name: "profile_id",
             type: "uuid",
             isNullable: false,
           },
           {
-            name: "types",
-            type: "enum",
-            enum: ["daily", "monthly"],
+            name: "mission_id",
+            type: "uuid",
             isNullable: false,
+          },
+          {
+            name: "status",
+            type: "enum",
+            enum: ["ASSIGNED", "COMPLETED"],
+            default: "'ASSIGNED'",
           },
         ],
         foreignKeys: [
           {
-            name: "FK_QUESTS_ACTION_ID",
-            columnNames: ["action_id"],
+            name: "FK_PROFILE_MISSIONS_PROFILE_ID",
+            columnNames: ["profile_id"],
             referencedColumnNames: ["id"],
-            referencedTableName: "actions",
+            referencedTableName: "learner_profiles",
+            onDelete: "CASCADE",
+          },
+          {
+            name: "FK_PROFILE_MISSIONS_MISSION_ID",
+            columnNames: ["mission_id"],
+            referencedColumnNames: ["id"],
+            referencedTableName: "missions",
             onDelete: "CASCADE",
           },
         ],

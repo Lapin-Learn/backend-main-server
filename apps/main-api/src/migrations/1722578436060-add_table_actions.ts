@@ -1,6 +1,6 @@
 import { MigrationInterface, QueryRunner, Table } from "typeorm";
 
-export class AddTableAction1722578436060 implements MigrationInterface {
+export class AddTableActions1722578436060 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.createTable(
       new Table({
@@ -8,7 +8,7 @@ export class AddTableAction1722578436060 implements MigrationInterface {
         columns: [
           {
             name: "id",
-            type: "number",
+            type: "int",
             isPrimary: true,
             isGenerated: true,
             generationStrategy: "increment",
@@ -18,6 +18,7 @@ export class AddTableAction1722578436060 implements MigrationInterface {
             type: "enum",
             enum: ["daily_login", "task_completed"],
             isNullable: false,
+            default: null,
           },
         ],
       })

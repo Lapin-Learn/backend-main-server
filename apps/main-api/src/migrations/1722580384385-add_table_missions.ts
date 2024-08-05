@@ -1,10 +1,10 @@
 import { MigrationInterface, QueryRunner, Table } from "typeorm";
 
-export class AddTableBadge1722579602969 implements MigrationInterface {
+export class AddTableMissions1722580384385 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.createTable(
       new Table({
-        name: "badges",
+        name: "missions",
         columns: [
           {
             name: "id",
@@ -14,33 +14,23 @@ export class AddTableBadge1722579602969 implements MigrationInterface {
             generationStrategy: "uuid",
           },
           {
-            name: "name",
-            type: "varchar",
+            name: "types",
+            type: "enum",
+            enum: ["daily", "monthly"],
             isNullable: false,
           },
           {
-            name: "description",
-            type: "text",
-            isNullable: false,
-          },
-          {
-            name: "requirements",
-            type: "int",
-            isNullable: false,
-            default: 0,
-          },
-          {
-            name: "action_id",
+            name: "quest_id",
             type: "uuid",
             isNullable: false,
           },
         ],
         foreignKeys: [
           {
-            name: "FK_BADGES_ACTION_ID",
-            columnNames: ["action_id"],
+            name: "FK_MISSIONS_QUEST_ID",
+            columnNames: ["quest_id"],
             referencedColumnNames: ["id"],
-            referencedTableName: "actions",
+            referencedTableName: "quests",
             onDelete: "CASCADE",
           },
         ],
