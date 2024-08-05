@@ -1,8 +1,9 @@
 import { IProfileBadge } from "@app/types/interfaces";
-import { BaseEntity, Column, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { BaseEntity, Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 import { LearnerProfile } from "./learner-profile.entity";
 import { Badge } from "./badge.entity";
 
+@Entity({ name: "profile_badges" })
 export class ProfileBadge extends BaseEntity implements IProfileBadge {
   @PrimaryGeneratedColumn("uuid")
   id: string;

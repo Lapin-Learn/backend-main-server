@@ -1,9 +1,10 @@
 import { ProfileMissionStatusEnum } from "@app/types/enums";
 import { IProfileMission } from "@app/types/interfaces";
-import { BaseEntity, Column, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { BaseEntity, Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 import { LearnerProfile } from "./learner-profile.entity";
 import { Mission } from "./mission.entity";
 
+@Entity({ name: "profile_missions" })
 export class ProfileMission extends BaseEntity implements IProfileMission {
   @PrimaryGeneratedColumn("uuid")
   id: string;

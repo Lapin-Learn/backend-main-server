@@ -1,8 +1,9 @@
 import { IProfileItem } from "@app/types/interfaces";
-import { BaseEntity, Column, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { BaseEntity, Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 import { LearnerProfile } from "./learner-profile.entity";
 import { Item } from "./item.entity";
 
+@Entity({ name: "profile_items" })
 export class ProfileItem extends BaseEntity implements IProfileItem {
   @PrimaryGeneratedColumn("uuid")
   id: string;

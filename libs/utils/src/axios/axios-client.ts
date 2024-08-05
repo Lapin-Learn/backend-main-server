@@ -9,7 +9,8 @@ const api = (baseUrl: string, token = ""): AxiosInstance => {
   api.interceptors.response.use(
     (res) => res,
     (err) => {
-      return Promise.reject(new HttpException(err.response?.data, err.response?.status));
+      const { error } = err.response.data;
+      return Promise.reject(new HttpException(error.message, error.code));
     }
   );
 
