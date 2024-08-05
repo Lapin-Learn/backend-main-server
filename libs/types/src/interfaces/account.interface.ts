@@ -11,8 +11,8 @@ export interface IAccount {
   dob: Date;
   gender: GenderEnum;
   learnerProfileId: string;
-  createdOn: Date;
-  updatedOn: Date;
+  createdAt: Date;
+  updatedAt: Date;
 
   //relationships
   readonly learnerProfile: ILearnerProfile;

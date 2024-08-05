@@ -65,13 +65,13 @@ export class AddTableAccounts1722572187305 implements MigrationInterface {
             default: null,
           },
           {
-            name: "created_on",
+            name: "created_at",
             type: "timestamp",
             isNullable: false,
             default: "CURRENT_TIMESTAMP",
           },
           {
-            name: "updated_on",
+            name: "updated_at",
             type: "timestamp",
             isNullable: false,
             default: "CURRENT_TIMESTAMP",

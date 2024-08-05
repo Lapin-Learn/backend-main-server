@@ -1,10 +1,10 @@
 import { MigrationInterface, QueryRunner, Table } from "typeorm";
 
-export class AddTableQuest1722579985537 implements MigrationInterface {
+export class AddTableActivities1722831101230 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.createTable(
       new Table({
-        name: "quests",
+        name: "activities",
         columns: [
           {
             name: "id",
@@ -14,46 +14,34 @@ export class AddTableQuest1722579985537 implements MigrationInterface {
             generationStrategy: "uuid",
           },
           {
-            name: "name",
-            type: "varchar",
-            length: "255",
-            isNullable: false,
-          },
-          {
-            name: "description",
-            type: "text",
-            isNullable: false,
-          },
-          {
-            name: "requirements",
-            type: "int",
-            isNullable: false,
-            default: 0,
-          },
-          {
-            name: "rewards",
-            type: "int",
-            isNullable: false,
-            default: 0,
-          },
-          {
             name: "action_id",
+            type: "int",
+            isNullable: false,
+          },
+          {
+            name: "profile_id",
             type: "uuid",
             isNullable: false,
           },
           {
-            name: "types",
-            type: "enum",
-            enum: ["daily", "monthly"],
-            isNullable: false,
+            name: "finished_at",
+            type: "timestamp",
+            default: "CURRENT_TIMESTAMP",
           },
         ],
         foreignKeys: [
           {
-            name: "FK_QUESTS_ACTION_ID",
+            name: "FK_ACTIVITIES_ACTION_ID",
             columnNames: ["action_id"],
             referencedColumnNames: ["id"],
             referencedTableName: "actions",
+            onDelete: "CASCADE",
+          },
+          {
+            name: "FK_ACTIVITIES_PROFILE_ID",
+            columnNames: ["profile_id"],
+            referencedColumnNames: ["id"],
+            referencedTableName: "learner_profiles",
             onDelete: "CASCADE",
           },
         ],

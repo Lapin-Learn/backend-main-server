@@ -41,17 +41,17 @@ export class Account extends BaseEntity implements IAccount {
   @Column({ name: "learner_profile_id", type: "varchar", length: 36, nullable: true, default: null })
   learnerProfileId: string;
 
-  @CreateDateColumn({ name: "created_on", type: "timestamp", nullable: false, default: () => "CURRENT_TIMESTAMP" })
-  createdOn: Date;
+  @CreateDateColumn({ name: "created_at", type: "timestamp", nullable: false, default: () => "CURRENT_TIMESTAMP" })
+  createdAt: Date;
 
   @UpdateDateColumn({
-    name: "updated_on",
+    name: "updated_at",
     type: "timestamp",
     nullable: false,
     default: () => "CURRENT_TIMESTAMP",
     onUpdate: "CURRENT_TIMESTAMP",
   })
-  updatedOn: Date;
+  updatedAt: Date;
 
   @OneToOne(() => LearnerProfile, { eager: true })
   @JoinColumn({ name: "learner_profile_id", referencedColumnName: "id" })

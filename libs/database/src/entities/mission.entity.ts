@@ -1,7 +1,8 @@
 import { IntervalTypeEnum } from "@app/types/enums";
 import { IMission } from "@app/types/interfaces";
-import { BaseEntity, Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { BaseEntity, Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 import { Quest } from "./quest.entity";
+import { ProfileMission } from "./profile-mission.entity";
 
 @Entity({ name: "missions" })
 export class Mission extends BaseEntity implements IMission {
@@ -18,4 +19,7 @@ export class Mission extends BaseEntity implements IMission {
   @ManyToOne(() => Quest, (quest) => quest.id)
   @JoinColumn({ name: "quest_id", referencedColumnName: "id" })
   quest: Quest;
+
+  @OneToMany(() => ProfileMission, (profileMission) => profileMission.mission)
+  profileMissions: ProfileMission[];
 }

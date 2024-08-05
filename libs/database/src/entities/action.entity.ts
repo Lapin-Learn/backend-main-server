@@ -4,6 +4,7 @@ import { IAction } from "@app/types/interfaces";
 import { BaseEntity, Column, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 import { Quest } from "./quest.entity";
 import { Badge } from "./badge.entity";
+import { Activity } from "./activity.entity";
 
 export class Action extends BaseEntity implements IAction {
   @PrimaryGeneratedColumn("increment")
@@ -18,4 +19,7 @@ export class Action extends BaseEntity implements IAction {
 
   @OneToMany(() => Badge, (badge) => badge.action)
   readonly badges: Badge[];
+
+  @OneToMany(() => Activity, (activity) => activity.action)
+  readonly activities: Activity[];
 }

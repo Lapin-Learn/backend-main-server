@@ -1,5 +1,9 @@
 import { RankEnum } from "../enums";
+import { IActivity } from "./activity.interface";
 import { ILevel } from "./level.interface";
+import { IProfileBadge } from "./profile-badge.interface";
+import { IProfileItem } from "./profile-item.interface";
+import { IProfileMission } from "./profile-mission.interface";
 import { IStreak } from "./streak.interface";
 
 export interface ILearnerProfile {
@@ -9,10 +13,14 @@ export interface ILearnerProfile {
   xp: number;
   carrots: number;
   streakId: number;
-  createdOn: Date;
-  updatedOn: Date;
+  createdAt: Date;
+  updatedAt: Date;
 
   //relationships
   readonly level: ILevel;
   readonly streak: IStreak;
+  readonly activities: IActivity[];
+  readonly profileBadges: IProfileBadge[];
+  readonly profileMissions: IProfileMission[];
+  readonly profileItems: IProfileItem[];
 }

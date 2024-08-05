@@ -1,5 +1,6 @@
 import { IItem } from "@app/types/interfaces";
-import { BaseEntity, Column, Entity, PrimaryGeneratedColumn } from "typeorm";
+import { BaseEntity, Column, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { ProfileItem } from "./profile-item.entity";
 
 @Entity({ name: "items" })
 export class Item extends BaseEntity implements IItem {
@@ -17,4 +18,8 @@ export class Item extends BaseEntity implements IItem {
 
   @Column({ name: "duration", type: "int", nullable: false })
   duration: number;
+
+  // Relations
+  @OneToMany(() => ProfileItem, (profileItem) => profileItem.item)
+  profileItems: ProfileItem[];
 }

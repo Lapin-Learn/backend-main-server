@@ -1,10 +1,10 @@
 import { MigrationInterface, QueryRunner, Table } from "typeorm";
 
-export class AddTableItem1722578572569 implements MigrationInterface {
+export class AddTableQuests1722579985537 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.createTable(
       new Table({
-        name: "items",
+        name: "quests",
         columns: [
           {
             name: "id",
@@ -25,14 +25,36 @@ export class AddTableItem1722578572569 implements MigrationInterface {
             isNullable: false,
           },
           {
-            name: "price",
+            name: "requirements",
+            type: "int",
+            isNullable: false,
+            default: 0,
+          },
+          {
+            name: "rewards",
+            type: "int",
+            isNullable: false,
+            default: 0,
+          },
+          {
+            name: "action_id",
             type: "int",
             isNullable: false,
           },
           {
-            name: "duration",
-            type: "int",
+            name: "types",
+            type: "enum",
+            enum: ["daily", "monthly"],
             isNullable: false,
+          },
+        ],
+        foreignKeys: [
+          {
+            name: "FK_QUESTS_ACTION_ID",
+            columnNames: ["action_id"],
+            referencedColumnNames: ["id"],
+            referencedTableName: "actions",
+            onDelete: "CASCADE",
           },
         ],
       })

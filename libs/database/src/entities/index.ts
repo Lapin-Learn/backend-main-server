@@ -6,3 +6,7 @@ export * from "./quest.entity";
 export * from "./learner-profile.entity";
 export * from "./level.entity";
 export * from "./streak.entity";
+export * from "./activity.entity";
+export * from "./profile-badge.entity";
+export * from "./profile-mission.entity";
+export * from "./profile-item.entity";
