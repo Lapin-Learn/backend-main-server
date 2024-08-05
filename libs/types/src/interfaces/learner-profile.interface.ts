@@ -13,8 +13,8 @@ export interface ILearnerProfile {
   xp: number;
   carrots: number;
   streakId: number;
-  createdOn: Date;
-  updatedOn: Date;
+  createdAt: Date;
+  updatedAt: Date;
 
   //relationships
   readonly level: ILevel;

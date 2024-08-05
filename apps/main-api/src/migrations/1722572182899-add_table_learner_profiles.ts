@@ -41,12 +41,12 @@ export class AddTableLearnerProfiles1722572182899 implements MigrationInterface 
             isNullable: false,
           },
           {
-            name: "created_on",
+            name: "created_at",
             type: "timestamp",
             default: "CURRENT_TIMESTAMP",
           },
           {
-            name: "updated_on",
+            name: "updated_at",
             type: "timestamp",
             default: "CURRENT_TIMESTAMP",
             onUpdate: "CURRENT_TIMESTAMP",

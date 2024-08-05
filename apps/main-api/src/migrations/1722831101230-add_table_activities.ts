@@ -14,11 +14,6 @@ export class AddTableActivities1722831101230 implements MigrationInterface {
             generationStrategy: "uuid",
           },
           {
-            name: "description",
-            type: "text",
-            isNullable: false,
-          },
-          {
             name: "action_id",
             type: "int",
             isNullable: false,
@@ -29,7 +24,7 @@ export class AddTableActivities1722831101230 implements MigrationInterface {
             isNullable: false,
           },
           {
-            name: "created_at",
+            name: "finished_at",
             type: "timestamp",
             default: "CURRENT_TIMESTAMP",
           },

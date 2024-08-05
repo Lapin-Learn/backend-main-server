@@ -5,7 +5,7 @@ export class IActivity {
   id: string;
   profileId: string;
   actionId: number;
-  finishedOn: Date;
+  finishedAt: Date;
 
   // Relations
   readonly profile: ILearnerProfile;

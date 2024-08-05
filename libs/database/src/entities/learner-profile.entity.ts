@@ -39,17 +39,17 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
   @Column({ name: "streak_id", type: "int", nullable: false })
   streakId: number;
 
-  @CreateDateColumn({ name: "created_on", type: "timestamp", nullable: false, default: () => "CURRENT_TIMESTAMP" })
-  createdOn: Date;
+  @CreateDateColumn({ name: "created_at", type: "timestamp", nullable: false, default: () => "CURRENT_TIMESTAMP" })
+  createdAt: Date;
 
   @UpdateDateColumn({
-    name: "updated_on",
+    name: "updated_at",
     type: "timestamp",
     nullable: false,
     default: () => "CURRENT_TIMESTAMP",
     onUpdate: "CURRENT_TIMESTAMP",
   })
-  updatedOn: Date;
+  updatedAt: Date;
 
   @ManyToOne(() => Level, (level) => level.id)
   @JoinColumn({ name: "level_id", referencedColumnName: "id" })

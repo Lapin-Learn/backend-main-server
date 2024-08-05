@@ -14,8 +14,8 @@ export class Activity extends BaseEntity implements IActivity {
   @Column({ name: "action_id", type: "number", nullable: false })
   actionId: number;
 
-  @Column({ name: "finished_on", type: "timestamp", nullable: false, default: () => "CURRENT_TIMESTAMP" })
-  finishedOn: Date;
+  @Column({ name: "finished_at", type: "timestamp", nullable: false, default: () => "CURRENT_TIMESTAMP" })
+  finishedAt: Date;
 
   // Relations
   @ManyToOne(() => LearnerProfile, (profile) => profile.id)

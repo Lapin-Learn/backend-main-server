@@ -30,7 +30,7 @@ export class AddTableProfileItems1722833518280 implements MigrationInterface {
             default: 1,
           },
           {
-            name: "exp_on",
+            name: "exp_at",
             type: "timestamp",
             isNullable: false,
           },

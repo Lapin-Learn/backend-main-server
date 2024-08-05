@@ -16,8 +16,8 @@ export class ProfileItem extends BaseEntity implements IProfileItem {
   @Column({ name: "quantity", type: "int", nullable: false, default: 1 })
   quantity: number;
 
-  @Column({ name: "exp_on", type: "timestamp", nullable: false })
-  expOn: Date;
+  @Column({ name: "exp_at", type: "timestamp", nullable: false })
+  expAt: Date;
 
   // Relations
   @ManyToOne(() => LearnerProfile, (profile) => profile.id)
