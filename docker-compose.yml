@@ -6,8 +6,10 @@ services:
       args:
         SERVICE_NAME: main-api
         STAGE: dev
+    env_file:
+      - .env
     ports:
-      - "3000:3000"
+      - "4000:3000"
     container_name: main-api
     networks:
       - ll-network

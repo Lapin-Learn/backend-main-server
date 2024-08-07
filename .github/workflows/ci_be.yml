@@ -19,7 +19,11 @@ jobs:
         script: |
             cd backend-main-server
             git reset --hard
+            git checkout main
             git pull
+
+            # Write .env file
+            echo ${{ secrets.ENV }} > .env
 
             # Stop docker compose 
             docker compose down && docker image prune -f
