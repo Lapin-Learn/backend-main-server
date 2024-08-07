@@ -10,7 +10,7 @@ services:
       - .env
     ports:
       - "4000:3000"
-    container_name: main-api
+    container_name: main-service
     networks:
       - ll-network
 
