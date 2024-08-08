@@ -1,5 +1,5 @@
-import { Module } from '@nestjs/common';
-import { SharedModulesService } from './shared-modules.service';
+import { Module } from "@nestjs/common";
+import { SharedModulesService } from "./shared-modules.service";
 
 @Module({
   providers: [SharedModulesService],
