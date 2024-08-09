@@ -1,5 +1,5 @@
 services:
-  main-api:
+  lapin-main-api:
     build:
       context: .
       dockerfile: docker/Dockerfile.service
@@ -10,7 +10,7 @@ services:
       - .env
     ports:
       - "4000:3000"
-    container_name: main-service
+    container_name: lapin-main-api
     networks:
       - ll-network
 
