@@ -1,18 +1,15 @@
 import { AccountRoleEnum } from "@app/types/enums";
 import { BadRequestException, Injectable, Logger } from "@nestjs/common";
-import { UserRepository } from "../repository/user.repository";
 import { CreateUserDto } from "@app/types/dtos/accounts/create-user.dto";
 import { UpdateAccountByAdminDto } from "@app/types/dtos/accounts/update-account-by-admin.dto";
 import { FirebaseAuthService } from "@app/shared-modules/firebase";
 import { Account } from "@app/database";
+import { isNil } from "lodash";
 
 @Injectable()
 export class UserService {
   private readonly logger = new Logger(this.constructor.name);
-  constructor(
-    private readonly userRepository: UserRepository,
-    private readonly firebaseService: FirebaseAuthService
-  ) {}
+  constructor(private readonly firebaseService: FirebaseAuthService) {}
 
   async createUserAccount(data: CreateUserDto) {
     try {
@@ -37,7 +34,26 @@ export class UserService {
 
   async getAllUsers(offset: number, limit: number, role: AccountRoleEnum = undefined) {
     try {
-      return this.userRepository.getAllUsers(offset, limit, role);
+      const [accounts, total] = await Promise.all([
+        Account.find({
+          where: isNil(role) ? {} : { role },
+          skip: offset,
+          take: limit,
+          select: {
+            id: true,
+            username: true,
+            fullName: true,
+            email: true,
+            role: true,
+            dob: true,
+            gender: true,
+            createdAt: true,
+          },
+        }),
+        Account.countBy({ role }),
+      ]);
+
+      return { accounts, total, offset, limit };
     } catch (error) {
       this.logger.error(error);
       throw new BadRequestException(error);
@@ -46,18 +62,43 @@ export class UserService {
 
   async getUserById(id: string) {
     try {
-      return this.userRepository.getUserById(id);
+      return Account.findOne({
+        where: { id },
+        select: {
+          id: true,
+          username: true,
+          fullName: true,
+          email: true,
+          role: true,
+          dob: true,
+          gender: true,
+          createdAt: true,
+        },
+      });
     } catch (error) {
       this.logger.error(error);
       throw new BadRequestException(error);
     }
   }
 
-  async updateUser(id: string, body: UpdateAccountByAdminDto) {
+  async updateUser(id: string, updateData: UpdateAccountByAdminDto) {
     try {
-      const { ...rest } = body;
-      const updatedUser = await this.userRepository.updateOne({ where: { id } }, rest);
-      return { ...updatedUser };
+      const existedUser = await Account.findOne({ where: { id } });
+      if (!existedUser) {
+        throw new BadRequestException("User not found");
+      }
+      const updatedUser = await Account.save({ ...existedUser, ...updateData });
+      return updatedUser;
+    } catch (error) {
+      this.logger.error(error);
+      throw new BadRequestException(error);
+    }
+  }
+
+  async deleteUser(id: string) {
+    try {
+      const deletedUser = await Account.delete({ id });
+      return { ...deletedUser };
     } catch (error) {
       this.logger.error(error);
       throw new BadRequestException(error);
