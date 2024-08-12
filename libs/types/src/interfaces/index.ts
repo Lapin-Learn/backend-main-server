@@ -16,3 +16,4 @@ export * from "./profile-mission.interface";
 export * from "./profile-item.interface";
 
 export * from "./current-user.interface";
+export * from "./reset-password-action.interface";
