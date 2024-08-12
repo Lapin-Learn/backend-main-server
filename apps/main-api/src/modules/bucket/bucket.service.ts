@@ -119,7 +119,7 @@ export class BucketService {
     }
   }
 
-  async getPresignedUploadUrlForUpdate(user: ICurrentUser, body: UpdateFileDto) {
+  async getPresignedUploadUrlForUpdate(user: ICurrentUser, body: UpdateFileDto & { id: string }) {
     try {
       const data = await Bucket.findOne({ where: { id: body.id } });
       if (!data) {

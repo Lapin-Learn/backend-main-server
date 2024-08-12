@@ -53,13 +53,17 @@ export class BucketController {
     return this.bucketService.uploadConfirmation(user, body);
   }
 
-  @Put("presigned-url")
+  @Put("presigned-url/:id")
   @ApiOperation({ summary: "Get presigned URL for updating file" })
   @ApiBody({ type: UpdateFileDto })
   @ApiResponse({ status: 200, description: "Presigned URL generated" })
   @ApiResponse({ status: 400, description: "File not found" })
   @ApiResponse({ status: 401, description: "Unauthorized" })
-  async getPresignedUploadUrlForUpdate(@CurrentUser() user: ICurrentUser, @Body() body: UpdateFileDto) {
-    return this.bucketService.getPresignedUploadUrlForUpdate(user, body);
+  async getPresignedUploadUrlForUpdate(
+    @CurrentUser() user: ICurrentUser,
+    @Body() body: UpdateFileDto,
+    @Param("id") id: string
+  ) {
+    return this.bucketService.getPresignedUploadUrlForUpdate(user, { ...body, id });
   }
 }
