@@ -3,7 +3,7 @@ import { BadRequestException, Injectable, Logger, UnauthorizedException } from "
 import { ConfigService } from "@nestjs/config";
 import { InjectS3, S3 } from "nestjs-s3";
 import { Bucket } from "@app/database/entities";
-import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
+import { DeleteObjectCommand, GetObjectCommand, HeadObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { ICurrentUser } from "@app/types/interfaces";
 import { BucketPermissionsEnum, BucketUploadStatusEnum } from "@app/types/enums";
@@ -100,6 +100,13 @@ export class BucketService {
 
       if (data.owner !== user.userId) {
         throw new UnauthorizedException("Unauthorized access");
+      }
+
+      try {
+        const command = new HeadObjectCommand({ Bucket: this.bucketName, Key: body.id });
+        await this.s3.send(command);
+      } catch (error) {
+        throw new BadRequestException("File is not uploaded");
       }
 
       data.uploadStatus = BucketUploadStatusEnum.UPLOADED;
