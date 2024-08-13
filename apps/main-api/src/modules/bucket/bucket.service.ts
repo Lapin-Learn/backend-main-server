@@ -6,7 +6,7 @@ import { Bucket } from "@app/database/entities";
 import { DeleteObjectCommand, GetObjectCommand, HeadObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { ICurrentUser } from "@app/types/interfaces";
-import { BucketPermissionsEnum, BucketUploadStatusEnum } from "@app/types/enums";
+import { AccountRoleEnum, BucketPermissionsEnum, BucketUploadStatusEnum } from "@app/types/enums";
 
 @Injectable()
 export class BucketService {
@@ -47,7 +47,11 @@ export class BucketService {
         throw new BadRequestException("File not found");
       }
 
-      if (data.permission === BucketPermissionsEnum.PRIVATE && data.owner !== user.userId && user.role !== "admin") {
+      if (
+        data.permission === BucketPermissionsEnum.PRIVATE &&
+        data.owner !== user.userId &&
+        user.role !== AccountRoleEnum.ADMIN
+      ) {
         throw new UnauthorizedException("Unauthorized access");
       }
 
@@ -72,7 +76,11 @@ export class BucketService {
         throw new BadRequestException("File not found");
       }
 
-      if (data.permission === BucketPermissionsEnum.PRIVATE && data.owner !== user.userId && user.role !== "admin") {
+      if (
+        data.permission === BucketPermissionsEnum.PRIVATE &&
+        data.owner !== user.userId &&
+        user.role !== AccountRoleEnum.ADMIN
+      ) {
         throw new UnauthorizedException("Unauthorized access");
       }
 
