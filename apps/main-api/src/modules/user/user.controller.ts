@@ -7,19 +7,31 @@ import { FirebaseJwtAuthGuard, RoleGuard } from "../../guards";
 import { CurrentUser, Roles } from "../../decorators";
 import { UpdateAccountDto } from "@app/types/dtos/accounts/update-account.dto";
 import { ICurrentUser } from "@app/types/interfaces";
+import { ApiBearerAuth, ApiBody, ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 
-@UseGuards(FirebaseJwtAuthGuard, RoleGuard)
+@ApiTags("Users")
+@ApiBearerAuth()
+@UseGuards(FirebaseJwtAuthGuard)
 @Controller("users")
 export class UserController {
   constructor(private userService: UserService) {}
 
   @Post()
+  @ApiOperation({ summary: "Create an admin account" })
+  @ApiBody({ type: CreateUserDto })
+  @ApiResponse({ status: 201, description: "Admin account created" })
+  @ApiResponse({ status: 401, description: "Unauthorized" })
+  @UseGuards(RoleGuard)
   @Roles(AccountRoleEnum.ADMIN)
   async createUserAccount(@Body() data: CreateUserDto) {
     return this.userService.createUserAccount(data);
   }
 
   @Get()
+  @ApiOperation({ summary: "Get all users" })
+  @ApiResponse({ status: 200, description: "All users found" })
+  @ApiResponse({ status: 401, description: "Unauthorized" })
+  @UseGuards(RoleGuard)
   @Roles(AccountRoleEnum.ADMIN)
   async getAllUsers(@Query() data: { offset: number; limit: number; role?: AccountRoleEnum }) {
     const { offset, limit, role } = data;
@@ -27,25 +39,42 @@ export class UserController {
   }
 
   @Get("profile")
-  @Roles(AccountRoleEnum.ADMIN, AccountRoleEnum.LEARNER)
+  @ApiOperation({ summary: "Get a user's profile" })
+  @ApiResponse({ status: 200, description: "User found" })
+  @ApiResponse({ status: 400, description: "User not found" })
+  @ApiResponse({ status: 401, description: "Unauthorized" })
   async getUserProfile(@CurrentUser() user: ICurrentUser) {
-    return this.userService.getUserProfile(user.userId);
+    return this.userService.getUserById(user.userId);
   }
 
   @Put("profile")
-  @Roles(AccountRoleEnum.ADMIN, AccountRoleEnum.LEARNER)
+  @ApiOperation({ summary: "Update profile" })
+  @ApiBody({ type: UpdateAccountDto })
+  @ApiResponse({ status: 200, description: "Profile updated" })
+  @ApiResponse({ status: 400, description: "User not found" })
+  @ApiResponse({ status: 401, description: "Unauthorized" })
   async updateUserProfile(@CurrentUser() user: ICurrentUser, @Body() data: { body: UpdateAccountDto }) {
     const { body } = data;
     return this.userService.updateUser(user.userId, body);
   }
 
-  @Get(":id")
+  @Get("profile/:id")
+  @ApiOperation({ summary: "Get a user's profile by ID" })
+  @ApiResponse({ status: 200, description: "User found" })
+  @ApiResponse({ status: 400, description: "User not found" })
+  @ApiResponse({ status: 401, description: "Unauthorized" })
+  @UseGuards(RoleGuard)
   @Roles(AccountRoleEnum.ADMIN)
   async getUserById(@Param("id") id: string) {
     return this.userService.getUserById(id);
   }
 
-  @Put(":id")
+  @Put("profile/:id")
+  @ApiOperation({ summary: "Update profile by admin" })
+  @ApiBody({ type: UpdateAccountByAdminDto })
+  @ApiResponse({ status: 200, description: "Profile updated by admin" })
+  @ApiResponse({ status: 401, description: "Unauthorized" })
+  @UseGuards(RoleGuard)
   @Roles(AccountRoleEnum.ADMIN)
   async updateUserAccountByAdmin(@Param("id") id: string, @Body() data: { body: UpdateAccountByAdminDto }) {
     const { body } = data;

@@ -85,20 +85,6 @@ export class UserService {
     }
   }
 
-  async getUserProfile(id: string) {
-    try {
-      const existedAccount = await this.getUserById(id);
-      if (!existedAccount) {
-        throw new BadRequestException("User not found");
-      }
-      const learnerProfile = existedAccount.learnerProfile;
-      return { ...existedAccount, learnerProfile };
-    } catch (error) {
-      this.logger.error(error);
-      throw new BadRequestException(error);
-    }
-  }
-
   async updateUser(id: string, updateData: UpdateAccountByAdminDto | UpdateAccountDto) {
     try {
       const existedUser = await Account.findOne({ where: { id } });
