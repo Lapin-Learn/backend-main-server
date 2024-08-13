@@ -1,6 +1,6 @@
 import { AccountRoleEnum } from "../enums";
 
 export interface ICurrentUser {
-  id: string;
+  userId: string;
   role: AccountRoleEnum;
 }
