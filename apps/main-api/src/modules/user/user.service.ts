@@ -1,11 +1,10 @@
 import { AccountRoleEnum } from "@app/types/enums";
 import { BadRequestException, Injectable, Logger } from "@nestjs/common";
 import { CreateUserDto } from "@app/types/dtos/accounts/create-user.dto";
-import { UpdateAccountByAdminDto } from "@app/types/dtos/accounts/update-account-by-admin.dto";
 import { FirebaseAuthService } from "@app/shared-modules/firebase";
 import { Account } from "@app/database";
 import { isNil } from "lodash";
-import { UpdateAccountDto } from "@app/types/dtos/accounts/update-account.dto";
+import { UpdateAccountByAdminDto, UpdateAccountDto } from "@app/types/dtos";
 
 @Injectable()
 export class UserService {

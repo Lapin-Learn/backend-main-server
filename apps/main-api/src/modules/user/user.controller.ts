@@ -2,12 +2,11 @@ import { Body, Controller, Get, Param, Post, Put, Query, UseGuards } from "@nest
 import { UserService } from "./user.service";
 import { AccountRoleEnum } from "@app/types/enums";
 import { CreateUserDto } from "@app/types/dtos/accounts/create-user.dto";
-import { UpdateAccountByAdminDto } from "@app/types/dtos/accounts/update-account-by-admin.dto";
 import { FirebaseJwtAuthGuard, RoleGuard } from "../../guards";
 import { CurrentUser, Roles } from "../../decorators";
-import { UpdateAccountDto } from "@app/types/dtos/accounts/update-account.dto";
 import { ICurrentUser } from "@app/types/interfaces";
 import { ApiBearerAuth, ApiBody, ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
+import { UpdateAccountByAdminDto, UpdateAccountDto } from "@app/types/dtos";
 
 @ApiTags("Users")
 @ApiBearerAuth()
