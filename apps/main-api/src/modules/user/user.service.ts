@@ -5,6 +5,7 @@ import { UpdateAccountByAdminDto } from "@app/types/dtos/accounts/update-account
 import { FirebaseAuthService } from "@app/shared-modules/firebase";
 import { Account } from "@app/database";
 import { isNil } from "lodash";
+import { UpdateAccountDto } from "@app/types/dtos/accounts/update-account.dto";
 
 @Injectable()
 export class UserService {
@@ -64,6 +65,9 @@ export class UserService {
     try {
       return Account.findOne({
         where: { id },
+        relations: {
+          learnerProfile: true,
+        },
         select: {
           id: true,
           username: true,
@@ -81,7 +85,21 @@ export class UserService {
     }
   }
 
-  async updateUser(id: string, updateData: UpdateAccountByAdminDto) {
+  async getUserProfile(id: string) {
+    try {
+      const existedAccount = await this.getUserById(id);
+      if (!existedAccount) {
+        throw new BadRequestException("User not found");
+      }
+      const learnerProfile = existedAccount.learnerProfile;
+      return { ...existedAccount, learnerProfile };
+    } catch (error) {
+      this.logger.error(error);
+      throw new BadRequestException(error);
+    }
+  }
+
+  async updateUser(id: string, updateData: UpdateAccountByAdminDto | UpdateAccountDto) {
     try {
       const existedUser = await Account.findOne({ where: { id } });
       if (!existedUser) {

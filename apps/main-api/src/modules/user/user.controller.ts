@@ -4,7 +4,9 @@ import { AccountRoleEnum } from "@app/types/enums";
 import { CreateUserDto } from "@app/types/dtos/accounts/create-user.dto";
 import { UpdateAccountByAdminDto } from "@app/types/dtos/accounts/update-account-by-admin.dto";
 import { FirebaseJwtAuthGuard, RoleGuard } from "../../guards";
-import { Roles } from "../../decorators";
+import { CurrentUser, Roles } from "../../decorators";
+import { UpdateAccountDto } from "@app/types/dtos/accounts/update-account.dto";
+import { ICurrentUser } from "@app/types/interfaces";
 
 @UseGuards(FirebaseJwtAuthGuard, RoleGuard)
 @Controller("users")
@@ -24,6 +26,19 @@ export class UserController {
     return this.userService.getAllUsers(offset, limit, role);
   }
 
+  @Get("profile")
+  @Roles(AccountRoleEnum.ADMIN, AccountRoleEnum.LEARNER)
+  async getUserProfile(@CurrentUser() user: ICurrentUser) {
+    return this.userService.getUserProfile(user.userId);
+  }
+
+  @Put("profile")
+  @Roles(AccountRoleEnum.ADMIN, AccountRoleEnum.LEARNER)
+  async updateUserProfile(@CurrentUser() user: ICurrentUser, @Body() data: { body: UpdateAccountDto }) {
+    const { body } = data;
+    return this.userService.updateUser(user.userId, body);
+  }
+
   @Get(":id")
   @Roles(AccountRoleEnum.ADMIN)
   async getUserById(@Param("id") id: string) {
@@ -32,7 +47,7 @@ export class UserController {
 
   @Put(":id")
   @Roles(AccountRoleEnum.ADMIN)
-  async updateUserInfo(@Param("id") id: string, @Body() data: { body: UpdateAccountByAdminDto }) {
+  async updateUserAccountByAdmin(@Param("id") id: string, @Body() data: { body: UpdateAccountByAdminDto }) {
     const { body } = data;
     return this.userService.updateUser(id, body);
   }
