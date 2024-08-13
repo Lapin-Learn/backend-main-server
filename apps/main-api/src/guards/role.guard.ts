@@ -1,6 +1,7 @@
 import { CanActivate, ExecutionContext, Injectable } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { ROLES_KEY } from "@app/types/constants";
+import { isNil } from "lodash";
 
 @Injectable()
 export class RoleGuard implements CanActivate {
@@ -13,6 +14,10 @@ export class RoleGuard implements CanActivate {
     ]);
 
     const { user } = context.switchToHttp().getRequest();
+
+    if (isNil(user.role)) {
+      return false;
+    }
 
     const isValidRole = requiredRoles.some((role) => user.role.includes(role));
     return isValidRole;

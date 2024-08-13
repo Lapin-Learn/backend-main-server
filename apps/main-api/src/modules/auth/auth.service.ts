@@ -2,13 +2,18 @@ import { BadRequestException, Injectable, Logger, NotAcceptableException } from 
 import { Account } from "@app/database/entities";
 import { FirebaseAuthService } from "@app/shared-modules/firebase";
 import { AuthHelper } from "./auth.helper";
-
+import { generate as otpGenerator } from "otp-generator";
+import { MailService } from "@app/shared-modules/mail";
+import { RedisService } from "@app/shared-modules/redis";
+import { ResetPasswordActionEnum } from "@app/types/enums";
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(this.constructor.name);
 
   constructor(
     private readonly firebaseService: FirebaseAuthService,
+    private readonly mailService: MailService,
+    private readonly redisService: RedisService,
     private readonly authHelper: AuthHelper
   ) {}
 
@@ -40,6 +45,63 @@ export class AuthService {
         role: dbUser.role,
       });
       return this.authHelper.buildTokenResponse(accessToken);
+    } catch (error) {
+      this.logger.error(error);
+      throw new BadRequestException(error);
+    }
+  }
+
+  async sendOtp(email: string) {
+    try {
+      const dbUser = await Account.findOne({ where: { email } });
+      if (!dbUser) {
+        throw new NotAcceptableException("Email not found");
+      }
+      const otp = otpGenerator(6, {
+        digits: true,
+        lowerCaseAlphabets: false,
+        upperCaseAlphabets: false,
+        specialChars: false,
+      });
+      const resetPasswordToken = await this.firebaseService.generateCustomToken(dbUser.providerId, {
+        uid: dbUser.providerId,
+        action: ResetPasswordActionEnum.RESET_PASSWORD,
+      });
+      const res = await this.mailService.sendMail(email, "Reset password", "reset-password", { otp });
+      if (res.accepted.length > 0 && resetPasswordToken) {
+        await this.redisService.delete(dbUser.email);
+        await this.redisService.set(dbUser.email, { otp, resetPasswordToken });
+        return true;
+      }
+      return false;
+    } catch (error) {
+      this.logger.error(error);
+      throw new BadRequestException(error);
+    }
+  }
+
+  async verifyOtp(email: string, otp: string) {
+    try {
+      const data = await this.redisService.get(email);
+      if (!data) {
+        throw new NotAcceptableException("OTP expired");
+      }
+
+      if (data.otp !== otp) {
+        throw new NotAcceptableException("Invalid OTP");
+      }
+
+      return data.resetPasswordToken; // attach this token to header for reset password
+    } catch (error) {
+      this.logger.error(error);
+      throw new BadRequestException(error);
+    }
+  }
+
+  async updatePassword(uid: string, newPassword: string) {
+    try {
+      const user = await this.firebaseService.changePassword(uid, newPassword);
+      return user;
     } catch (error) {
       this.logger.error(error);
       throw new BadRequestException(error);

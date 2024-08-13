@@ -17,3 +17,4 @@ export * from "./profile-item.interface";
 export * from "./bucket.interface";
 
 export * from "./current-user.interface";
+export * from "./reset-password-action.interface";

@@ -66,17 +66,37 @@ export class FirebaseAuthService {
 
   async verifyToken(token: string) {
     try {
-      const requestGetIdToken = await this.httpService.post(
+      const idToken = await this.getIdToken(token);
+      const auth = getAuth(this.app);
+      return auth.verifyIdToken(idToken);
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
+  async getIdToken(token: string) {
+    try {
+      const response = await this.httpService.post(
         `${this.firebaseUrl}/accounts:signInWithCustomToken?key=${this.apiKey}`,
         {
           token,
           returnSecureToken: true,
         }
       );
+      return response.data.idToken;
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
 
-      const { idToken } = requestGetIdToken.data;
-      const auth = getAuth(this.app);
-      return auth.verifyIdToken(idToken);
+  async changePassword(uid: string, newPassword: string) {
+    try {
+      const app = getAuth(this.app);
+      return app.updateUser(uid, {
+        password: newPassword,
+      });
     } catch (error) {
       this.logger.error(error);
       throw error;
