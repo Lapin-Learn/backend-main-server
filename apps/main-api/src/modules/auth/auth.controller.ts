@@ -1,7 +1,10 @@
-import { Body, Controller, Post } from "@nestjs/common";
+import { Body, Controller, Get, Post, Query, UseGuards, Request } from "@nestjs/common";
 import { AuthService } from "./auth.service";
-import { LogInUserDto, RegisterUserDto } from "@app/types/dtos";
-import { ApiBody, ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
+import { LogInUserDto, RegisterUserDto, VerifyOtpDto, ResetPasswordDto } from "@app/types/dtos";
+import { ApiBearerAuth, ApiBody, ApiOperation, ApiQuery, ApiResponse, ApiTags } from "@nestjs/swagger";
+import { FirebaseJwtAuthGuard } from "../../guards";
+import { ResetPasswordGuard } from "../../guards/reset-password.guard";
+import { IResetPasswordAction } from "@app/types/interfaces";
 
 @ApiTags("Authentication")
 @Controller("auth")
@@ -26,5 +29,36 @@ export class AuthController {
   async signin(@Body() data: LogInUserDto) {
     const { email, password } = data;
     return this.authService.login(email, password);
+  }
+
+  @Post("otp")
+  @ApiOperation({ summary: "Verify OTP" })
+  @ApiBody({ type: VerifyOtpDto })
+  @ApiResponse({ status: 201, description: "OTP verified" })
+  @ApiResponse({ status: 406, description: "Expired OTP or Invalid OTP" })
+  async verifyOtp(@Body() data: VerifyOtpDto) {
+    return this.authService.verifyOtp(data.email, data.otp);
+  }
+
+  @UseGuards(FirebaseJwtAuthGuard, ResetPasswordGuard)
+  @Post("password-update")
+  @ApiOperation({ summary: "Update password" })
+  @ApiBearerAuth()
+  @ApiBody({ type: ResetPasswordDto })
+  @ApiResponse({ status: 200, description: "Password updated" })
+  @ApiResponse({ status: 400, description: "Invalid uid" })
+  @ApiResponse({ status: 401, description: "Unauthorized" })
+  async resetPassword(@Request() request, @Body() data: ResetPasswordDto) {
+    const { uid } = request.user as IResetPasswordAction;
+    return this.authService.updatePassword(uid, data.newPassword);
+  }
+
+  @Get("otp")
+  @ApiOperation({ summary: "Send OTP" })
+  @ApiQuery({ name: "email", required: true })
+  @ApiResponse({ status: 200, description: "OTP sent" })
+  @ApiResponse({ status: 406, description: "Email not found" })
+  async sendOtp(@Query("email") email: string) {
+    return this.authService.sendOtp(email);
   }
 }
