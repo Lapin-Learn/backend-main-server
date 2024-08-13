@@ -1,8 +1,8 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import { getRepositoryToken } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
-import { Account, LearnerProfile, Level, Streak } from "./entities";
-import { RankEnum } from "@app/types/enums";
+import { Account, Bucket, LearnerProfile, Level, Streak } from "./entities";
+import { BucketPermissionsEnum, BucketUploadStatusEnum, RankEnum } from "@app/types/enums";
 import { v4 as uuidv4 } from "uuid";
 
 describe("Test create new user", () => {
@@ -138,5 +138,57 @@ describe("Test create new user", () => {
       },
     });
     expect(foundLearnerProfile).toEqual(learnerProfile);
+  });
+});
+
+describe("Test bucket service", () => {
+  let bucketRepository: Repository<Bucket>;
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        {
+          provide: getRepositoryToken(Bucket),
+          useValue: {
+            create: jest.fn(),
+            save: jest.fn(),
+            find: jest.fn(),
+            findOne: jest.fn(),
+          },
+        },
+      ],
+    }).compile();
+
+    bucketRepository = module.get<Repository<Bucket>>(getRepositoryToken(Bucket));
+  });
+
+  it("Bucket repository should be defined", () => {
+    expect(bucketRepository).toBeDefined();
+  });
+
+  it("should create a new record in Bucket database", async () => {
+    const bucket = {
+      id: uuidv4(),
+      name: "test.png",
+      owner: uuidv4(),
+      permission: BucketPermissionsEnum.PUBLIC,
+      uploadStatus: BucketUploadStatusEnum.PENDING,
+    };
+
+    bucketRepository.save = jest.fn().mockResolvedValue(bucket);
+    bucketRepository.findOne = jest.fn().mockResolvedValue(bucket);
+
+    const createdBucket = await bucketRepository.save({
+      name: "test.png",
+      owner: uuidv4(),
+    });
+
+    expect(createdBucket).toEqual(bucket);
+
+    const foundBucket = await bucketRepository.findOne({
+      where: { id: createdBucket.id },
+    });
+
+    expect(foundBucket).toEqual(bucket);
   });
 });

@@ -24,6 +24,8 @@
     "migrate": "npx typeorm-ts-node-commonjs migration:run -d apps/main-api/typeorm.config.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.627.0",
+    "@aws-sdk/s3-request-presigner": "^3.627.0",
     "@commitlint/cli": "^19.3.0",
     "@commitlint/config-conventional": "^19.2.2",
     "@nestjs/common": "^10.0.0",
@@ -43,6 +45,7 @@
     "firebase-admin": "^12.3.0",
     "husky": "^9.1.4",
     "lodash": "^4.17.21",
+    "nestjs-s3": "^2.0.1",
     "passport-custom": "^1.1.1",
     "pg": "^8.12.0",
     "reflect-metadata": "^0.2.0",
