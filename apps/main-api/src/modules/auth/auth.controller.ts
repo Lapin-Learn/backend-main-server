@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Post, Query, UseGuards, Request } from "@nestjs/common";
 import { AuthService } from "./auth.service";
 import { LogInUserDto, RegisterUserDto, VerifyOtpDto, ResetPasswordDto } from "@app/types/dtos";
-import { ApiBody, ApiHeader, ApiOperation, ApiQuery, ApiResponse, ApiTags } from "@nestjs/swagger";
+import { ApiBearerAuth, ApiBody, ApiOperation, ApiQuery, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { FirebaseJwtAuthGuard } from "../../guards";
 import { ResetPasswordGuard } from "../../guards/reset-password.guard";
 import { IResetPasswordAction } from "@app/types/interfaces";
@@ -43,7 +43,7 @@ export class AuthController {
   @UseGuards(FirebaseJwtAuthGuard, ResetPasswordGuard)
   @Post("password-update")
   @ApiOperation({ summary: "Update password" })
-  @ApiHeader({ name: "Authorization", description: "Bearer token" })
+  @ApiBearerAuth()
   @ApiBody({ type: ResetPasswordDto })
   @ApiResponse({ status: 200, description: "Password updated" })
   @ApiResponse({ status: 400, description: "Invalid uid" })
