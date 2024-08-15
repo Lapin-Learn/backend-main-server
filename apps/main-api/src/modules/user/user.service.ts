@@ -1,10 +1,10 @@
 import { AccountRoleEnum } from "@app/types/enums";
 import { BadRequestException, Injectable, Logger } from "@nestjs/common";
 import { CreateUserDto } from "@app/types/dtos/accounts/create-user.dto";
-import { UpdateAccountByAdminDto } from "@app/types/dtos/accounts/update-account-by-admin.dto";
 import { FirebaseAuthService } from "@app/shared-modules/firebase";
 import { Account } from "@app/database";
 import { isNil } from "lodash";
+import { UpdateAccountByAdminDto, UpdateAccountDto } from "@app/types/dtos";
 
 @Injectable()
 export class UserService {
@@ -64,6 +64,9 @@ export class UserService {
     try {
       return Account.findOne({
         where: { id },
+        relations: {
+          learnerProfile: true,
+        },
         select: {
           id: true,
           username: true,
@@ -81,7 +84,7 @@ export class UserService {
     }
   }
 
-  async updateUser(id: string, updateData: UpdateAccountByAdminDto) {
+  async updateUser(id: string, updateData: UpdateAccountByAdminDto | UpdateAccountDto) {
     try {
       const existedUser = await Account.findOne({ where: { id } });
       if (!existedUser) {
