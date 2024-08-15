@@ -1,4 +1,5 @@
-const mock_tokens = "mock_token";
-const mock_access_token = "mock_access_token";
+const mock_tokens = "mockToken";
+const mock_access_token = "mockAccessToken";
+const mockAccessToken = "mockAccessToken";
 
-export { mock_tokens, mock_access_token };
+export { mock_tokens, mock_access_token, mockAccessToken };
