@@ -76,11 +76,7 @@ export class BucketService {
         throw new BadRequestException("File not found");
       }
 
-      if (
-        data.permission === BucketPermissionsEnum.PRIVATE &&
-        data.owner !== user.userId &&
-        user.role !== AccountRoleEnum.ADMIN
-      ) {
+      if (data.owner !== user.userId && user.role !== AccountRoleEnum.ADMIN) {
         throw new UnauthorizedException("Unauthorized access");
       }
 
