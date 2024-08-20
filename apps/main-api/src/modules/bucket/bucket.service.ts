@@ -61,7 +61,7 @@ export class BucketService {
         ResponseContentDisposition: `inline; filename=${data.name}`,
       });
 
-      return getSignedUrl(this.s3, command, { expiresIn: 3600 });
+      return await getSignedUrl(this.s3, command, { expiresIn: 3600 });
     } catch (error) {
       this.logger.error(error);
       throw new BadRequestException(error);
