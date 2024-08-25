@@ -27,6 +27,7 @@ export class AuthService {
       const newUser = await Account.save({ email, providerId: firebaseUser.uid, username: email });
       const accessToken = await this.firebaseService.generateCustomToken(firebaseUser.uid, {
         userId: newUser.id,
+        profileId: newUser.learnerProfileId,
         role: newUser.role,
       });
       return this.authHelper.buildTokenResponse(accessToken);
@@ -42,6 +43,7 @@ export class AuthService {
       const dbUser = await Account.findOne({ where: { providerId: user.localId } });
       const accessToken = await this.firebaseService.generateCustomToken(dbUser.providerId, {
         userId: dbUser.id,
+        profileId: dbUser.learnerProfileId,
         role: dbUser.role,
       });
       return this.authHelper.buildTokenResponse(accessToken);

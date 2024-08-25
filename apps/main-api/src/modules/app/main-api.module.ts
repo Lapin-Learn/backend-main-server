@@ -6,9 +6,10 @@ import { ConfigModule } from "@nestjs/config";
 import { BucketModule } from "../bucket/bucket.module";
 import { UserModule } from "../user/user.module";
 import { MailModule } from "@app/shared-modules/mail";
+import { ActivityModule } from "../activity/activity.module";
 
 @Module({
-  imports: [ConfigModule.forRoot({ isGlobal: true }), AuthModule, BucketModule, UserModule, MailModule],
+  imports: [ConfigModule.forRoot({ isGlobal: true }), AuthModule, BucketModule, UserModule, MailModule, ActivityModule],
   controllers: [MainApiController],
   providers: [MainApiService],
 })
