@@ -6,3 +6,4 @@ export * from "./accounts/create-user.dto";
 export * from "./accounts/update-account.dto";
 export * from "./accounts/update-account-by-admin.dto";
 export * from "./buckets";
+export * from "./streaks";
