@@ -175,4 +175,16 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
 
     return { ...profile, currentItems };
   }
+
+  static async getDailyLoginActivities(profileId: string, startDate: Date, endDate: Date) {
+    const data = await this.createQueryBuilder("learnerProfile")
+      .leftJoinAndSelect("learnerProfile.activities", "activity")
+      .leftJoinAndSelect("activity.action", "action")
+      .where("learnerProfile.id = :profileId", { profileId })
+      .andWhere("action.name = :actionName", { actionName: ActionNameEnum.DAILY_LOGIN })
+      .andWhere("activity.finishedAt BETWEEN :startDate AND :endDate", { startDate, endDate })
+      .getOne();
+
+    return data?.activities || [];
+  }
 }

@@ -48,7 +48,11 @@ export class StreakService {
         throw new BadRequestException("Start date cannot be later than yesterday");
       }
 
-      const getDailyLoginActivities = await Account.getDailyLoginActivities(user.userId, startDate, yesterday);
+      const getDailyLoginActivities = await LearnerProfile.getDailyLoginActivities(
+        user.profileId,
+        startDate,
+        yesterday
+      );
       return this.streakHelper.buildStreakHistoryResponseData(getDailyLoginActivities);
     } catch (error) {
       this.logger.error(error);
