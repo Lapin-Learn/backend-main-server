@@ -1,4 +1,4 @@
-import { AccountRoleEnum, GenderEnum } from "@app/types/enums";
+import { AccountRoleEnum, ActionNameEnum, GenderEnum } from "@app/types/enums";
 import { IAccount, ILearnerProfile } from "@app/types/interfaces";
 import {
   BaseEntity,
@@ -60,8 +60,22 @@ export class Account extends BaseEntity implements IAccount {
   @OneToOne(() => LearnerProfile)
   @JoinColumn({ name: "learner_profile_id", referencedColumnName: "id" })
   readonly learnerProfile: ILearnerProfile;
-
+  
   @OneToOne(() => Bucket)
   @JoinColumn({ name: "avatar_id", referencedColumnName: "id" })
   readonly avatar: Bucket;
+
+  // Active Record Pattern
+  static async getDailyLoginActivities(accountId: string, startDate: Date, endDate: Date) {
+    const data = await this.createQueryBuilder("account")
+      .leftJoinAndSelect("account.learnerProfile", "learnerProfile")
+      .leftJoinAndSelect("learnerProfile.activities", "activity")
+      .leftJoinAndSelect("activity.action", "action")
+      .where("account.id = :accountId", { accountId })
+      .andWhere("action.name = :actionName", { actionName: ActionNameEnum.DAILY_LOGIN })
+      .andWhere("activity.finishedAt BETWEEN :startDate AND :endDate", { startDate, endDate })
+      .getOne();
+
+    return data.learnerProfile.activities;
+  }
 }

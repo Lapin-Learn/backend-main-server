@@ -18,6 +18,7 @@ import { Activity } from "./activity.entity";
 import { ProfileBadge } from "./profile-badge.entity";
 import { ProfileMission } from "./profile-mission.entity";
 import { ProfileItem } from "./profile-item.entity";
+import { getUTCBeginOfDay, getUTCEndOfDay, newDateUTC } from "@app/utils/time";
 import { LessonRecord } from "./lesson-record.entity";
 import { LessonProcess } from "./lesson-process.entity";
 import { LevelRankMap } from "@app/utils/maps";
@@ -130,14 +131,10 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
   // Active Record Pattern
   static async getBrokenStreakProfiles() {
     // Midnight yesterday in UTC
-    const beginOfYesterday = new Date(
-      Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), new Date().getUTCDate() - 1, 0, 0, 0, 0)
-    );
+    const beginOfYesterday = getUTCBeginOfDay(newDateUTC(), 1);
 
     // 23:59:59 yesterday in UTC
-    const endOfYesterday = new Date(
-      Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), new Date().getUTCDate() - 1, 23, 59, 59, 999)
-    );
+    const endOfYesterday = getUTCEndOfDay(newDateUTC(), 1);
 
     const rawValidLearnerProfileIds = await this.createQueryBuilder("learnerProfiles")
       .leftJoinAndSelect("learnerProfiles.activities", "activities")
