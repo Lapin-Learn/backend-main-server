@@ -1,4 +1,4 @@
-import { RankEnum } from "@app/types/enums";
+import { ActionNameEnum, RankEnum } from "@app/types/enums";
 import { ILearnerProfile } from "@app/types/interfaces";
 import {
   BaseEntity,
@@ -70,4 +70,39 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
 
   @OneToMany(() => ProfileItem, (profileItem) => profileItem.profile)
   readonly profileItems: ProfileItem[];
+
+  // Active Record Pattern
+  static async getBrokenStreakProfiles() {
+    // Midnight yesterday in UTC
+    const beginOfYesterday = new Date(
+      Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), new Date().getUTCDate() - 1, 0, 0, 0, 0)
+    );
+
+    // 23:59:59 yesterday in UTC
+    const endOfYesterday = new Date(
+      Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), new Date().getUTCDate() - 1, 23, 59, 59, 999)
+    );
+
+    const rawValidLearnerProfileIds = await this.createQueryBuilder("learnerProfiles")
+      .leftJoinAndSelect("learnerProfiles.activities", "activities")
+      .leftJoinAndSelect("activities.action", "actions")
+      .where("activities.finishedAt BETWEEN :beginOfYesterday AND :endOfYesterday", {
+        beginOfYesterday,
+        endOfYesterday,
+      })
+      .andWhere("actions.name = :actionName", { actionName: ActionNameEnum.DAILY_LOGIN })
+      .select("learnerProfiles.id")
+      .getMany();
+
+    const validLearnerProfileIds = rawValidLearnerProfileIds.map((profile) => profile.id);
+
+    const invalidLearnerProfiles = await this.createQueryBuilder("learnerProfiles")
+      .where(validLearnerProfileIds.length > 0 ? "learnerProfiles.id NOT IN (:...validLearnerProfileIds)" : "1=1", {
+        validLearnerProfileIds,
+      })
+      .leftJoinAndSelect("learnerProfiles.streak", "streaks")
+      .getMany();
+
+    return invalidLearnerProfiles;
+  }
 }
