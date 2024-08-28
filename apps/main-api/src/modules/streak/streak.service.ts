@@ -1,16 +1,13 @@
-import { Account, Streak } from "@app/database";
+import { Account, LearnerProfile, Streak } from "@app/database";
 import { SetTargetStreak } from "@app/types/dtos";
-import { ActionNameEnum } from "@app/types/enums";
 import { ICurrentUser } from "@app/types/interfaces";
 import { BadRequestException, Injectable, Logger } from "@nestjs/common";
 import { Cron } from "@nestjs/schedule";
-import { DataSource } from "typeorm";
+import { In } from "typeorm";
 
 @Injectable()
 export class StreakService {
   private readonly logger = new Logger(this.constructor.name);
-
-  constructor(private readonly dataSource: DataSource) {}
 
   async setTargetStreak(user: ICurrentUser, dto: SetTargetStreak) {
     try {
@@ -24,51 +21,18 @@ export class StreakService {
     }
   }
 
-  @Cron("0 7 * * *") // Midnight in GMT+7 (system uses UTC)
+  @Cron("* * * * *") // Midnight in GMT+7 (system uses UTC)
   async resetStreak() {
     try {
       this.logger.log("Reset streak");
 
-      // Midnight yesterday in UTC
-      const beginOfYesterday = new Date(
-        Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), new Date().getUTCDate() - 1, 0, 0, 0, 0)
-      );
+      const brokenStreakProfiles = await LearnerProfile.getBrokenStreakProfiles();
 
-      // 23:59:59 yesterday in UTC
-      const endOfYesterday = new Date(
-        Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), new Date().getUTCDate() - 1, 23, 59, 59, 999)
-      );
-
-      const rawValidAccountIds = await this.dataSource
-        .getRepository(Account)
-        .createQueryBuilder("accounts")
-        .leftJoinAndSelect("accounts.learnerProfile", "learnerProfiles")
-        .leftJoinAndSelect("learnerProfiles.activities", "activities")
-        .leftJoinAndSelect("activities.action", "actions")
-        .where("activities.finishedAt BETWEEN :beginOfYesterday AND :endOfYesterday", {
-          beginOfYesterday,
-          endOfYesterday,
-        })
-        .andWhere("actions.name = :actionName", { actionName: ActionNameEnum.DAILY_LOGIN })
-        .select("accounts.id")
-        .getMany();
-
-      const validAccountIds = rawValidAccountIds.map((account) => account.id);
-
-      const invalidAccounts = await this.dataSource
-        .getRepository(Account)
-        .createQueryBuilder("accounts")
-        .leftJoinAndSelect("accounts.learnerProfile", "learnerProfiles")
-        .where(validAccountIds.length > 0 ? "accounts.id NOT IN (:...validAccountIds)" : "1=1", { validAccountIds })
-        .leftJoinAndSelect("learnerProfiles.streak", "streaks")
-        .getMany();
-
-      for (const account of invalidAccounts) {
-        await Streak.update({ id: account.learnerProfile.streak.id }, { current: 0 });
+      if (brokenStreakProfiles.length > 0) {
+        await Streak.update({ id: In(brokenStreakProfiles.map((profile) => profile.streakId)) }, { current: 0 });
       }
     } catch (error) {
       this.logger.error(error);
-      throw new BadRequestException(error);
     }
   }
 }
