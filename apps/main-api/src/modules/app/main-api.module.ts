@@ -8,6 +8,7 @@ import { UserModule } from "../user/user.module";
 import { MailModule } from "@app/shared-modules/mail";
 import { ActivityModule } from "../activity/activity.module";
 import { StreakModule } from "../streak/streak.module";
+import { DailyLessonModule } from "../daily-lesson/daily-lesson.module";
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { StreakModule } from "../streak/streak.module";
     MailModule,
     ActivityModule,
     StreakModule,
+    DailyLessonModule,
   ],
   controllers: [MainApiController],
   providers: [MainApiService],

@@ -7,3 +7,4 @@ export * from "./profile-mission.enum";
 export * from "./reset-password-action.enum";
 export * from "./bucket-permissions.enum";
 export * from "./bucket-upload-status.enum";
+export * from "./skill.enum";
