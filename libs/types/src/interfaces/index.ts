@@ -18,3 +18,5 @@ export * from "./bucket.interface";
 
 export * from "./current-user.interface";
 export * from "./reset-password-action.interface";
+export * from "./question-type.interface";
+export * from "./lesson.interface";
