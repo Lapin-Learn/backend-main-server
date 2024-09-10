@@ -14,3 +14,7 @@ export * from "./profile-item.entity";
 export * from "./bucket.entity";
 export * from "./lesson.entity";
 export * from "./question-type.entity";
+export * from "./instruction.entity";
+export * from "./question.entity";
+export * from "./question-to-lesson.entity";
+export * from "./multiple-choice.entity";

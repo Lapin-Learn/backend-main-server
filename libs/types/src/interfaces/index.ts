@@ -20,3 +20,7 @@ export * from "./current-user.interface";
 export * from "./reset-password-action.interface";
 export * from "./question-type.interface";
 export * from "./lesson.interface";
+export * from "./instruction.interface";
+export * from "./question.interface";
+export * from "./multiple-choice.interface";
+export * from "./question-to-lesson.interface";

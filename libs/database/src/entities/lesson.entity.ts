@@ -6,12 +6,15 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from "typeorm";
 import { QuestionType } from "./question-type.entity";
+import { Instruction } from "./instruction.entity";
+import { QuestionToLesson } from "./question-to-lesson.entity";
 
-@Entity("lessons")
+@Entity({ name: "lessons" })
 export class Lesson extends BaseEntity implements ILesson {
   @PrimaryGeneratedColumn("increment")
   id: number;
@@ -40,4 +43,10 @@ export class Lesson extends BaseEntity implements ILesson {
   @ManyToOne(() => QuestionType, (questionType) => questionType.lessons)
   @JoinColumn({ name: "question_type_id", referencedColumnName: "id" })
   readonly questionType: QuestionType;
+
+  @OneToMany(() => Instruction, (instruction) => instruction.lesson)
+  readonly instructions: Instruction[];
+
+  @OneToMany(() => QuestionToLesson, (questionToLesson) => questionToLesson.lesson)
+  readonly questionToLessons: QuestionToLesson[];
 }
