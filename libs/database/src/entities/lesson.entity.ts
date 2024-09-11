@@ -13,6 +13,7 @@ import {
 import { QuestionType } from "./question-type.entity";
 import { Instruction } from "./instruction.entity";
 import { QuestionToLesson } from "./question-to-lesson.entity";
+import { LessonProcess } from "./lesson-process.entity";
 
 @Entity({ name: "lessons" })
 export class Lesson extends BaseEntity implements ILesson {
@@ -43,6 +44,9 @@ export class Lesson extends BaseEntity implements ILesson {
   @ManyToOne(() => QuestionType, (questionType) => questionType.lessons)
   @JoinColumn({ name: "question_type_id", referencedColumnName: "id" })
   readonly questionType: QuestionType;
+
+  @OneToMany(() => LessonProcess, (lessonProcess) => lessonProcess.lesson)
+  readonly lessonProcesses: LessonProcess[];
 
   @OneToMany(() => Instruction, (instruction) => instruction.lesson)
   readonly instructions: Instruction[];

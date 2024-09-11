@@ -1,5 +1,6 @@
 import { RankEnum } from "../enums";
 import { IActivity } from "./activity.interface";
+import { ILessonProcess } from "./lesson-process.interface";
 import { ILevel } from "./level.interface";
 import { IProfileBadge } from "./profile-badge.interface";
 import { IProfileItem } from "./profile-item.interface";
@@ -23,4 +24,5 @@ export interface ILearnerProfile {
   readonly profileBadges: IProfileBadge[];
   readonly profileMissions: IProfileMission[];
   readonly profileItems: IProfileItem[];
+  readonly lessonProcesses: ILessonProcess[];
 }
