@@ -1,14 +1,14 @@
-import { ContentTypeEnum, LevelEnum } from "../enums";
+import { ContentTypeEnum, CERFLevelEum } from "../enums";
 import { IBucket } from "./bucket.interface";
 import { IQuestionToLesson } from "./question-to-lesson.interface";
 
 export interface IQuestion {
   id: string;
   contentType: ContentTypeEnum;
-  contentId: string;
+  content: object;
   imageId: string;
   audioId: string;
-  level: LevelEnum;
+  cerfLevel: CERFLevelEum;
   explanation: string;
   createdAt: Date;
   updatedAt: Date;

@@ -20,8 +20,8 @@ export class AddTableQuestions1725985337896 implements MigrationInterface {
             isNullable: false,
           },
           {
-            name: "content_id",
-            type: "uuid",
+            name: "content",
+            type: "jsonb",
             isNullable: false,
           },
           {
@@ -35,9 +35,9 @@ export class AddTableQuestions1725985337896 implements MigrationInterface {
             isNullable: true,
           },
           {
-            name: "level",
+            name: "cerf_level",
             type: "enum",
-            enum: ["beginner", "intermediate", "advanced"],
+            enum: ["A1", "A2", "B1", "B2", "C1", "C2", "Any"],
             isNullable: false,
           },
           {

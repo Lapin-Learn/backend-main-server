@@ -1,12 +1,12 @@
-import { ContentTypeEnum, LevelEnum } from "@app/types/enums";
+import { ContentTypeEnum, CERFLevelEum } from "@app/types/enums";
 import { IQuestion } from "@app/types/interfaces";
 import {
   BaseEntity,
   Column,
   CreateDateColumn,
   Entity,
-  ManyToOne,
   OneToMany,
+  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from "typeorm";
@@ -21,8 +21,8 @@ export class Question extends BaseEntity implements IQuestion {
   @Column({ name: "content_type", type: "enum", enum: ContentTypeEnum, nullable: false })
   contentType: ContentTypeEnum;
 
-  @Column({ name: "content_id", type: "uuid", nullable: false })
-  contentId: string;
+  @Column({ name: "content", type: "jsonb", nullable: false })
+  content: object;
 
   @Column({ name: "image_id", type: "uuid", nullable: true })
   imageId: string;
@@ -30,8 +30,8 @@ export class Question extends BaseEntity implements IQuestion {
   @Column({ name: "audio_id", type: "uuid", nullable: true })
   audioId: string;
 
-  @Column({ name: "level", type: "enum", enum: LevelEnum, nullable: false })
-  level: LevelEnum;
+  @Column({ name: "cerf_level", type: "enum", enum: CERFLevelEum, nullable: false })
+  cerfLevel: CERFLevelEum;
 
   @Column({ name: "explanation", type: "text", nullable: false })
   explanation: string;
@@ -50,9 +50,9 @@ export class Question extends BaseEntity implements IQuestion {
   @OneToMany(() => QuestionToLesson, (questionToLesson) => questionToLesson.question)
   readonly questionToLessons: QuestionToLesson[];
 
-  @ManyToOne(() => Bucket, (bucket) => bucket.id)
+  @OneToOne(() => Bucket, (bucket) => bucket.id)
   readonly image: Bucket;
 
-  @ManyToOne(() => Bucket, (bucket) => bucket.id)
+  @OneToOne(() => Bucket, (bucket) => bucket.id)
   readonly audio: Bucket;
 }

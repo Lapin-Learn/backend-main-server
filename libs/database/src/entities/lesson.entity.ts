@@ -49,4 +49,18 @@ export class Lesson extends BaseEntity implements ILesson {
 
   @OneToMany(() => QuestionToLesson, (questionToLesson) => questionToLesson.lesson)
   readonly questionToLessons: QuestionToLesson[];
+
+  static async getContentOfLesson(questionTypeId: number) {
+    return this.createQueryBuilder("lesson")
+      .select(["lesson.id", "lesson.name", "lesson.order", "lesson.questionTypeId"])
+      .leftJoinAndSelect("lesson.instructions", "instruction")
+      .addOrderBy("instruction.order", "ASC")
+      .leftJoin("lesson.questionToLessons", "questions")
+      .addSelect(["questions.order", "questions.questionId"])
+      .addOrderBy("questions.order", "ASC")
+      .leftJoinAndSelect("questions.question", "question")
+      .where("lesson.questionTypeId = :questionTypeId", { questionTypeId })
+      .addOrderBy("lesson.order", "ASC")
+      .getMany();
+  }
 }

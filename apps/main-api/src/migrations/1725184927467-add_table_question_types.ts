@@ -27,7 +27,7 @@ export class AddTableQuestionTypes1725184927467 implements MigrationInterface {
           {
             name: "image_id",
             type: "uuid",
-            isNullable: false,
+            isNullable: true,
           },
           {
             name: "created_at",

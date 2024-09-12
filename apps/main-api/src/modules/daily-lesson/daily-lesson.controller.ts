@@ -1,4 +1,4 @@
-import { Controller, Get, Query, UseGuards, ValidationPipe } from "@nestjs/common";
+import { Controller, Get, Param, ParseIntPipe, Query, UseGuards, ValidationPipe } from "@nestjs/common";
 import { DailyLessonService } from "./daily-lesson.service";
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { QueryQuestionTypesDto } from "@app/types/dtos";
@@ -20,5 +20,10 @@ export class DailyLessonController {
   @Get("question-types")
   async getQuestionTypes(@Query(new ValidationPipe()) query: QueryQuestionTypesDto) {
     return this.dailyLessonService.getQuestionTypes(query?.skill);
+  }
+
+  @Get("questions-types/:id/lessons")
+  async getLessonsByQuestionType(@Param("id", ParseIntPipe) id: number) {
+    return this.dailyLessonService.getLessonsOfQuestionType(id);
   }
 }
