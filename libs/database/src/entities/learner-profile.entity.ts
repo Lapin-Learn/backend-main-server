@@ -19,6 +19,7 @@ import { ProfileBadge } from "./profile-badge.entity";
 import { ProfileMission } from "./profile-mission.entity";
 import { ProfileItem } from "./profile-item.entity";
 import { LessonRecord } from "./lesson-record.entity";
+import { LessonProcess } from "./lesson-process.entity";
 
 @Entity("learner_profiles")
 export class LearnerProfile extends BaseEntity implements ILearnerProfile {
@@ -74,6 +75,9 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
 
   @OneToMany(() => LessonRecord, (lessonRecord) => lessonRecord.learnerProfile)
   readonly lessonRecords: LessonRecord[];
+
+  @OneToMany(() => LessonProcess, (lessonProcess) => lessonProcess.learnerProfile)
+  readonly lessonProcesses: LessonProcess[];
 
   // Active Record Pattern
   static async getBrokenStreakProfiles() {

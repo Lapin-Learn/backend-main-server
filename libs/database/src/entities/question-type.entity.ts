@@ -14,6 +14,7 @@ import {
 import { Bucket } from "./bucket.entity";
 import { Lesson } from "./lesson.entity";
 import * as _ from "lodash";
+import { LessonProcess } from "./lesson-process.entity";
 
 @Entity("question_types")
 export class QuestionType extends BaseEntity implements IQuestionType {
@@ -47,6 +48,9 @@ export class QuestionType extends BaseEntity implements IQuestionType {
 
   @OneToMany(() => Lesson, (lesson) => lesson.questionType)
   readonly lessons: Lesson[];
+
+  @OneToMany(() => LessonProcess, (lessonProcess) => lessonProcess.questionType)
+  readonly lessonProcesses: LessonProcess[];
 
   static ofASkill(skill: SkillEnum): Promise<QuestionType[]> {
     return this.createQueryBuilder("question_type")

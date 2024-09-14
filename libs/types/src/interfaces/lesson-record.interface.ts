@@ -3,9 +3,8 @@ import { ILesson } from "./lesson.interface";
 
 export interface ILessonRecord {
   id: string;
-  lessonId: string;
+  lessonId: number;
   learnerProfileId: string;
-  totalAnswers: number;
   correctAnswers: number;
   wrongAnswers: number;
   createdAt: Date;

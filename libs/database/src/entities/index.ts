@@ -17,3 +17,4 @@ export * from "./question-type.entity";
 export * from "./instruction.entity";
 export * from "./question.entity";
 export * from "./question-to-lesson.entity";
+export * from "./lesson-record.entity";

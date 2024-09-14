@@ -17,14 +17,11 @@ export class LessonRecord extends BaseEntity implements ILessonRecord {
   @PrimaryGeneratedColumn("uuid")
   id: string;
 
-  @Column({ name: "lesson_id", type: "uuid", nullable: false })
-  lessonId: string;
+  @Column({ name: "lesson_id", type: "int", nullable: false })
+  lessonId: number;
 
   @Column({ name: "learner_profile_id", type: "uuid", nullable: false })
   learnerProfileId: string;
-
-  @Column({ name: "total_answers", type: "int", nullable: false })
-  totalAnswers: number;
 
   @Column({ name: "correct_answers", type: "int", nullable: false })
   correctAnswers: number;
