@@ -1,4 +1,3 @@
-import { ILessonProcess } from "@app/types/interfaces/lesson-process.interface";
 import {
   BaseEntity,
   Column,
@@ -11,9 +10,10 @@ import {
 } from "typeorm";
 import { Lesson } from "./lesson.entity";
 import { LearnerProfile } from "./learner-profile.entity";
+import { ILessonRecord } from "@app/types/interfaces";
 
-@Entity("lesson_processes")
-export class LessonProcess extends BaseEntity implements ILessonProcess {
+@Entity("lesson_records")
+export class LessonRecord extends BaseEntity implements ILessonRecord {
   @PrimaryGeneratedColumn("uuid")
   id: string;
 
@@ -22,6 +22,9 @@ export class LessonProcess extends BaseEntity implements ILessonProcess {
 
   @Column({ name: "learner_profile_id", type: "uuid", nullable: false })
   learnerProfileId: string;
+
+  @Column({ name: "total_answers", type: "int", nullable: false })
+  totalAnswers: number;
 
   @Column({ name: "correct_answers", type: "int", nullable: false })
   correctAnswers: number;
