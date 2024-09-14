@@ -1,54 +1,57 @@
 import { MigrationInterface, QueryRunner, Table } from "typeorm";
 
-export class AddTableQuestionTypes1725184927467 implements MigrationInterface {
+export class AddTableQuestionsToLessons1725985897619 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.createTable(
       new Table({
-        name: "question_types",
+        name: "questions_to_lessons",
         columns: [
           {
             name: "id",
-            type: "int",
+            type: "uuid",
             isPrimary: true,
             isGenerated: true,
-            generationStrategy: "increment",
+            generationStrategy: "uuid",
           },
           {
-            name: "name",
-            type: "text",
-            isNullable: false,
-          },
-          {
-            name: "skill",
-            type: "enum",
-            enum: ["speaking", "listening", "reading", "writing"],
-            isNullable: false,
-          },
-          {
-            name: "image_id",
+            name: "question_id",
             type: "uuid",
-            isNullable: true,
+            isNullable: false,
+          },
+          {
+            name: "lesson_id",
+            type: "int",
+            isNullable: false,
+          },
+          {
+            name: "order",
+            type: "int",
+            isNullable: false,
           },
           {
             name: "created_at",
             type: "timestamp",
-            isNullable: false,
             default: "CURRENT_TIMESTAMP",
           },
           {
             name: "updated_at",
             type: "timestamp",
-            isNullable: false,
             default: "CURRENT_TIMESTAMP",
             onUpdate: "CURRENT_TIMESTAMP",
           },
         ],
         foreignKeys: [
           {
-            name: "FK_QUESTION_TYPES_IMAGE_ID",
-            columnNames: ["image_id"],
+            name: "FK_QUESTION_TO_LESSON_QUESTION_ID",
+            columnNames: ["question_id"],
+            referencedTableName: "questions",
             referencedColumnNames: ["id"],
-            referencedTableName: "buckets",
+          },
+          {
+            name: "FK_QUESTION_TO_LESSON_LESSON_ID",
+            columnNames: ["lesson_id"],
+            referencedTableName: "lessons",
+            referencedColumnNames: ["id"],
           },
         ],
       })

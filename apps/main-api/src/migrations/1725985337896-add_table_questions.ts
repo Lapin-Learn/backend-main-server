@@ -1,27 +1,27 @@
 import { MigrationInterface, QueryRunner, Table } from "typeorm";
 
-export class AddTableQuestionTypes1725184927467 implements MigrationInterface {
+export class AddTableQuestions1725985337896 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.createTable(
       new Table({
-        name: "question_types",
+        name: "questions",
         columns: [
           {
             name: "id",
-            type: "int",
+            type: "uuid",
             isPrimary: true,
             isGenerated: true,
-            generationStrategy: "increment",
+            generationStrategy: "uuid",
           },
           {
-            name: "name",
-            type: "text",
+            name: "content_type",
+            type: "enum",
+            enum: ["multiple_choice", "fill_in_the_blank", "matching"],
             isNullable: false,
           },
           {
-            name: "skill",
-            type: "enum",
-            enum: ["speaking", "listening", "reading", "writing"],
+            name: "content",
+            type: "jsonb",
             isNullable: false,
           },
           {
@@ -30,25 +30,45 @@ export class AddTableQuestionTypes1725184927467 implements MigrationInterface {
             isNullable: true,
           },
           {
+            name: "audio_id",
+            type: "uuid",
+            isNullable: true,
+          },
+          {
+            name: "cerf_level",
+            type: "enum",
+            enum: ["A1", "A2", "B1", "B2", "C1", "C2", "Any"],
+            isNullable: false,
+          },
+          {
+            name: "explanation",
+            type: "text",
+            isNullable: false,
+          },
+          {
             name: "created_at",
             type: "timestamp",
-            isNullable: false,
             default: "CURRENT_TIMESTAMP",
           },
           {
             name: "updated_at",
             type: "timestamp",
-            isNullable: false,
             default: "CURRENT_TIMESTAMP",
             onUpdate: "CURRENT_TIMESTAMP",
           },
         ],
         foreignKeys: [
           {
-            name: "FK_QUESTION_TYPES_IMAGE_ID",
+            name: "FK_QUESTION_IMAGE_ID",
             columnNames: ["image_id"],
-            referencedColumnNames: ["id"],
             referencedTableName: "buckets",
+            referencedColumnNames: ["id"],
+          },
+          {
+            name: "FK_QUESTION_AUDIO_ID",
+            columnNames: ["audio_id"],
+            referencedTableName: "buckets",
+            referencedColumnNames: ["id"],
           },
         ],
       })

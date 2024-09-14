@@ -1,6 +1,6 @@
-import { Controller, Get, Query, UseGuards, ValidationPipe } from "@nestjs/common";
+import { Controller, Get, Param, ParseIntPipe, Query, UseGuards, ValidationPipe } from "@nestjs/common";
 import { DailyLessonService } from "./daily-lesson.service";
-import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from "@nestjs/swagger";
+import { ApiBearerAuth, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { QueryQuestionTypesDto } from "@app/types/dtos";
 import { SkillEnum } from "@app/types/enums";
 import { FirebaseJwtAuthGuard } from "../../guards";
@@ -20,5 +20,14 @@ export class DailyLessonController {
   @Get("question-types")
   async getQuestionTypes(@Query(new ValidationPipe()) query: QueryQuestionTypesDto) {
     return this.dailyLessonService.getQuestionTypes(query?.skill);
+  }
+
+  @ApiOperation({ summary: "Get all lessons of a question type" })
+  @ApiParam({ name: "id", description: "Question type id", type: Number })
+  @ApiResponse({ status: 200, description: "Get all lessons of a question type successfully" })
+  @ApiResponse({ status: 401, description: "Unauthorized" })
+  @Get("questions-types/:id/lessons")
+  async getLessonsByQuestionType(@Param("id", ParseIntPipe) id: number) {
+    return this.dailyLessonService.getLessonsOfQuestionType(id);
   }
 }

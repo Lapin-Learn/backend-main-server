@@ -1,28 +1,28 @@
 import { MigrationInterface, QueryRunner, Table } from "typeorm";
 
-export class AddTableQuestionTypes1725184927467 implements MigrationInterface {
+export class AddTableInstructions1725984759674 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.createTable(
       new Table({
-        name: "question_types",
+        name: "instructions",
         columns: [
           {
             name: "id",
-            type: "int",
+            type: "uuid",
             isPrimary: true,
             isGenerated: true,
-            generationStrategy: "increment",
+            generationStrategy: "uuid",
           },
           {
-            name: "name",
+            name: "content",
             type: "text",
             isNullable: false,
           },
           {
-            name: "skill",
-            type: "enum",
-            enum: ["speaking", "listening", "reading", "writing"],
+            name: "order",
+            type: "int",
             isNullable: false,
+            default: 0,
           },
           {
             name: "image_id",
@@ -30,25 +30,45 @@ export class AddTableQuestionTypes1725184927467 implements MigrationInterface {
             isNullable: true,
           },
           {
+            name: "audio_id",
+            type: "uuid",
+            isNullable: true,
+          },
+          {
+            name: "lesson_id",
+            type: "int",
+            isNullable: false,
+          },
+          {
             name: "created_at",
             type: "timestamp",
-            isNullable: false,
             default: "CURRENT_TIMESTAMP",
           },
           {
             name: "updated_at",
             type: "timestamp",
-            isNullable: false,
             default: "CURRENT_TIMESTAMP",
             onUpdate: "CURRENT_TIMESTAMP",
           },
         ],
         foreignKeys: [
           {
-            name: "FK_QUESTION_TYPES_IMAGE_ID",
-            columnNames: ["image_id"],
+            name: "FK_INSTRUCTION_LESSON_ID",
+            columnNames: ["lesson_id"],
+            referencedTableName: "lessons",
             referencedColumnNames: ["id"],
+          },
+          {
+            name: "FK_INSTRUCTION_IMAGE_ID",
+            columnNames: ["image_id"],
             referencedTableName: "buckets",
+            referencedColumnNames: ["id"],
+          },
+          {
+            name: "FK_INSTRUCTION_AUDIO_ID",
+            columnNames: ["audio_id"],
+            referencedTableName: "buckets",
+            referencedColumnNames: ["id"],
           },
         ],
       })
