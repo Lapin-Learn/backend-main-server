@@ -7,6 +7,7 @@ export interface ILessonRecord {
   learnerProfileId: string;
   correctAnswers: number;
   wrongAnswers: number;
+  duration: number;
   createdAt: Date;
   updatedAt: Date;
 

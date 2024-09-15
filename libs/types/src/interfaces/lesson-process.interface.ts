@@ -2,6 +2,7 @@ import { BandScoreEnum } from "../enums";
 import { ILearnerProfile } from "./learner-profile.interface";
 import { ILesson } from "./lesson.interface";
 import { IQuestionType } from "./question-type.interface";
+import { IXPLessonProcess } from "./xp-lesson-process.interface";
 
 export interface ILessonProcess {
   id: string;
@@ -9,12 +10,12 @@ export interface ILessonProcess {
   questionTypeId: number;
   currentLessonId: number;
   band_score: BandScoreEnum;
-  xp: object;
+  xp: IXPLessonProcess[];
   createdAt: Date;
   updatedAt: Date;
 
   // Relations
-  learnerProfile: ILearnerProfile;
-  questionType: IQuestionType;
-  currentLesson: ILesson;
+  readonly learnerProfile: ILearnerProfile;
+  readonly questionType: IQuestionType;
+  readonly currentLesson: ILesson;
 }

@@ -1,5 +1,6 @@
 import { SkillEnum } from "../enums";
 import { IBucket } from "./bucket.interface";
+import { IInstruction } from "./instruction.interface";
 import { ILessonProcess } from "./lesson-process.interface";
 import { ILesson } from "./lesson.interface";
 
@@ -15,4 +16,5 @@ export interface IQuestionType {
   readonly image: IBucket;
   readonly lessons: ILesson[];
   readonly lessonProcesses: ILessonProcess[];
+  readonly instructions: IInstruction[];
 }

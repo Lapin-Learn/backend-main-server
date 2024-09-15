@@ -41,12 +41,15 @@ export class LessonRecord extends BaseEntity implements ILessonRecord {
   })
   updatedAt: Date;
 
+  @Column({ name: "duration", type: "int", nullable: true })
+  duration: number;
+
   // Relations
   @ManyToOne(() => Lesson, (lesson) => lesson.id)
   @JoinColumn({ name: "lesson_id", referencedColumnName: "id" })
-  lesson: Lesson;
+  readonly lesson: Lesson;
 
   @ManyToOne(() => LearnerProfile, (learnerProfile) => learnerProfile.id)
   @JoinColumn({ name: "learner_profile_id", referencedColumnName: "id" })
-  learnerProfile: LearnerProfile;
+  readonly learnerProfile: LearnerProfile;
 }

@@ -25,3 +25,4 @@ export * from "./lesson.interface";
 export * from "./instruction.interface";
 export * from "./question.interface";
 export * from "./question-to-lesson.interface";
+export * from "./xp-lesson-process.interface";
