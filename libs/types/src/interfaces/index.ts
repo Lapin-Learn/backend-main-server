@@ -15,6 +15,8 @@ export * from "./profile-badge.interface";
 export * from "./profile-mission.interface";
 export * from "./profile-item.interface";
 export * from "./bucket.interface";
+export * from "./lesson-record.interface";
+export * from "./lesson-process.interface";
 
 export * from "./current-user.interface";
 export * from "./reset-password-action.interface";

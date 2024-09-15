@@ -13,6 +13,8 @@ import {
 import { QuestionType } from "./question-type.entity";
 import { Instruction } from "./instruction.entity";
 import { QuestionToLesson } from "./question-to-lesson.entity";
+import { LessonRecord } from "./lesson-record.entity";
+import { LessonProcess } from "./lesson-process.entity";
 
 @Entity({ name: "lessons" })
 export class Lesson extends BaseEntity implements ILesson {
@@ -44,6 +46,9 @@ export class Lesson extends BaseEntity implements ILesson {
   @JoinColumn({ name: "question_type_id", referencedColumnName: "id" })
   readonly questionType: QuestionType;
 
+  @OneToMany(() => LessonRecord, (lessonRecord) => lessonRecord.lesson)
+  readonly lessonRecords: LessonRecord[];
+
   @OneToMany(() => Instruction, (instruction) => instruction.lesson)
   readonly instructions: Instruction[];
 
@@ -63,4 +68,7 @@ export class Lesson extends BaseEntity implements ILesson {
       .addOrderBy("lesson.order", "ASC")
       .getMany();
   }
+
+  @OneToMany(() => LessonProcess, (lessonProcess) => lessonProcess.currentLesson)
+  readonly lessonProcesses: LessonProcess[];
 }
