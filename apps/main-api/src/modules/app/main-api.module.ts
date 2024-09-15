@@ -9,6 +9,7 @@ import { MailModule } from "@app/shared-modules/mail";
 import { ActivityModule } from "../activity/activity.module";
 import { StreakModule } from "../streak/streak.module";
 import { DailyLessonModule } from "../daily-lesson/daily-lesson.module";
+import { LessonModule } from "../lesson/lesson.module";
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { DailyLessonModule } from "../daily-lesson/daily-lesson.module";
     ActivityModule,
     StreakModule,
     DailyLessonModule,
+    LessonModule,
   ],
   controllers: [MainApiController],
   providers: [MainApiService],

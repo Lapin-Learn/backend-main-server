@@ -7,7 +7,7 @@ import { In } from "typeorm";
 
 @Injectable()
 export class StreakService {
-  private readonly logger = new Logger(this.constructor.name);
+  private readonly logger = new Logger(StreakService.name);
 
   async setTargetStreak(user: ICurrentUser, dto: SetTargetStreak) {
     try {
@@ -21,7 +21,7 @@ export class StreakService {
     }
   }
 
-  @Cron("* * * * *") // Midnight in GMT+7 (system uses UTC)
+  @Cron("0 7 * * *") // Midnight in GMT+7 (system uses UTC)
   async resetStreak() {
     try {
       this.logger.log("Reset streak");
