@@ -11,10 +11,10 @@ import {
   UpdateDateColumn,
 } from "typeorm";
 import { QuestionType } from "./question-type.entity";
-import { Instruction } from "./instruction.entity";
 import { QuestionToLesson } from "./question-to-lesson.entity";
 import { LessonRecord } from "./lesson-record.entity";
 import { LessonProcess } from "./lesson-process.entity";
+import { BandScoreEnum } from "@app/types/enums";
 
 @Entity({ name: "lessons" })
 export class Lesson extends BaseEntity implements ILesson {
@@ -29,6 +29,9 @@ export class Lesson extends BaseEntity implements ILesson {
 
   @Column({ name: "question_type_id", type: "int", nullable: false })
   questionTypeId: number;
+
+  @Column({ name: "band_score", type: "enum", enum: BandScoreEnum, nullable: false })
+  bandScore: BandScoreEnum;
 
   @CreateDateColumn({ name: "created_at", type: "timestamp", nullable: false, default: () => "CURRENT_TIMESTAMP" })
   createdAt: Date;
@@ -49,26 +52,20 @@ export class Lesson extends BaseEntity implements ILesson {
   @OneToMany(() => LessonRecord, (lessonRecord) => lessonRecord.lesson)
   readonly lessonRecords: LessonRecord[];
 
-  @OneToMany(() => Instruction, (instruction) => instruction.lesson)
-  readonly instructions: Instruction[];
-
   @OneToMany(() => QuestionToLesson, (questionToLesson) => questionToLesson.lesson)
   readonly questionToLessons: QuestionToLesson[];
 
-  static async getContentOfLesson(questionTypeId: number) {
+  @OneToMany(() => LessonProcess, (lessonProcess) => lessonProcess.currentLesson)
+  readonly lessonProcesses: LessonProcess[];
+
+  static async getContentOfLesson(lessonId: number) {
     return this.createQueryBuilder("lesson")
-      .select(["lesson.id", "lesson.name", "lesson.order", "lesson.questionTypeId"])
-      .leftJoinAndSelect("lesson.instructions", "instruction")
-      .addOrderBy("instruction.order", "ASC")
+      .select(["lesson.id", "lesson.name", "lesson.order"])
       .leftJoin("lesson.questionToLessons", "questions")
       .addSelect(["questions.order", "questions.questionId"])
       .addOrderBy("questions.order", "ASC")
       .leftJoinAndSelect("questions.question", "question")
-      .where("lesson.questionTypeId = :questionTypeId", { questionTypeId })
-      .addOrderBy("lesson.order", "ASC")
-      .getMany();
+      .where("lesson.id = :lessonId", { lessonId })
+      .getOne();
   }
-
-  @OneToMany(() => LessonProcess, (lessonProcess) => lessonProcess.currentLesson)
-  readonly lessonProcesses: LessonProcess[];
 }

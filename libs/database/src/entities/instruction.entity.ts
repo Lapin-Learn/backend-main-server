@@ -9,8 +9,8 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from "typeorm";
-import { Lesson } from "./lesson.entity";
 import { Bucket } from "./bucket.entity";
+import { QuestionType } from "./question-type.entity";
 
 @Entity({ name: "instructions" })
 export class Instruction extends BaseEntity implements IInstruction {
@@ -29,8 +29,8 @@ export class Instruction extends BaseEntity implements IInstruction {
   @Column({ name: "audio_id", type: "uuid", nullable: true })
   audioId: string;
 
-  @Column({ name: "lesson_id", type: "int", nullable: false })
-  lessonId: number;
+  @Column({ name: "question_type_id", type: "int", nullable: false })
+  questionTypeId: number;
 
   @CreateDateColumn({ name: "created_at", type: "timestamp", default: () => "CURRENT_TIMESTAMP" })
   createdAt: Date;
@@ -43,9 +43,9 @@ export class Instruction extends BaseEntity implements IInstruction {
   })
   updatedAt: Date;
 
-  @ManyToOne(() => Lesson, (lesson) => lesson.instructions)
-  @JoinColumn({ name: "lesson_id", referencedColumnName: "id" })
-  readonly lesson: Lesson;
+  @ManyToOne(() => QuestionType, (questionType) => questionType.instructions)
+  @JoinColumn({ name: "question_type_id", referencedColumnName: "id" })
+  readonly questionType: QuestionType;
 
   @ManyToOne(() => Bucket, (bucket) => bucket.id)
   @JoinColumn({ name: "image_id", referencedColumnName: "id" })

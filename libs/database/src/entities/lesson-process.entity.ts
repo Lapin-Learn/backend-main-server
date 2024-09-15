@@ -1,5 +1,5 @@
 import { BandScoreEnum } from "@app/types/enums";
-import { ILessonProcess } from "@app/types/interfaces";
+import { ILessonProcess, IXPLessonProcess } from "@app/types/interfaces";
 import {
   BaseEntity,
   Column,
@@ -32,7 +32,7 @@ export class LessonProcess extends BaseEntity implements ILessonProcess {
   band_score: BandScoreEnum;
 
   @Column({ name: "xp", type: "jsonb", nullable: false })
-  xp: object;
+  xp: IXPLessonProcess[];
 
   @CreateDateColumn({ name: "created_at", type: "timestamp", nullable: false, default: () => "CURRENT_TIMESTAMP" })
   createdAt: Date;
@@ -49,13 +49,13 @@ export class LessonProcess extends BaseEntity implements ILessonProcess {
   // Relations
   @ManyToOne(() => LearnerProfile, (learnerProfile) => learnerProfile.lessonProcesses)
   @JoinColumn({ name: "learner_profile_id", referencedColumnName: "id" })
-  learnerProfile: LearnerProfile;
+  readonly learnerProfile: LearnerProfile;
 
   @ManyToOne(() => QuestionType, (questionType) => questionType.lessonProcesses)
   @JoinColumn({ name: "question_type_id", referencedColumnName: "id" })
-  questionType: QuestionType;
+  readonly questionType: QuestionType;
 
   @ManyToOne(() => Lesson, (lesson) => lesson.lessonProcesses)
   @JoinColumn({ name: "current_lesson_id", referencedColumnName: "id" })
-  currentLesson: Lesson;
+  readonly currentLesson: Lesson;
 }

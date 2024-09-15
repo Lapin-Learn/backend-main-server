@@ -34,6 +34,11 @@ export class AddTableLessonRecords1726339690681 implements MigrationInterface {
             isNullable: false,
           },
           {
+            name: "duration",
+            type: "int", // seconds
+            isNullable: true,
+          },
+          {
             name: "created_at",
             type: "timestamp",
             isNullable: false,

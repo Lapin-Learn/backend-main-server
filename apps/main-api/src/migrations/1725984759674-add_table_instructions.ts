@@ -35,7 +35,7 @@ export class AddTableInstructions1725984759674 implements MigrationInterface {
             isNullable: true,
           },
           {
-            name: "lesson_id",
+            name: "question_type_id",
             type: "int",
             isNullable: false,
           },
@@ -53,9 +53,9 @@ export class AddTableInstructions1725984759674 implements MigrationInterface {
         ],
         foreignKeys: [
           {
-            name: "FK_INSTRUCTION_LESSON_ID",
-            columnNames: ["lesson_id"],
-            referencedTableName: "lessons",
+            name: "FK_INSTRUCTION_QUESTION_TYPE_ID",
+            columnNames: ["question_type_id"],
+            referencedTableName: "question_types",
             referencedColumnNames: ["id"],
           },
           {

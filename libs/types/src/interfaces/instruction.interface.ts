@@ -1,5 +1,5 @@
 import { IBucket } from "./bucket.interface";
-import { ILesson } from "./lesson.interface";
+import { IQuestionType } from "./question-type.interface";
 
 export interface IInstruction {
   id: string;
@@ -7,11 +7,11 @@ export interface IInstruction {
   order: number;
   imageId: string;
   audioId: string;
-  lessonId: number;
+  questionTypeId: number;
   createdAt: Date;
   updatedAt: Date;
 
-  readonly lesson: ILesson;
+  readonly questionType: IQuestionType;
   readonly image: IBucket;
   readonly audio: IBucket;
 }

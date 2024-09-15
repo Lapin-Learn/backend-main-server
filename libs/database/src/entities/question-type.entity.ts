@@ -13,8 +13,9 @@ import {
 } from "typeorm";
 import { Bucket } from "./bucket.entity";
 import { Lesson } from "./lesson.entity";
-import * as _ from "lodash";
+import _ from "lodash";
 import { LessonProcess } from "./lesson-process.entity";
+import { Instruction } from "./instruction.entity";
 
 @Entity("question_types")
 export class QuestionType extends BaseEntity implements IQuestionType {
@@ -52,15 +53,21 @@ export class QuestionType extends BaseEntity implements IQuestionType {
   @OneToMany(() => LessonProcess, (lessonProcess) => lessonProcess.questionType)
   readonly lessonProcesses: LessonProcess[];
 
-  static ofASkill(skill: SkillEnum): Promise<QuestionType[]> {
+  @OneToMany(() => Instruction, (instruction) => instruction.questionType)
+  readonly instructions: Instruction[];
+
+  static getQuestionTypeProgressOfLearner(skill: SkillEnum, learnerProfileId: string): Promise<IQuestionType[]> {
     return this.createQueryBuilder("question_type")
-      .leftJoin("question_type.lessons", "lessons")
+      .leftJoinAndSelect("question_type.lessons", "lessons")
       .loadRelationCountAndMap("question_type.lessons", "question_type.lessons")
+      .leftJoinAndSelect("question_type.instructions", "instruction")
+      .leftJoinAndSelect("question_type.lessonProcesses", "lesson_process")
+      .andWhere("lesson_process.learnerProfileId = :learnerId", { learnerProfileId })
       .where("question_type.skill = :skill", { skill })
       .getMany();
   }
 
-  static async ofAllSkills(): Promise<{ [key: string]: QuestionType[] }> {
+  static async ofAllSkills(): Promise<{ [key: string]: IQuestionType[] }> {
     const questionTypes = await this.createQueryBuilder("question_type")
       .leftJoinAndSelect("question_type.lessons", "lessons")
       .getMany();
