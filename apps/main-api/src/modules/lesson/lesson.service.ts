@@ -10,28 +10,16 @@ export class LessonService {
 
   async completeLesson(dto: CompleteLessonDto, user: ICurrentUser) {
     try {
-      // Perform upsert operation
-      await LessonRecord.upsert(
-        {
-          lessonId: dto.lessonId,
-          learnerProfileId: user.profileId,
-          correctAnswers: dto.correctAnswers,
-          wrongAnswers: dto.wrongAnswers,
-          duration: dto.duration,
-        },
-        {
-          conflictPaths: ["lessonId", "learnerProfileId"],
-          skipUpdateIfNoValuesChanged: true,
-        }
-      );
-
-      return {
+      const lessonRecord = await LessonRecord.save({
         lessonId: dto.lessonId,
         learnerProfileId: user.profileId,
         correctAnswers: dto.correctAnswers,
         wrongAnswers: dto.wrongAnswers,
         duration: dto.duration,
+      });
 
+      return {
+        ...lessonRecord,
         xp: calcXP(dto.correctAnswers, dto.wrongAnswers),
         carrots: calcCarrots(dto.duration),
       };

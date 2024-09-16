@@ -10,41 +10,61 @@ export class LessonRecordSubscriber implements EntitySubscriberInterface<LessonR
 
   async afterInsert(event: InsertEvent<LessonRecord>): Promise<void> {
     const { entity, manager } = event;
-    const lessonProcess = await manager.getRepository(LessonProcess).findOneBy({
-      learnerProfileId: entity.learnerProfileId,
-      currentLessonId: entity.lessonId,
-    });
 
     const lesson = await manager.getRepository(Lesson).findOneBy({ id: entity.lessonId });
+
+    const lessonProcess = await manager.getRepository(LessonProcess).findOneBy({
+      learnerProfileId: entity.learnerProfileId,
+      questionTypeId: lesson.questionTypeId,
+    });
+
+    const carrots = calcCarrots(entity.duration);
+    const xp = calcXP(entity.correctAnswers, entity.wrongAnswers);
 
     // Update lesson process
     if (!lessonProcess) {
       await manager.getRepository(LessonProcess).save({
         learnerProfileId: entity.learnerProfileId,
-        currentLessonId: entity.lessonId,
         questionTypeId: lesson.questionTypeId,
+        currentLessonId: entity.lessonId,
         bandScore: lesson.bandScore,
         xp: [
           {
             lessonId: entity.lessonId,
-            xp: calcXP(entity.correctAnswers, entity.wrongAnswers),
+            xp: xp,
             duration: entity.duration,
           },
         ],
       });
     } else {
-      lessonProcess.xp.push({
-        lessonId: entity.lessonId,
-        xp: calcXP(entity.correctAnswers, entity.wrongAnswers),
-        duration: entity.duration,
-      });
+      lessonProcess.currentLessonId =
+        entity.lessonId > lessonProcess.currentLessonId ? entity.lessonId : lessonProcess.currentLessonId;
+
+      // Check if lesson is already completed
+      const lessonIndex = lessonProcess.xp.findIndex((xp) => xp.lessonId === entity.lessonId);
+
+      if (lessonIndex !== -1) {
+        // Update lesson in lesson process
+        // The most XP (accuracy) will be prioritized
+        if (xp > lessonProcess.xp[lessonIndex].xp) {
+          lessonProcess.xp[lessonIndex].xp = xp;
+          lessonProcess.xp[lessonIndex].duration = entity.duration;
+        }
+      } else {
+        // Add new lesson to lesson process
+        lessonProcess.xp.push({
+          lessonId: entity.lessonId,
+          xp: xp,
+          duration: entity.duration,
+        });
+      }
+
       await lessonProcess.save();
     }
 
-    // Update learner profile
     const learnerProfile = await manager.getRepository(LearnerProfile).findOneBy({ id: entity.learnerProfileId });
-    learnerProfile.xp += calcXP(entity.correctAnswers, entity.wrongAnswers);
-    learnerProfile.carrots += calcCarrots(entity.duration);
+    learnerProfile.xp += xp;
+    learnerProfile.carrots += carrots;
     await learnerProfile.save();
   }
 }
