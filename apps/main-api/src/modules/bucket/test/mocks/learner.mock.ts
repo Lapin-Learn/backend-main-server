@@ -5,4 +5,5 @@ import { randomUUID } from "crypto";
 export const learner: ICurrentUser = {
   userId: randomUUID(),
   role: AccountRoleEnum.LEARNER,
+  profileId: randomUUID(),
 };

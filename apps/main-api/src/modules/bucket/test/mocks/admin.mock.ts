@@ -5,4 +5,5 @@ import { randomUUID } from "crypto";
 export const admin: ICurrentUser = {
   userId: randomUUID(),
   role: AccountRoleEnum.ADMIN,
+  profileId: randomUUID(),
 };
