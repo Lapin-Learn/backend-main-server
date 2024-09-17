@@ -1,7 +1,7 @@
 import { Repository } from "typeorm";
 import { UserRecord } from "firebase-admin/auth";
 import { Test, TestingModule } from "@nestjs/testing";
-import { BadRequestException, Logger } from "@nestjs/common";
+import { BadRequestException } from "@nestjs/common";
 import { getRepositoryToken } from "@nestjs/typeorm";
 import { Account } from "@app/database/entities";
 import { FirebaseAuthService } from "@app/shared-modules/firebase";
@@ -13,28 +13,14 @@ import { AuthHelper } from "./auth.helper";
 import { signInRequestMock, signUpRequestMock } from "./test/requests.mock";
 import { userStub } from "../user/test/user.stub";
 
-const mockLogger = {
-  log: jest.fn(),
-  error: jest.fn(),
-  warn: jest.fn(),
-  debug: jest.fn(),
-  verbose: jest.fn(),
-};
-
 jest.mock("@app/shared-modules/firebase/firebase-auth.service");
 jest.mock("@app/shared-modules/mail");
 jest.mock("@app/shared-modules/redis");
-jest.mock("@nestjs/common", () => ({
-  Logger: {
-    error: jest.fn(),
-  },
-}));
 describe("AuthService", function () {
   let service: AuthService;
   let firebaseAuthService: FirebaseAuthService;
   let authHelper: AuthHelper;
   let mailService: MailService;
-  let logger: Logger;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -45,10 +31,6 @@ describe("AuthService", function () {
         MailService,
         RedisService,
         {
-          provide: Logger,
-          useValue: mockLogger,
-        },
-        {
           provide: getRepositoryToken(Account),
           useClass: Repository,
         },
@@ -58,7 +40,6 @@ describe("AuthService", function () {
     authHelper = module.get<AuthHelper>(AuthHelper);
     firebaseAuthService = module.get<FirebaseAuthService>(FirebaseAuthService);
     mailService = module.get<MailService>(MailService);
-    logger = module.get<Logger>(Logger);
   });
 
   it("should be defined", () => {
@@ -131,30 +112,19 @@ describe("AuthService", function () {
     });
   });
   describe("updatePassword", () => {
-    // it("updatePassword should be defined", () => {
-    //   expect(service.updatePassword).toBeDefined();
-    // });
-    // it("should return true when the password is updated", async () => {
-    //   await service.updatePassword(mockUid, signInRequestMock.password);
-    //   expect(firebaseAuthService.changePassword).toHaveBeenCalledWith(mockUid, signInRequestMock.password);
-    // });
-    // it("should throw a BadRequestException when the user is not found", async () => {
-    //   jest.spyOn(firebaseAuthService, "changePassword").mockRejectedValueOnce(new Error("User not found"));
-    //   try {
-    //     await service.updatePassword(mockUid, signInRequestMock.password);
-    //   } catch (e) {
-    //     expect(e).toBeInstanceOf(BadRequestException);
-    //   }
-    // });
-    it("should log an error when the password is not updated", async () => {
-      const error = new Error("User not found");
-      jest.spyOn(firebaseAuthService, "changePassword").mockRejectedValueOnce(error);
-      jest.spyOn(logger, "error");
+    it("updatePassword should be defined", () => {
+      expect(service.updatePassword).toBeDefined();
+    });
+    it("should return true when the password is updated", async () => {
+      await service.updatePassword(mockUid, signInRequestMock.password);
+      expect(firebaseAuthService.changePassword).toHaveBeenCalledWith(mockUid, signInRequestMock.password);
+    });
+    it("should throw a BadRequestException when the user is not found", async () => {
+      jest.spyOn(firebaseAuthService, "changePassword").mockRejectedValueOnce(new Error("User not found"));
       try {
         await service.updatePassword(mockUid, signInRequestMock.password);
       } catch (e) {
-        await new Promise(process.nextTick);
-        expect(logger.error).toHaveBeenCalled();
+        expect(e).toBeInstanceOf(BadRequestException);
       }
     });
   });
