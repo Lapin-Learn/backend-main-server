@@ -61,7 +61,7 @@ export class BucketService {
         ResponseContentDisposition: `inline; filename=${data.name}`,
       });
 
-      return getSignedUrl(this.s3, command, { expiresIn: 3600 });
+      return await getSignedUrl(this.s3, command, { expiresIn: 3600 });
     } catch (error) {
       this.logger.error(error);
       throw new BadRequestException(error);
@@ -76,11 +76,7 @@ export class BucketService {
         throw new BadRequestException("File not found");
       }
 
-      if (
-        data.permission === BucketPermissionsEnum.PRIVATE &&
-        data.owner !== user.userId &&
-        user.role !== AccountRoleEnum.ADMIN
-      ) {
+      if (data.owner !== user.userId && user.role !== AccountRoleEnum.ADMIN) {
         throw new UnauthorizedException("Unauthorized access");
       }
 

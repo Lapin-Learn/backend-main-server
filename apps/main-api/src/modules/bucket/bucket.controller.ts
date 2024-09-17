@@ -19,7 +19,7 @@ export class BucketController {
   @ApiBody({ type: UploadFileDto })
   @ApiResponse({ status: 201, description: "Presigned URL generated" })
   @ApiResponse({ status: 401, description: "Unauthorized" })
-  async getUploadPresignedUrl(@CurrentUser() user: ICurrentUser, @Body() body: UploadFileDto) {
+  async getPresignedUploadUrl(@CurrentUser() user: ICurrentUser, @Body() body: UploadFileDto) {
     return this.bucketService.getPresignedUploadUrl(user, body);
   }
 
