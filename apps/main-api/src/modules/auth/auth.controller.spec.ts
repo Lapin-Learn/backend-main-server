@@ -1,13 +1,13 @@
 import { Test, TestingModule } from "@nestjs/testing";
-import { AuthController } from "../auth.controller";
-import { AuthService } from "../auth.service";
-import { signInRequestMock } from "./mocks/requests.mock";
-import { mock_access_token } from "./mocks/tokens.mock";
+import { AuthController } from "./auth.controller";
+import { AuthService } from "./auth.service";
+import { signInRequestMock } from "./test/mocks/requests.mock";
+import { mock_access_token } from "./test/mocks/tokens.mock";
 import { BadRequestException } from "@nestjs/common";
 import { mockEmail } from "@app/shared-modules/firebase/__mocks__/firebase-auth.service";
 import { VerifyOtpDto } from "@app/types/dtos";
 
-jest.mock("../auth.service");
+jest.mock("./auth.service");
 describe("AuthController", () => {
   let controller: AuthController;
   let authService: AuthService;

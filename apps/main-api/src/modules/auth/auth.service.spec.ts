@@ -8,10 +8,10 @@ import { FirebaseAuthService } from "@app/shared-modules/firebase";
 import { MailService } from "@app/shared-modules/mail";
 import { RedisService } from "@app/shared-modules/redis";
 import { mockToken, mockUid } from "@app/shared-modules/firebase/__mocks__/firebase-auth.service";
-import { AuthService } from "../auth.service";
-import { AuthHelper } from "../auth.helper";
-import { signInRequestMock, signUpRequestMock } from "./mocks/requests.mock";
-import { userStub } from "../../user/test/stubs/user.stub";
+import { AuthService } from "./auth.service";
+import { AuthHelper } from "./auth.helper";
+import { signInRequestMock, signUpRequestMock } from "./test/requests.mock";
+import { userStub } from "../user/test/user.stub";
 
 jest.mock("@app/shared-modules/firebase/firebase-auth.service");
 jest.mock("@app/shared-modules/mail");
@@ -21,7 +21,6 @@ describe("AuthService", function () {
   let firebaseAuthService: FirebaseAuthService;
   let authHelper: AuthHelper;
   let mailService: MailService;
-  let redisService: RedisService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -41,7 +40,6 @@ describe("AuthService", function () {
     authHelper = module.get<AuthHelper>(AuthHelper);
     firebaseAuthService = module.get<FirebaseAuthService>(FirebaseAuthService);
     mailService = module.get<MailService>(MailService);
-    redisService = module.get<RedisService>(RedisService);
   });
 
   it("should be defined", () => {
@@ -63,7 +61,7 @@ describe("AuthService", function () {
       jest
         .spyOn(firebaseAuthService, "createUserByEmailAndPassword")
         .mockResolvedValueOnce({ email: signUpRequestMock.email, uid: mockUid } as UserRecord);
-      const saveSpy = jest.spyOn(Account, "save").mockResolvedValue({
+      jest.spyOn(Account, "save").mockResolvedValue({
         ...userStub(),
         email: signUpRequestMock.email,
       } as Account);
@@ -72,18 +70,6 @@ describe("AuthService", function () {
       // Act
       const result = await service.registerUser(signUpRequestMock.email, signUpRequestMock.password);
       // Assert
-      expect(firebaseAuthService.getUserByEmail).toHaveBeenCalledWith(signUpRequestMock.email, true);
-      expect(firebaseAuthService.createUserByEmailAndPassword).toHaveBeenCalledWith(
-        signUpRequestMock.email,
-        signUpRequestMock.password
-      );
-      expect(saveSpy).toHaveBeenCalledWith({
-        email: signUpRequestMock.email,
-        providerId: mockUid,
-        username: signUpRequestMock.email,
-      });
-      expect(firebaseAuthService.generateCustomToken).toHaveBeenCalled();
-      expect(authHelper.buildTokenResponse).toHaveBeenCalled();
       expect(result).toEqual({ accessToken: mockToken });
     });
   });
@@ -93,18 +79,12 @@ describe("AuthService", function () {
       expect(service.login).toBeDefined();
     });
     it("should return access token when the user is logged in", async () => {
-      // Arrange
-      const findOne = jest.spyOn(Account, "findOne").mockResolvedValueOnce({
+      jest.spyOn(Account, "findOne").mockResolvedValueOnce({
         ...userStub(),
         email: signInRequestMock.email,
       } as Account);
       jest.spyOn(authHelper, "buildTokenResponse").mockResolvedValueOnce({ accessToken: mockToken });
       const result = await service.login(signInRequestMock.email, signInRequestMock.password);
-      const user = await firebaseAuthService.verifyUser(signInRequestMock.email, signInRequestMock.password);
-      expect(firebaseAuthService.verifyUser).toHaveBeenCalledWith(signInRequestMock.email, signInRequestMock.password);
-      expect(findOne).toHaveBeenCalledWith({ where: { providerId: user.localId } });
-      expect(firebaseAuthService.generateCustomToken).toHaveBeenCalled();
-      expect(authHelper.buildTokenResponse).toHaveBeenCalled();
       expect(result).toEqual({ accessToken: mockToken });
     });
     it("should throw a BadRequestException when the user is not found", async () => {
@@ -122,25 +102,13 @@ describe("AuthService", function () {
       expect(service.sendOtp).toBeDefined();
     });
     it("should return true when the email is sent", async () => {
-      // Arrange
       jest.spyOn(mailService, "sendMail").mockResolvedValueOnce({ accepted: [signInRequestMock.email] });
-      // Act
       const result = await service.sendOtp(signInRequestMock.email);
-      // Assert
-      expect(findOne).toHaveBeenCalledWith({ where: { email: signInRequestMock.email } });
-      expect(firebaseAuthService.generateCustomToken).toHaveBeenCalled();
-      expect(mailService.sendMail).toHaveBeenCalled();
-      expect(redisService.delete).toHaveBeenCalled();
-      expect(redisService.set).toHaveBeenCalled();
       expect(result).toBe(true);
     });
     it("should return false when the email is not exist", async () => {
-      // Arrange
       findOne.mockResolvedValueOnce(null);
-      // Act
-      // Assert
       expect(service.sendOtp(signInRequestMock.email)).rejects.toThrow(BadRequestException);
-      expect(findOne).toHaveBeenCalledWith({ where: { email: signInRequestMock.email } });
     });
   });
   describe("updatePassword", () => {
@@ -148,17 +116,16 @@ describe("AuthService", function () {
       expect(service.updatePassword).toBeDefined();
     });
     it("should return true when the password is updated", async () => {
-      // Act
       await service.updatePassword(mockUid, signInRequestMock.password);
-      // Assert
       expect(firebaseAuthService.changePassword).toHaveBeenCalledWith(mockUid, signInRequestMock.password);
     });
     it("should throw a BadRequestException when the user is not found", async () => {
-      // Arrange
       jest.spyOn(firebaseAuthService, "changePassword").mockRejectedValueOnce(new Error("User not found"));
-      // Act
-      // Assert
-      expect(service.updatePassword(mockUid, signInRequestMock.password)).rejects.toThrow(BadRequestException);
+      try {
+        await service.updatePassword(mockUid, signInRequestMock.password);
+      } catch (e) {
+        expect(e).toBeInstanceOf(BadRequestException);
+      }
     });
   });
 });

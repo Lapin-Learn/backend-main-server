@@ -1,6 +1,6 @@
 import { Test, TestingModule } from "@nestjs/testing";
-import { AuthHelper } from "../auth.helper";
-import { mockAccessToken } from "./mocks/tokens.mock";
+import { AuthHelper } from "./auth.helper";
+import { mockAccessToken } from "./test/tokens.mock";
 
 describe("AuthHelper", () => {
   let authHelper: AuthHelper;
