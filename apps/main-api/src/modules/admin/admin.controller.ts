@@ -1,6 +1,12 @@
-import { Body, Controller, Get, Param, Post, Put, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Param, ParseIntPipe, Post, Put, UseGuards } from "@nestjs/common";
 import { AdminService } from "./admin.service";
-import { CreateLessonDto, CreateQuestionDto, UpdateQuestionDto } from "@app/types/dtos/admin";
+import {
+  CreateLessonDto,
+  CreateQuestionDto,
+  CreateQuestionTypeDto,
+  UpdateQuestionDto,
+  UpdateQuestionTypeDto,
+} from "@app/types/dtos/admin";
 import { FirebaseJwtAuthGuard, RoleGuard } from "../../guards";
 import { Roles } from "../../decorators";
 import { AccountRoleEnum } from "@app/types/enums";
@@ -49,5 +55,47 @@ export class AdminController {
   @Put("questions/:id")
   updateQuestion(@Param("id") id: string, @Body() updateQuestionDto: UpdateQuestionDto) {
     return this.adminService.updateQuestion(id, updateQuestionDto);
+  }
+
+  @ApiOperation({ summary: "Create a question type" })
+  @ApiBody({ type: CreateQuestionTypeDto })
+  @ApiResponse({ status: 201, description: "Question type created" })
+  @ApiResponse({ status: 400, description: "Bad request" })
+  @ApiResponse({ status: 401, description: "Unauthorized" })
+  @ApiResponse({ status: 500, description: "Internal server error" })
+  @Post("question-types")
+  createQuestionType(@Body() dto: CreateQuestionTypeDto) {
+    return this.adminService.createQuestionType(dto);
+  }
+
+  @ApiOperation({ summary: "Get all question types" })
+  @ApiResponse({ status: 200, description: "Get all question types successfully" })
+  @ApiResponse({ status: 400, description: "Error" })
+  @ApiResponse({ status: 401, description: "Unauthorized" })
+  @ApiResponse({ status: 500, description: "Internal server error" })
+  @Get("question-types")
+  getQuestionTypes() {
+    return this.adminService.getQuestionTypes();
+  }
+
+  @ApiOperation({ summary: "Get all lessons in a question type" })
+  @ApiResponse({ status: 200, description: "Get all lessons in a question type successfully" })
+  @ApiResponse({ status: 400, description: "Error" })
+  @ApiResponse({ status: 401, description: "Unauthorized" })
+  @ApiResponse({ status: 500, description: "Internal server error" })
+  @Get("question-types/:id")
+  getQuestionType(@Param("id", new ParseIntPipe()) id: number) {
+    return this.adminService.getListLessonsInQuestionType(id);
+  }
+
+  @ApiOperation({ summary: "Update a question type" })
+  @ApiBody({ type: UpdateQuestionTypeDto })
+  @ApiResponse({ status: 200, description: "Question type updated" })
+  @ApiResponse({ status: 400, description: "Bad request" })
+  @ApiResponse({ status: 401, description: "Unauthorized" })
+  @ApiResponse({ status: 500, description: "Internal server error" })
+  @Put("question-types/:id")
+  updateQuestionType(@Param("id", new ParseIntPipe()) id: number, @Body() dto: UpdateQuestionTypeDto) {
+    return this.adminService.updateQuestionType(id, dto);
   }
 }
