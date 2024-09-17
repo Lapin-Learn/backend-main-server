@@ -1,7 +1,8 @@
 import { ApiProperty, PartialType } from "@nestjs/swagger";
 import { CreateQuestionTypeDto } from "./create-question-type.dto";
-import { ArrayNotEmpty, IsInt, IsOptional, Min, ValidateNested } from "class-validator";
+import { ArrayNotEmpty, IsEnum, IsInt, IsOptional, Min, ValidateIf, ValidateNested } from "class-validator";
 import { Type } from "class-transformer";
+import { BandScoreEnum } from "@app/types/enums";
 
 class ReoderLessonDto {
   @ApiProperty({ type: Number, example: 1 })
@@ -22,4 +23,9 @@ export class UpdateQuestionTypeDto extends PartialType(CreateQuestionTypeDto) {
   @ValidateNested({ each: true })
   @Type(() => ReoderLessonDto)
   reorderLessons: ReoderLessonDto[];
+
+  @ApiProperty({ type: "string", enum: BandScoreEnum, example: "5.0", nullable: true })
+  @ValidateIf((dto) => dto.bandScore || (dto.reorderLessons && dto.reorderLessons.length > 0))
+  @IsEnum(BandScoreEnum, { message: "Invalid band score" })
+  bandScore: BandScoreEnum;
 }
