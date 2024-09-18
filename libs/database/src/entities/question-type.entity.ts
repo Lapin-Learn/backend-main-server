@@ -28,7 +28,7 @@ export class QuestionType extends BaseEntity implements IQuestionType {
   @Column({ name: "skill", type: "enum", enum: SkillEnum, nullable: false })
   skill: SkillEnum;
 
-  @Column({ name: "image_id", type: "uuid", nullable: false })
+  @Column({ name: "image_id", type: "uuid", nullable: true })
   imageId: string;
 
   @CreateDateColumn({ name: "created_at", type: "timestamp", nullable: false, default: () => "CURRENT_TIMESTAMP" })
