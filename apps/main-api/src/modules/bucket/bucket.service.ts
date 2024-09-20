@@ -5,7 +5,7 @@ import { InjectS3, S3 } from "nestjs-s3";
 import { Bucket } from "@app/database/entities";
 import { DeleteObjectCommand, GetObjectCommand, HeadObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { ICurrentUser } from "@app/types/interfaces";
+import { IBucket, ICurrentUser } from "@app/types/interfaces";
 import { AccountRoleEnum, BucketPermissionsEnum, BucketUploadStatusEnum } from "@app/types/enums";
 
 @Injectable()
@@ -143,6 +143,21 @@ export class BucketService {
         id: data.id,
         url: await getSignedUrl(this.s3, command, { expiresIn: 3600 }),
       };
+    } catch (error) {
+      this.logger.error(error);
+      throw new BadRequestException(error);
+    }
+  }
+
+  async getPresignedDownloadUrlForAfterLoad(entity: IBucket) {
+    try {
+      const command = new GetObjectCommand({
+        Bucket: this.bucketName,
+        Key: entity.id,
+        ResponseContentDisposition: `inline; filename=${entity.name}`,
+      });
+
+      return await getSignedUrl(this.s3, command, { expiresIn: 3600 });
     } catch (error) {
       this.logger.error(error);
       throw new BadRequestException(error);

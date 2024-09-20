@@ -43,7 +43,7 @@ export class QuestionType extends BaseEntity implements IQuestionType {
   })
   updatedAt: Date;
 
-  @OneToOne(() => Bucket)
+  @OneToOne(() => Bucket, { eager: true })
   @JoinColumn({ name: "image_id", referencedColumnName: "id" })
   readonly image: Bucket;
 

@@ -65,6 +65,8 @@ export class Lesson extends BaseEntity implements ILesson {
       .addSelect(["questions.order", "questions.questionId"])
       .addOrderBy("questions.order", "ASC")
       .leftJoinAndSelect("questions.question", "question")
+      .leftJoinAndSelect("question.image", "image")
+      .leftJoinAndSelect("question.audio", "audio")
       .where("lesson.id = :lessonId", { lessonId })
       .getOne();
   }
