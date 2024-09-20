@@ -1,10 +1,11 @@
 import { ContentTypeEnum, CERFLevelEum } from "@app/types/enums";
-import { IQuestion } from "@app/types/interfaces";
+import { IListQuestion, IQuestion } from "@app/types/interfaces";
 import {
   BaseEntity,
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
   OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
@@ -51,8 +52,33 @@ export class Question extends BaseEntity implements IQuestion {
   readonly questionToLessons: QuestionToLesson[];
 
   @OneToOne(() => Bucket, (bucket) => bucket.id)
+  @JoinColumn({ name: "image_id" })
   readonly image: Bucket;
 
   @OneToOne(() => Bucket, (bucket) => bucket.id)
+  @JoinColumn({ name: "audio_id" })
   readonly audio: Bucket;
+
+  static async getQuestionsByContentTypesAndCerfLevel(
+    listContentTypes: ContentTypeEnum[],
+    cerfLevel: CERFLevelEum,
+    offset: number,
+    limit: number
+  ): Promise<IListQuestion> {
+    const listQuestions = await this.createQueryBuilder("question")
+      .leftJoinAndSelect("question.image", "image")
+      .leftJoinAndSelect("question.audio", "audio")
+      .where("question.contentType IN (:...listContentTypes)", { listContentTypes })
+      .andWhere("question.cerfLevel = :cerfLevel", { cerfLevel })
+      .skip(offset)
+      .take(limit)
+      .getManyAndCount();
+
+    return {
+      questions: listQuestions[0],
+      offset,
+      limit,
+      total: listQuestions[1],
+    };
+  }
 }

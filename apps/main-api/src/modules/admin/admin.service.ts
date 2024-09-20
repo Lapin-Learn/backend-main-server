@@ -6,7 +6,8 @@ import {
   UpdateQuestionDto,
   UpdateQuestionTypeDto,
 } from "@app/types/dtos/admin";
-import { ILesson, IQuestion, IQuestionType } from "@app/types/interfaces";
+import { CERFLevelEum, ContentTypeEnum } from "@app/types/enums";
+import { ILesson, IListQuestion, IQuestion, IQuestionType } from "@app/types/interfaces";
 import { BadRequestException, Injectable, Logger } from "@nestjs/common";
 import _ from "lodash";
 
@@ -25,10 +26,14 @@ export class AdminService {
     }
   }
 
-  async getQuestions(): Promise<Record<string, IQuestion[]>> {
+  async getQuestions(
+    listContentType: ContentTypeEnum[],
+    cerfLevel: CERFLevelEum,
+    offset: number,
+    limit: number
+  ): Promise<IListQuestion> {
     try {
-      const questions: IQuestion[] = await Question.find();
-      return _.groupBy(questions, (IQuestion) => IQuestion.contentType);
+      return Question.getQuestionsByContentTypesAndCerfLevel(listContentType, cerfLevel, offset, limit);
     } catch (error) {
       this.logger.error(error);
       throw new BadRequestException(error);
