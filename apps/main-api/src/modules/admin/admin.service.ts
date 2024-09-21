@@ -3,11 +3,11 @@ import {
   CreateLessonDto,
   CreateQuestionDto,
   CreateQuestionTypeDto,
+  QueryParamQuestionDto,
   UpdateLessonDto,
   UpdateQuestionDto,
   UpdateQuestionTypeDto,
 } from "@app/types/dtos/admin";
-import { CERFLevelEum, ContentTypeEnum } from "@app/types/enums";
 import { ILesson, IListQuestion, IQuestion, IQuestionType } from "@app/types/interfaces";
 import { BadRequestException, Injectable, Logger } from "@nestjs/common";
 import _ from "lodash";
@@ -27,14 +27,9 @@ export class AdminService {
     }
   }
 
-  async getQuestions(
-    listContentType: ContentTypeEnum[],
-    cerfLevel: CERFLevelEum,
-    offset: number,
-    limit: number
-  ): Promise<IListQuestion> {
+  async getQuestions(queryParamQuestionDto: QueryParamQuestionDto): Promise<IListQuestion> {
     try {
-      return Question.getQuestionsByContentTypesAndCerfLevel(listContentType, cerfLevel, offset, limit);
+      return Question.getQuestionsWithParams(queryParamQuestionDto);
     } catch (error) {
       this.logger.error(error);
       throw new BadRequestException(error);

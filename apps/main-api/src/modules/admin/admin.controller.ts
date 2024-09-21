@@ -51,26 +51,26 @@ export class AdminController {
     return this.adminService.updateLesson(id, updateLessonDto);
   }
 
-  @ApiOperation({ summary: "Get all questions grouped by question type" })
+  @ApiOperation({ summary: "Get all questions with query parameters" })
   @ApiQuery({
     name: "contentType",
     type: String,
-    required: true,
+    required: false,
     example: `${ContentTypeEnum.MULTIPLE_CHOICE}+${ContentTypeEnum.FILL_IN_THE_BLANK}`,
   })
-  @ApiQuery({ name: "cerfLevel", type: String, enum: CERFLevelEum, required: true })
+  @ApiQuery({ name: "cerfLevel", type: String, enum: CERFLevelEum, required: false })
   @ApiQuery({ name: "offset", type: Number, required: true })
   @ApiQuery({ name: "limit", type: Number, required: true })
   @ApiResponse({ status: 200, description: "Get all questions successfully" })
   @ApiResponse({ status: 400, description: "Invalid query param" })
   @Get("questions")
   getQuestions(
-    @Query("contentType", new ParseListStringEnumPipe(ContentTypeEnum, "+")) listContentTypes: ContentTypeEnum[],
-    @Query("cerfLevel", new ParseEnumPipe(CERFLevelEum)) cerfLevel: CERFLevelEum,
     @Query("offset", new ParseIntPipe()) offset: number,
-    @Query("limit", new ParseIntPipe()) limit: number
+    @Query("limit", new ParseIntPipe()) limit: number,
+    @Query("contentType", new ParseListStringEnumPipe(ContentTypeEnum, "+")) listContentTypes?: ContentTypeEnum[],
+    @Query("cerfLevel", new ParseEnumPipe(CERFLevelEum, { optional: true })) cerfLevel?: CERFLevelEum
   ) {
-    return this.adminService.getQuestions(listContentTypes, cerfLevel, offset, limit);
+    return this.adminService.getQuestions({ listContentTypes, cerfLevel, offset, limit });
   }
 
   @ApiOperation({ summary: "Update a question" })

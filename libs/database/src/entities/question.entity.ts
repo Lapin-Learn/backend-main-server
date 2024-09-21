@@ -13,6 +13,8 @@ import {
 } from "typeorm";
 import { QuestionToLesson } from "./question-to-lesson.entity";
 import { Bucket } from "./bucket.entity";
+import { QueryParamQuestionDto } from "@app/types/dtos/admin";
+import _ from "lodash";
 
 @Entity({ name: "questions" })
 export class Question extends BaseEntity implements IQuestion {
@@ -59,20 +61,17 @@ export class Question extends BaseEntity implements IQuestion {
   @JoinColumn({ name: "audio_id" })
   readonly audio: Bucket;
 
-  static async getQuestionsByContentTypesAndCerfLevel(
-    listContentTypes: ContentTypeEnum[],
-    cerfLevel: CERFLevelEum,
-    offset: number,
-    limit: number
-  ): Promise<IListQuestion> {
-    const listQuestions = await this.createQueryBuilder("question")
+  static async getQuestionsWithParams(param: QueryParamQuestionDto): Promise<IListQuestion> {
+    const { listContentTypes, cerfLevel, offset, limit } = param;
+
+    const query = this.createQueryBuilder("question")
       .leftJoinAndSelect("question.image", "image")
-      .leftJoinAndSelect("question.audio", "audio")
-      .where("question.contentType IN (:...listContentTypes)", { listContentTypes })
-      .andWhere("question.cerfLevel = :cerfLevel", { cerfLevel })
-      .skip(offset)
-      .take(limit)
-      .getManyAndCount();
+      .leftJoinAndSelect("question.audio", "audio");
+
+    !_.isNil(listContentTypes) && query.where("question.contentType IN (:...listContentTypes)", { listContentTypes });
+    !_.isNil(cerfLevel) && query.andWhere("question.cerfLevel = :cerfLevel", { cerfLevel });
+
+    const listQuestions = await query.skip(offset).take(limit).getManyAndCount();
 
     return {
       questions: listQuestions[0],

@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable, PipeTransform } from "@nestjs/common";
+import _ from "lodash";
 
 @Injectable()
 export class ParseListStringEnumPipe implements PipeTransform {
@@ -8,6 +9,9 @@ export class ParseListStringEnumPipe implements PipeTransform {
   ) {}
 
   transform(value: any) {
+    if (_.isNil(value)) {
+      return null;
+    }
     const values = value.split(this.separator);
 
     if (values.length === 0) {
