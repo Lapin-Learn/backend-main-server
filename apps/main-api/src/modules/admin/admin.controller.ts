@@ -4,6 +4,7 @@ import {
   CreateLessonDto,
   CreateQuestionDto,
   CreateQuestionTypeDto,
+  UpdateLessonDto,
   UpdateQuestionDto,
   UpdateQuestionTypeDto,
 } from "@app/types/dtos/admin";
@@ -39,6 +40,15 @@ export class AdminController {
   @Post("lessons")
   createLesson(@Body() createLessonDto: CreateLessonDto) {
     return this.adminService.createLesson(createLessonDto);
+  }
+
+  @ApiOperation({ summary: "Update a lesson" })
+  @ApiBody({ type: UpdateLessonDto })
+  @ApiResponse({ status: 200, description: "Lesson updated" })
+  @ApiResponse({ status: 400, description: "Not found lesson or question type" })
+  @Put("lessons/:id")
+  updateLesson(@Param("id", ParseIntPipe) id: number, @Body() updateLessonDto: UpdateLessonDto) {
+    return this.adminService.updateLesson(id, updateLessonDto);
   }
 
   @ApiOperation({ summary: "Get all questions grouped by question type" })

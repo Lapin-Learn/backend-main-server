@@ -3,6 +3,7 @@ import {
   CreateLessonDto,
   CreateQuestionDto,
   CreateQuestionTypeDto,
+  UpdateLessonDto,
   UpdateQuestionDto,
   UpdateQuestionTypeDto,
 } from "@app/types/dtos/admin";
@@ -58,15 +59,27 @@ export class AdminService {
 
   async createLesson(createLessonDto: CreateLessonDto): Promise<ILesson> {
     try {
-      const { questionTypeId, bandScore, name } = createLessonDto;
-      const totalLessons = await Lesson.count({
-        where: { questionTypeId, bandScore },
-      });
       return Lesson.save({
-        questionTypeId,
-        bandScore,
-        name,
-        order: totalLessons + 1,
+        ...createLessonDto,
+      });
+    } catch (error) {
+      this.logger.error(error);
+      throw new BadRequestException(error);
+    }
+  }
+
+  async updateLesson(id: number, updateLessonDto: UpdateLessonDto): Promise<ILesson> {
+    const { questionTypeId } = updateLessonDto;
+    try {
+      const lesson = await Lesson.findOneBy({ id });
+      const questionType = await QuestionType.findOneBy({ id: questionTypeId });
+      if (!lesson || !questionType) {
+        throw new BadRequestException("Lesson or question type not found");
+      }
+
+      return Lesson.save({
+        ...lesson,
+        ...updateLessonDto,
       });
     } catch (error) {
       this.logger.error(error);
