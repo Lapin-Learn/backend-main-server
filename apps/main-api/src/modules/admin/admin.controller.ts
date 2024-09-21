@@ -1,16 +1,18 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Post, Put, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Param, ParseEnumPipe, ParseIntPipe, Post, Put, Query, UseGuards } from "@nestjs/common";
 import { AdminService } from "./admin.service";
 import {
   CreateLessonDto,
   CreateQuestionDto,
   CreateQuestionTypeDto,
+  UpdateLessonDto,
   UpdateQuestionDto,
   UpdateQuestionTypeDto,
 } from "@app/types/dtos/admin";
 import { FirebaseJwtAuthGuard, RoleGuard } from "../../guards";
 import { Roles } from "../../decorators";
-import { AccountRoleEnum } from "@app/types/enums";
-import { ApiBearerAuth, ApiBody, ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
+import { AccountRoleEnum, CERFLevelEum, ContentTypeEnum } from "@app/types/enums";
+import { ApiBearerAuth, ApiBody, ApiOperation, ApiQuery, ApiResponse, ApiTags } from "@nestjs/swagger";
+import { ParseListStringEnumPipe } from "@app/utils/pipes";
 
 @ApiTags("Admin")
 @ApiBearerAuth()
@@ -40,12 +42,35 @@ export class AdminController {
     return this.adminService.createLesson(createLessonDto);
   }
 
-  @ApiOperation({ summary: "Get all questions grouped by question type" })
+  @ApiOperation({ summary: "Update a lesson" })
+  @ApiBody({ type: UpdateLessonDto })
+  @ApiResponse({ status: 200, description: "Lesson updated" })
+  @ApiResponse({ status: 400, description: "Not found lesson or question type" })
+  @Put("lessons/:id")
+  updateLesson(@Param("id", ParseIntPipe) id: number, @Body() updateLessonDto: UpdateLessonDto) {
+    return this.adminService.updateLesson(id, updateLessonDto);
+  }
+
+  @ApiOperation({ summary: "Get all questions with query parameters" })
+  @ApiQuery({
+    name: "contentType",
+    type: String,
+    required: false,
+    example: `${ContentTypeEnum.MULTIPLE_CHOICE}+${ContentTypeEnum.FILL_IN_THE_BLANK}`,
+  })
+  @ApiQuery({ name: "cerfLevel", type: String, enum: CERFLevelEum, required: false })
+  @ApiQuery({ name: "offset", type: Number, required: true })
+  @ApiQuery({ name: "limit", type: Number, required: true })
   @ApiResponse({ status: 200, description: "Get all questions successfully" })
-  @ApiResponse({ status: 400, description: "Error" })
+  @ApiResponse({ status: 400, description: "Invalid query param" })
   @Get("questions")
-  getQuestions() {
-    return this.adminService.getQuestions();
+  getQuestions(
+    @Query("offset", new ParseIntPipe()) offset: number,
+    @Query("limit", new ParseIntPipe()) limit: number,
+    @Query("contentType", new ParseListStringEnumPipe(ContentTypeEnum, "+")) listContentTypes?: ContentTypeEnum[],
+    @Query("cerfLevel", new ParseEnumPipe(CERFLevelEum, { optional: true })) cerfLevel?: CERFLevelEum
+  ) {
+    return this.adminService.getQuestions({ listContentTypes, cerfLevel, offset, limit });
   }
 
   @ApiOperation({ summary: "Update a question" })
