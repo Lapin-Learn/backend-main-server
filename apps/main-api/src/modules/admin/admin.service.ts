@@ -131,33 +131,35 @@ export class AdminService {
       });
 
       if (reorderLessons) {
-        // Check if all lessons are unique
-        if (_.uniqBy(reorderLessons, "lessonId").length !== reorderLessons.length) {
-          throw new BadRequestException("Lesson ID must be unique");
-        }
-
-        // Must ensure that order must be unique in range [1, n] by comparing 2 sorted arrays
-        // Example: [1, 2, 3, 5] and [1, 2, 3, 4] => false
-        if (!_.isEqual(_.sortBy(_.map(reorderLessons, "order")), _.range(1, reorderLessons.length + 1)))
+        // Check if all lessons are unique and order is sequential from 1 to n
+        const lessonOrderPairs = reorderLessons.map((lesson) => `${lesson.lessonId}-${lesson.order}`);
+        const lessonOrderSet = new Set(lessonOrderPairs);
+        const orderValues = reorderLessons.map((lesson) => lesson.order);
+        if (
+          lessonOrderPairs.length !== lessonOrderSet.size ||
+          Math.min(...orderValues) !== 1 ||
+          Math.max(...orderValues) !== reorderLessons.length
+        ) {
           throw new BadRequestException("Order must be unique and sequential from 1 to n");
+        }
 
         // Check the quantity of lessons is match between request and database
-        const oldLessons = await Lesson.find({ where: { questionTypeId: id, bandScore: dto.bandScore } });
-        if (oldLessons.length !== reorderLessons.length) {
-          throw new BadRequestException("Number of lessons is not match");
+        const oldLessons = await Lesson.find({
+          where: { questionTypeId: id, bandScore: dto.bandScore },
+          order: { id: "ASC" },
+        });
+
+        if (oldLessons.length !== reorderLessons.length || oldLessons.length === 0) {
+          throw new BadRequestException("Quantity of lessons is not match");
         }
 
-        // Check if all lessons are valid
-        _.sortBy(reorderLessons, "lessonId");
-        _.sortBy(oldLessons, "id");
+        const sortedReorderLessons = _.sortBy(reorderLessons, (lesson) => lesson.lessonId);
 
-        for (let i = 0; i < reorderLessons.length; i++) {
-          if (reorderLessons[i].lessonId !== oldLessons[i].id) {
-            throw new BadRequestException("Lesson ID is not match with database");
-          }
+        if (!sortedReorderLessons.every((lesson) => oldLessons.find((oldLesson) => oldLesson.id === lesson.lessonId))) {
+          throw new BadRequestException("Lesson ID must be match with the database");
         }
 
-        const lessonMap = _.map(reorderLessons, (updatedLessonOrder, index) =>
+        const lessonMap = sortedReorderLessons.map((updatedLessonOrder, index) =>
           Lesson.save({
             ...oldLessons[index],
             order: updatedLessonOrder.order,
@@ -168,7 +170,7 @@ export class AdminService {
 
         return {
           ...updatedQuestionType,
-          lessons: _.sortBy(lessons, "order"),
+          lessons: _.sortBy(lessons, (lesson) => lesson.order),
         };
       }
 
