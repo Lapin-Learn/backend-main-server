@@ -41,6 +41,7 @@ export class DailyLessonController {
   @ApiResponse({ status: 200, description: "Get all questions of a lesson successfully" })
   @ApiResponse({ status: 401, description: "Unauthorized" })
   @Get("lessons/:lessonId/questions")
+  // Marked
   async getQuestionsByLesson(@Param("lessonId") lessonId: number) {
     return this.dailyLessonService.getContentOfLesson(lessonId);
   }

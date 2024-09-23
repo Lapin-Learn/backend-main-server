@@ -43,7 +43,7 @@ export class QuestionType extends BaseEntity implements IQuestionType {
   })
   updatedAt: Date;
 
-  @OneToOne(() => Bucket)
+  @OneToOne(() => Bucket, { eager: true })
   @JoinColumn({ name: "image_id", referencedColumnName: "id" })
   readonly image: Bucket;
 
@@ -59,6 +59,7 @@ export class QuestionType extends BaseEntity implements IQuestionType {
   static getQuestionTypeProgressOfLearner(skill: SkillEnum, learnerProfileId: string): Promise<IQuestionType[]> {
     return this.createQueryBuilder("question_type")
       .leftJoinAndSelect("question_type.lessons", "lessons")
+      .leftJoinAndSelect("question_type.image", "image")
       .loadRelationCountAndMap("question_type.lessons", "question_type.lessons")
       .leftJoinAndSelect("question_type.instructions", "instruction")
       .leftJoinAndSelect("question_type.lessonProcesses", "lesson_process")

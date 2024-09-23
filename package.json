@@ -112,7 +112,8 @@
       "^@app/dtos(|/.*)$": "<rootDir>/libs/dtos/src/$1",
       "^@app/constants(|/.*)$": "<rootDir>/libs/constants/src/$1",
       "^@app/utils(|/.*)$": "<rootDir>/libs/utils/src/$1",
-      "^@app/shared-modules(|/.*)$": "<rootDir>/libs/shared-modules/src/$1"
+      "^@app/shared-modules(|/.*)$": "<rootDir>/libs/shared-modules/src/$1",
+      "apps/(.*)": "<rootDir>/apps/$1"
     }
   }
 }

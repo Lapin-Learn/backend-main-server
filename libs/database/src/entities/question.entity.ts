@@ -53,11 +53,11 @@ export class Question extends BaseEntity implements IQuestion {
   @OneToMany(() => QuestionToLesson, (questionToLesson) => questionToLesson.question)
   readonly questionToLessons: QuestionToLesson[];
 
-  @OneToOne(() => Bucket, (bucket) => bucket.id)
+  @OneToOne(() => Bucket, { eager: true })
   @JoinColumn({ name: "image_id" })
   readonly image: Bucket;
 
-  @OneToOne(() => Bucket, (bucket) => bucket.id)
+  @OneToOne(() => Bucket, { eager: true })
   @JoinColumn({ name: "audio_id" })
   readonly audio: Bucket;
 
