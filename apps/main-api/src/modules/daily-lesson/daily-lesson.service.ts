@@ -71,7 +71,13 @@ export class DailyLessonService {
 
   async getInstructionsOfQuestionType(questionTypeId: number): Promise<IInstruction> {
     try {
-      return Instruction.findOne({ where: { questionTypeId } });
+      return Instruction.findOne({
+        where: { questionTypeId },
+        relations: {
+          image: true,
+          audio: true,
+        },
+      });
     } catch (error) {
       this.logger.error(error);
       throw new BadRequestException(error);
