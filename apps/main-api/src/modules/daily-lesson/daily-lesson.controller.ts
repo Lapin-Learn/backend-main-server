@@ -41,8 +41,15 @@ export class DailyLessonController {
   @ApiResponse({ status: 200, description: "Get all questions of a lesson successfully" })
   @ApiResponse({ status: 401, description: "Unauthorized" })
   @Get("lessons/:lessonId/questions")
-  // Marked
   async getQuestionsByLesson(@Param("lessonId") lessonId: number) {
     return this.dailyLessonService.getContentOfLesson(lessonId);
+  }
+
+  @ApiOperation({ summary: "Get instruction of a question type" })
+  @ApiParam({ name: "id", description: "Question type id", type: Number })
+  @ApiResponse({ status: 200, description: "Get instruction of a question type successfully" })
+  @Get("question-types/:id/instruction")
+  async getInstructionsByQuestionType(@Param("id", ParseIntPipe) id: number) {
+    return this.dailyLessonService.getInstructionsOfQuestionType(id);
   }
 }

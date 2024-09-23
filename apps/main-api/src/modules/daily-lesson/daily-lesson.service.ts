@@ -1,5 +1,6 @@
-import { Lesson, LessonProcess, QuestionType } from "@app/database";
+import { Instruction, Lesson, LessonProcess, QuestionType } from "@app/database";
 import { BandScoreEnum, SkillEnum } from "@app/types/enums";
+import { IInstruction } from "@app/types/interfaces";
 import { BadRequestException, Injectable, Logger } from "@nestjs/common";
 import _ from "lodash";
 
@@ -62,6 +63,15 @@ export class DailyLessonService {
         lessons: lessonsProcess,
         totalLearningDuration: currentProcess?.xp.reduce((acc, cur) => acc + cur.duration, 0) || 0,
       };
+    } catch (error) {
+      this.logger.error(error);
+      throw new BadRequestException(error);
+    }
+  }
+
+  async getInstructionsOfQuestionType(questionTypeId: number): Promise<IInstruction> {
+    try {
+      return Instruction.findOne({ where: { questionTypeId } });
     } catch (error) {
       this.logger.error(error);
       throw new BadRequestException(error);
