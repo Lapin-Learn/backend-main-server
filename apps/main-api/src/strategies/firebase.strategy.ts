@@ -20,7 +20,11 @@ export class FirebaseStrategy extends PassportStrategy(Strategy, "firebase-jwt")
     }
 
     const token = authHeader.substring(7, authHeader.length);
-    const decodedToken = await this.firebaseService.verifyToken(token);
-    return decodedToken.data;
+    try {
+      const decodedToken = await this.firebaseService.verifyToken(token);
+      return decodedToken.data;
+    } catch (error) {
+      return false;
+    }
   }
 }
