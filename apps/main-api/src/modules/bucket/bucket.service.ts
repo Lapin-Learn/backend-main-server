@@ -7,6 +7,7 @@ import { DeleteObjectCommand, GetObjectCommand, HeadObjectCommand, PutObjectComm
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { IBucket, ICurrentUser } from "@app/types/interfaces";
 import { AccountRoleEnum, BucketPermissionsEnum, BucketUploadStatusEnum } from "@app/types/enums";
+import _ from "lodash";
 
 @Injectable()
 export class BucketService {
@@ -151,6 +152,9 @@ export class BucketService {
 
   async getPresignedDownloadUrlForAfterLoad(entity: IBucket) {
     try {
+      if (_.isNil(entity.id)) {
+        return null;
+      }
       const command = new GetObjectCommand({
         Bucket: this.bucketName,
         Key: entity.id,
