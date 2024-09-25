@@ -1,4 +1,4 @@
-import { ContentTypeEnum, CERFLevelEum } from "@app/types/enums";
+import { ContentTypeEnum, CEFRLevelEum } from "@app/types/enums";
 import { IListQuestion, IQuestion } from "@app/types/interfaces";
 import {
   BaseEntity,
@@ -33,8 +33,8 @@ export class Question extends BaseEntity implements IQuestion {
   @Column({ name: "audio_id", type: "uuid", nullable: true })
   audioId: string;
 
-  @Column({ name: "cerf_level", type: "enum", enum: CERFLevelEum, nullable: false })
-  cerfLevel: CERFLevelEum;
+  @Column({ name: "cefr_level", type: "enum", enum: CERFLevelEum, nullable: false })
+  cefrLevel: CEFRLevelEum;
 
   @Column({ name: "explanation", type: "text", nullable: false })
   explanation: string;

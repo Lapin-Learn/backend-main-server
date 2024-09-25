@@ -1,4 +1,4 @@
-import { CERFLevelEum, ContentTypeEnum } from "@app/types/enums";
+import { CEFRLevelEum, ContentTypeEnum } from "@app/types/enums";
 import { IsEnum, IsNumber, IsOptional, Min } from "class-validator";
 
 export class QueryParamQuestionDto {
@@ -7,8 +7,8 @@ export class QueryParamQuestionDto {
   listContentTypes: ContentTypeEnum[];
 
   @IsOptional()
-  @IsEnum(CERFLevelEum)
-  cerfLevel: CERFLevelEum;
+  @IsEnum(CEFRLevelEum)
+  cerfLevel: CEFRLevelEum;
 
   @IsNumber({ allowNaN: false, allowInfinity: false }, { message: "Offset must be a number" })
   @Min(0, { message: "Offset must be greater than or equal to 0" })

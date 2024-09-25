@@ -1,4 +1,4 @@
-export enum CERFLevelEum {
+export enum CEFRLevelEum {
   A1 = "A1",
   A2 = "A2",
   B1 = "B1",

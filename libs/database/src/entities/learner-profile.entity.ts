@@ -104,13 +104,11 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
 
     const validLearnerProfileIds = rawValidLearnerProfileIds.map((profile) => profile.id);
 
-    const invalidLearnerProfiles = await this.createQueryBuilder("learnerProfiles")
+    return await this.createQueryBuilder("learnerProfiles")
       .where(validLearnerProfileIds.length > 0 ? "learnerProfiles.id NOT IN (:...validLearnerProfileIds)" : "1=1", {
         validLearnerProfileIds,
       })
       .leftJoinAndSelect("learnerProfiles.streak", "streaks")
       .getMany();
-
-    return invalidLearnerProfiles;
   }
 }

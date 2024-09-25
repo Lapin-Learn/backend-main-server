@@ -1,4 +1,4 @@
-import { CERFLevelEum, ContentTypeEnum } from "@app/types/enums";
+import { CEFRLevelEum, ContentTypeEnum } from "@app/types/enums";
 import { ApiProperty } from "@nestjs/swagger";
 import { IsEnum, IsNotEmpty, IsOptional, IsUUID } from "class-validator";
 
@@ -21,9 +21,9 @@ export class CreateQuestionDto {
   @IsUUID(4, { message: "Invalid audio id" })
   audioId: string | null;
 
-  @ApiProperty({ type: "string", enum: CERFLevelEum, example: CERFLevelEum.A1 })
-  @IsEnum(CERFLevelEum, { message: "Invalid CERF level" })
-  cerfLevel: CERFLevelEum;
+  @ApiProperty({ type: "string", enum: CEFRLevelEum, example: CEFRLevelEum.A1 })
+  @IsEnum(CERFLevelEum, { message: "Invalid CEFR level" })
+  cefrLevel: CEFRLevelEum;
 
   @ApiProperty({ type: "string", example: "This is an explanation" })
   @IsNotEmpty({ message: "Explanation is required" })
