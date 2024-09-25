@@ -14,7 +14,11 @@ const transform = <T extends DataType>(rawData: T): ISuccessResponse<T> => {
   };
 
   if (rawData && isNil(rawData.data)) {
-    response.data = rawData;
+    if (typeof rawData === "string") {
+      response.message = rawData;
+    } else {
+      response.data = rawData;
+    }
   } else {
     response.data = rawData?.data ?? null;
   }

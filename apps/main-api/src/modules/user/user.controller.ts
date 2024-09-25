@@ -5,7 +5,7 @@ import { FirebaseJwtAuthGuard, RoleGuard } from "../../guards";
 import { CurrentUser, Roles } from "../../decorators";
 import { ICurrentUser } from "@app/types/interfaces";
 import { ApiBearerAuth, ApiBody, ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
-import { UpdateAccountByAdminDto, UpdateAccountDto, CreateUserDto } from "@app/types/dtos";
+import { ChangePasswordDto, CreateUserDto, UpdateAccountByAdminDto, UpdateAccountDto } from "@app/types/dtos/accounts";
 
 @ApiTags("Users")
 @ApiBearerAuth()
@@ -65,6 +65,16 @@ export class UserController {
   @Roles(AccountRoleEnum.ADMIN)
   async getUserById(@Param("id") id: string) {
     return this.userService.getUserById(id);
+  }
+
+  @Put("profile/password")
+  @ApiOperation({ summary: "Change password" })
+  @ApiBody({ type: ChangePasswordDto })
+  @ApiResponse({ status: 200, description: "Password changed" })
+  @ApiResponse({ status: 400, description: "User not found or invalid old and new password" })
+  @ApiResponse({ status: 401, description: "Unauthorized" })
+  async changePassword(@CurrentUser() user: ICurrentUser, @Body() data: ChangePasswordDto) {
+    return this.userService.changePassword(user.userId, data.oldPassword, data.newPassword);
   }
 
   @Put("profile/:id")
