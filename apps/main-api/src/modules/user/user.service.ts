@@ -4,6 +4,7 @@ import { FirebaseAuthService } from "@app/shared-modules/firebase";
 import { Account } from "@app/database";
 import { isNil } from "lodash";
 import { UpdateAccountByAdminDto, UpdateAccountDto, CreateUserDto } from "@app/types/dtos";
+import { EntityNotFoundError } from "typeorm";
 
 @Injectable()
 export class UserService {
@@ -103,6 +104,23 @@ export class UserService {
       return { ...deletedUser };
     } catch (error) {
       this.logger.error(error);
+      throw new BadRequestException(error);
+    }
+  }
+
+  async changePassword(userId: string, oldPassword: string, newPassword: string) {
+    try {
+      const user = await Account.findOneOrFail({ where: { id: userId } });
+      const verifiedFirebaseUser = await this.firebaseService.verifyUser(user.email, oldPassword);
+      await this.firebaseService.changePassword(verifiedFirebaseUser.localId, newPassword);
+      return "Password changed";
+    } catch (error) {
+      this.logger.error(error);
+      if (error.response && error.response === "INVALID_LOGIN_CREDENTIALS") {
+        throw new BadRequestException("Invalid old password");
+      } else if (error instanceof EntityNotFoundError) {
+        throw new BadRequestException("User not found");
+      }
       throw new BadRequestException(error);
     }
   }

@@ -2,11 +2,11 @@ import { Module } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { TypeOrmModule } from "@nestjs/typeorm";
 
-import * as dbEntites from "./entities";
+import * as dbEntities from "./entities";
 import * as dbSubscribers from "./subscribers";
 import { BucketSubscriber } from "./subscribers/bucket.subscriber";
 import { BucketService } from "apps/main-api/src/modules/bucket/bucket.service";
-const entities = (Object.keys(dbEntites) as Array<keyof typeof dbEntites>).map((key) => dbEntites[key]);
+const entities = (Object.keys(dbEntities) as Array<keyof typeof dbEntities>).map((key) => dbEntities[key]);
 const subscribers = (Object.keys(dbSubscribers) as Array<keyof typeof dbSubscribers>).map((key) => dbSubscribers[key]);
 @Module({
   imports: [

@@ -17,7 +17,7 @@ export class ActivitySubscriber implements EntitySubscriberInterface<Activity> {
       case ActionNameEnum.DAILY_LOGIN:
         learner.carrots += 10;
         learner.xp += 10;
-        learner.save();
+        await learner.save();
         break;
       case ActionNameEnum.TASK_COMPLETED:
         // Do something
