@@ -6,6 +6,8 @@ import { generate as otpGenerator } from "otp-generator";
 import { MailService } from "@app/shared-modules/mail";
 import { RedisService } from "@app/shared-modules/redis";
 import { ResetPasswordActionEnum } from "@app/types/enums";
+import { IAccount } from "@app/types/interfaces";
+
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(this.constructor.name);
@@ -24,7 +26,7 @@ export class AuthService {
         throw new NotAcceptableException("Email has already existed");
       }
       firebaseUser = await this.firebaseService.createUserByEmailAndPassword(email, password);
-      const newUser = await Account.save({ email, providerId: firebaseUser.uid, username: email });
+      const newUser: IAccount = await Account.save({ email, providerId: firebaseUser.uid, username: email });
       const accessToken = await this.firebaseService.generateCustomToken(firebaseUser.uid, {
         userId: newUser.id,
         profileId: newUser.learnerProfileId,
@@ -102,8 +104,7 @@ export class AuthService {
 
   async updatePassword(uid: string, newPassword: string) {
     try {
-      const user = await this.firebaseService.changePassword(uid, newPassword);
-      return user;
+      return await this.firebaseService.changePassword(uid, newPassword);
     } catch (error) {
       this.logger.error(error);
       throw new BadRequestException(error);

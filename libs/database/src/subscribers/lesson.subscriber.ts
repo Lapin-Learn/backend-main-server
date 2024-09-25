@@ -27,7 +27,7 @@ export class LessonSubscriber implements EntitySubscriberInterface<ILesson> {
       updatedLessonCategory.bandScore !== previousLessonCategory.bandScore
     ) {
       // Get all the lessons with the old questionTypeId and bandScore, ordered by 'order'
-      const listPreviouslessonsCategory = await Lesson.find({
+      const listPreviousLessonsCategory = await Lesson.find({
         where: {
           id: Not(updatedLessonCategory.id),
           questionTypeId: previousLessonCategory.questionTypeId,
@@ -37,9 +37,9 @@ export class LessonSubscriber implements EntitySubscriberInterface<ILesson> {
       });
 
       // Update the 'order' of each lesson
-      for (let i = 0; i < listPreviouslessonsCategory.length; i++) {
-        listPreviouslessonsCategory[i].order = i + 1;
-        await listPreviouslessonsCategory[i].save();
+      for (let i = 0; i < listPreviousLessonsCategory.length; i++) {
+        listPreviousLessonsCategory[i].order = i + 1;
+        await listPreviousLessonsCategory[i].save();
       }
 
       const currentTotalLessonsCategory = await Lesson.count({

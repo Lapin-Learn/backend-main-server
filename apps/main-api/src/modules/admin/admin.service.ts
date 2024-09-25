@@ -117,7 +117,7 @@ export class AdminService {
     try {
       const { reorderLessons, ...restDto } = dto;
 
-      // Must be changed if use subcribers
+      // Must be changed if use subscribers
       const questionType = await QuestionType.findOneBy({ id });
 
       if (!questionType) {
