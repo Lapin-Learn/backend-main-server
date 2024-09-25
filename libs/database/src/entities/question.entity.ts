@@ -33,7 +33,7 @@ export class Question extends BaseEntity implements IQuestion {
   @Column({ name: "audio_id", type: "uuid", nullable: true })
   audioId: string;
 
-  @Column({ name: "cefr_level", type: "enum", enum: CERFLevelEum, nullable: false })
+  @Column({ name: "cefr_level", type: "enum", enum: CEFRLevelEum, nullable: false })
   cefrLevel: CEFRLevelEum;
 
   @Column({ name: "explanation", type: "text", nullable: false })
@@ -62,14 +62,14 @@ export class Question extends BaseEntity implements IQuestion {
   readonly audio: Bucket;
 
   static async getQuestionsWithParams(param: QueryParamQuestionDto): Promise<IListQuestion> {
-    const { listContentTypes, cerfLevel, offset, limit } = param;
+    const { listContentTypes, cefrLevel, offset, limit } = param;
 
     const query = this.createQueryBuilder("question")
       .leftJoinAndSelect("question.image", "image")
       .leftJoinAndSelect("question.audio", "audio");
 
     !_.isNil(listContentTypes) && query.where("question.contentType IN (:...listContentTypes)", { listContentTypes });
-    !_.isNil(cerfLevel) && query.andWhere("question.cerfLevel = :cerfLevel", { cerfLevel });
+    !_.isNil(cefrLevel) && query.andWhere("question.cefrLevel = :cefrLevel", { cefrLevel });
 
     const listQuestions = await query.skip(offset).take(limit).getManyAndCount();
 

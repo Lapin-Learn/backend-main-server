@@ -8,7 +8,7 @@ export class QueryParamQuestionDto {
 
   @IsOptional()
   @IsEnum(CEFRLevelEum)
-  cerfLevel: CEFRLevelEum;
+  cefrLevel: CEFRLevelEum;
 
   @IsNumber({ allowNaN: false, allowInfinity: false }, { message: "Offset must be a number" })
   @Min(0, { message: "Offset must be greater than or equal to 0" })

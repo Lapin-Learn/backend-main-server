@@ -45,15 +45,13 @@ export class UserController {
     return this.userService.getUserById(user.userId);
   }
 
-  @Put("profile")
-  @ApiOperation({ summary: "Update profile" })
-  @ApiBody({ type: UpdateAccountDto })
-  @ApiResponse({ status: 200, description: "Profile updated" })
+  @Get("profile/gamification")
+  @ApiOperation({ summary: "Get a user's gamification profile" })
+  @ApiResponse({ status: 200, description: "User found" })
   @ApiResponse({ status: 400, description: "User not found" })
   @ApiResponse({ status: 401, description: "Unauthorized" })
-  async updateUserProfile(@CurrentUser() user: ICurrentUser, @Body() data: { body: UpdateAccountDto }) {
-    const { body } = data;
-    return this.userService.updateUser(user.userId, body);
+  async getCurrentGamificationProfile(@CurrentUser() user: ICurrentUser) {
+    return this.userService.getCurrentGamificationProfile(user.profileId);
   }
 
   @Get("profile/:id")
@@ -65,6 +63,26 @@ export class UserController {
   @Roles(AccountRoleEnum.ADMIN)
   async getUserById(@Param("id") id: string) {
     return this.userService.getUserById(id);
+  }
+
+  @Get("account")
+  @ApiOperation({ summary: "Get a user's account" })
+  @ApiResponse({ status: 200, description: "Account found" })
+  @ApiResponse({ status: 400, description: "Account not found" })
+  @ApiResponse({ status: 401, description: "Unauthorized" })
+  async getCurrentAccount(@CurrentUser() user: ICurrentUser) {
+    return this.userService.getCurrentAccount(user.userId);
+  }
+
+  @Put("profile")
+  @ApiOperation({ summary: "Update profile" })
+  @ApiBody({ type: UpdateAccountDto })
+  @ApiResponse({ status: 200, description: "Profile updated" })
+  @ApiResponse({ status: 400, description: "User not found" })
+  @ApiResponse({ status: 401, description: "Unauthorized" })
+  async updateUserProfile(@CurrentUser() user: ICurrentUser, @Body() data: { body: UpdateAccountDto }) {
+    const { body } = data;
+    return this.userService.updateUser(user.userId, body);
   }
 
   @Put("profile/password")

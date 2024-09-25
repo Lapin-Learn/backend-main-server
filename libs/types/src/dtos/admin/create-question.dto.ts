@@ -22,7 +22,7 @@ export class CreateQuestionDto {
   audioId: string | null;
 
   @ApiProperty({ type: "string", enum: CEFRLevelEum, example: CEFRLevelEum.A1 })
-  @IsEnum(CERFLevelEum, { message: "Invalid CEFR level" })
+  @IsEnum(CEFRLevelEum, { message: "Invalid CEFR level" })
   cefrLevel: CEFRLevelEum;
 
   @ApiProperty({ type: "string", example: "This is an explanation" })

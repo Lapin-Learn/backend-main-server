@@ -11,6 +11,7 @@ import {
   UpdateDateColumn,
 } from "typeorm";
 import { LearnerProfile } from "./learner-profile.entity";
+import { Bucket } from "@app/database/entities/bucket.entity";
 
 @Entity("accounts")
 export class Account extends BaseEntity implements IAccount {
@@ -41,6 +42,9 @@ export class Account extends BaseEntity implements IAccount {
   @Column({ name: "learner_profile_id", type: "uuid", nullable: true, default: null })
   learnerProfileId: string;
 
+  @Column({ name: "avatar_id", type: "uuid", nullable: true, default: null })
+  avatarId: string;
+
   @CreateDateColumn({ name: "created_at", type: "timestamp", nullable: false, default: () => "CURRENT_TIMESTAMP" })
   createdAt: Date;
 
@@ -53,7 +57,11 @@ export class Account extends BaseEntity implements IAccount {
   })
   updatedAt: Date;
 
-  @OneToOne(() => LearnerProfile, { eager: true })
+  @OneToOne(() => LearnerProfile)
   @JoinColumn({ name: "learner_profile_id", referencedColumnName: "id" })
   readonly learnerProfile: ILearnerProfile;
+
+  @OneToOne(() => Bucket)
+  @JoinColumn({ name: "avatar_id", referencedColumnName: "id" })
+  readonly avatar: Bucket;
 }

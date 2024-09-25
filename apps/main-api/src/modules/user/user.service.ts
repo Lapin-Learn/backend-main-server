@@ -1,10 +1,11 @@
 import { AccountRoleEnum } from "@app/types/enums";
 import { BadRequestException, Injectable, Logger } from "@nestjs/common";
 import { FirebaseAuthService } from "@app/shared-modules/firebase";
-import { Account } from "@app/database";
+import { Account, LearnerProfile } from "@app/database";
 import { isNil } from "lodash";
-import { UpdateAccountByAdminDto, UpdateAccountDto, CreateUserDto } from "@app/types/dtos";
+import { CreateUserDto, UpdateAccountByAdminDto, UpdateAccountDto } from "@app/types/dtos";
 import { EntityNotFoundError } from "typeorm";
+import { IAccount } from "@app/types/interfaces";
 
 @Injectable()
 export class UserService {
@@ -19,13 +20,12 @@ export class UserService {
         throw new BadRequestException("Email has already existed");
       }
       firebaseUser = await this.firebaseService.createUserByEmailAndPassword(email, password);
-      const newUser = await Account.save({
+      return Account.save({
         email,
         providerId: firebaseUser.uid,
         username,
         role: AccountRoleEnum.ADMIN,
       });
-      return newUser;
     } catch (error) {
       this.logger.error(error);
       throw new BadRequestException(error);
@@ -66,6 +66,7 @@ export class UserService {
         where: { id },
         relations: {
           learnerProfile: true,
+          avatar: true,
         },
         select: {
           id: true,
@@ -80,6 +81,39 @@ export class UserService {
       });
     } catch (error) {
       this.logger.error(error);
+      throw new BadRequestException(error);
+    }
+  }
+
+  async getCurrentAccount(userId: string): Promise<IAccount> {
+    try {
+      return Account.findOneOrFail({
+        where: { id: userId },
+        select: {
+          username: true,
+          fullName: true,
+          email: true,
+          dob: true,
+          gender: true,
+        },
+      });
+    } catch (error) {
+      this.logger.error(error);
+      if (error instanceof EntityNotFoundError) {
+        throw new BadRequestException("User not found");
+      }
+      throw new BadRequestException(error);
+    }
+  }
+
+  async getCurrentGamificationProfile(learnerProfileId: string) {
+    try {
+      return LearnerProfile.getLearnerProfileById(learnerProfileId);
+    } catch (error) {
+      this.logger.error(error);
+      if (error instanceof EntityNotFoundError) {
+        throw new BadRequestException("User not found");
+      }
       throw new BadRequestException(error);
     }
   }

@@ -58,7 +58,7 @@ export class AdminController {
     required: false,
     example: `${ContentTypeEnum.MULTIPLE_CHOICE}+${ContentTypeEnum.FILL_IN_THE_BLANK}`,
   })
-  @ApiQuery({ name: "cerfLevel", type: String, enum: CEFRLevelEum, required: false })
+  @ApiQuery({ name: "cefrLevel", type: String, enum: CEFRLevelEum, required: false })
   @ApiQuery({ name: "offset", type: Number, required: true })
   @ApiQuery({ name: "limit", type: Number, required: true })
   @ApiResponse({ status: 200, description: "Get all questions successfully" })
@@ -68,9 +68,9 @@ export class AdminController {
     @Query("offset", new ParseIntPipe()) offset: number,
     @Query("limit", new ParseIntPipe()) limit: number,
     @Query("contentType", new ParseListStringEnumPipe(ContentTypeEnum, "+")) listContentTypes?: ContentTypeEnum[],
-    @Query("cerfLevel", new ParseEnumPipe(CEFRLevelEum, { optional: true })) cerfLevel?: CERFLevelEum
+    @Query("cerfLevel", new ParseEnumPipe(CEFRLevelEum, { optional: true })) cefrLevel?: CEFRLevelEum
   ) {
-    return this.adminService.getQuestions({ listContentTypes, cerfLevel, offset, limit });
+    return this.adminService.getQuestions({ listContentTypes, cefrLevel, offset, limit });
   }
 
   @ApiOperation({ summary: "Update a question" })
