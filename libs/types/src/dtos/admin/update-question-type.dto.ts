@@ -4,7 +4,7 @@ import { ArrayNotEmpty, IsEnum, IsInt, IsOptional, Min, ValidateIf, ValidateNest
 import { Type } from "class-transformer";
 import { BandScoreEnum } from "@app/types/enums";
 
-class ReoderLessonDto {
+class ReorderLessonDto {
   @ApiProperty({ type: Number, example: 1 })
   @IsInt()
   @Min(1, { message: "Lesson ID must be positive" })
@@ -17,12 +17,12 @@ class ReoderLessonDto {
 }
 
 export class UpdateQuestionTypeDto extends PartialType(CreateQuestionTypeDto) {
-  @ApiProperty({ type: [ReoderLessonDto] })
+  @ApiProperty({ type: [ReorderLessonDto] })
   @IsOptional()
   @ArrayNotEmpty({ message: "Reorder lessons must not be empty" })
   @ValidateNested({ each: true })
-  @Type(() => ReoderLessonDto)
-  reorderLessons: ReoderLessonDto[];
+  @Type(() => ReorderLessonDto)
+  reorderLessons: ReorderLessonDto[];
 
   @ApiProperty({ type: "string", enum: BandScoreEnum, example: "5.0", nullable: true })
   @ValidateIf((dto) => dto.bandScore || (dto.reorderLessons && dto.reorderLessons.length > 0))

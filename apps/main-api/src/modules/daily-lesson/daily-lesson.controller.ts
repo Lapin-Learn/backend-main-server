@@ -31,7 +31,7 @@ export class DailyLessonController {
   @ApiParam({ name: "id", description: "Question type id", type: Number })
   @ApiResponse({ status: 200, description: "Get all lessons of a question type successfully" })
   @ApiResponse({ status: 401, description: "Unauthorized" })
-  @Get("questions-types/:id/lessons")
+  @Get("question-types/:id/lessons")
   async getLessonsByQuestionType(@Param("id", ParseIntPipe) id: number, @CurrentUser() learner: ICurrentUser) {
     return this.dailyLessonService.getLessonsInQuestionTypeOfLearner(id, learner.profileId);
   }

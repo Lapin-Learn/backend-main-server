@@ -1,8 +1,9 @@
 import { v4 as uuidv4 } from "uuid";
-import { AccountRoleEnum, GenderEnum, RankEnum } from "@app/types/enums";
+import { AccountRoleEnum, BucketPermissionsEnum, BucketUploadStatusEnum, GenderEnum, RankEnum } from "@app/types/enums";
 import {
   IAccount,
   IActivity,
+  IBucket,
   ILearnerProfile,
   ILessonProcess,
   ILessonRecord,
@@ -34,6 +35,15 @@ const learnerProfile: ILearnerProfile = {
   createdAt: new Date(),
   updatedAt: new Date(),
 };
+const avatar: IBucket = {
+  id: uuidv4(),
+  name: "avatar",
+  owner: mockUid,
+  permission: BucketPermissionsEnum.PUBLIC,
+  createdAt: new Date(),
+  updatedAt: new Date(),
+  uploadStatus: BucketUploadStatusEnum.UPLOADED,
+};
 
 export const userStub = (): IAccount => {
   return {
@@ -46,8 +56,10 @@ export const userStub = (): IAccount => {
     dob: new Date(),
     gender: GenderEnum.FEMALE,
     learnerProfileId: learnerProfile.id,
+    avatarId: uuidv4(),
     createdAt: new Date(),
     updatedAt: new Date(),
     learnerProfile: learnerProfile,
+    avatar: avatar,
   };
 };

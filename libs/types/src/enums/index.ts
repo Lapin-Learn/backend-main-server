@@ -10,4 +10,4 @@ export * from "./bucket-upload-status.enum";
 export * from "./skill.enum";
 export * from "./band-score.enum";
 export * from "./content-type.enum";
-export * from "./cerf-level.enum";
+export * from "./cefr-level.enum";

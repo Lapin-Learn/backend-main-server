@@ -1,6 +1,8 @@
+//response
 export * from "./error-response.interface";
 export * from "./success-response.interface";
 
+//entities
 export * from "./item.interface";
 export * from "./action.interface";
 export * from "./badge.interface";
@@ -17,9 +19,6 @@ export * from "./profile-item.interface";
 export * from "./bucket.interface";
 export * from "./lesson-record.interface";
 export * from "./lesson-process.interface";
-
-export * from "./current-user.interface";
-export * from "./reset-password-action.interface";
 export * from "./question-type.interface";
 export * from "./lesson.interface";
 export * from "./instruction.interface";
@@ -27,4 +26,8 @@ export * from "./question.interface";
 export * from "./question-to-lesson.interface";
 export * from "./xp-lesson-process.interface";
 
+export * from "./current-user.interface";
+export * from "./reset-password-action.interface";
+
 export * from "./list-question.interface";
+export * from "./learner-profile-info.interface";

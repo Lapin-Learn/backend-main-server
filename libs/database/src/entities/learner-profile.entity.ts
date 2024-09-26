@@ -1,5 +1,5 @@
 import { ActionNameEnum, RankEnum } from "@app/types/enums";
-import { ILearnerProfile } from "@app/types/interfaces";
+import { ILearnerProfile, ILearnerProfileInfo } from "@app/types/interfaces";
 import {
   BaseEntity,
   Column,
@@ -53,7 +53,7 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
   })
   updatedAt: Date;
 
-  @ManyToOne(() => Level, (level) => level.id)
+  @ManyToOne(() => Level, (level) => level.id, { eager: true })
   @JoinColumn({ name: "level_id", referencedColumnName: "id" })
   readonly level: Level;
 
@@ -104,13 +104,30 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
 
     const validLearnerProfileIds = rawValidLearnerProfileIds.map((profile) => profile.id);
 
-    const invalidLearnerProfiles = await this.createQueryBuilder("learnerProfiles")
+    return await this.createQueryBuilder("learnerProfiles")
       .where(validLearnerProfileIds.length > 0 ? "learnerProfiles.id NOT IN (:...validLearnerProfileIds)" : "1=1", {
         validLearnerProfileIds,
       })
       .leftJoinAndSelect("learnerProfiles.streak", "streaks")
       .getMany();
+  }
 
-    return invalidLearnerProfiles;
+  static async getLearnerProfileById(id: string): Promise<ILearnerProfileInfo> {
+    const profile: ILearnerProfile = await this.createQueryBuilder("learnerProfile")
+      .where("learnerProfile.id = :id", { id })
+      .leftJoinAndSelect("learnerProfile.level", "levels")
+      .leftJoinAndSelect("learnerProfile.streak", "streaks")
+      .leftJoinAndSelect("learnerProfile.profileBadges", "profileBadges")
+      .leftJoinAndSelect("learnerProfile.profileMissions", "profileMissions")
+      .leftJoinAndSelect("learnerProfile.profileItems", "profileItems")
+      .leftJoinAndSelect("profileItems.item", "items")
+      .getOneOrFail();
+
+    const currentItems = profile.profileItems.map((profileItem) => {
+      const { quantity, expAt } = profileItem;
+      return { ...profileItem.item, quantity, expAt };
+    });
+
+    return { ...profile, currentItems };
   }
 }

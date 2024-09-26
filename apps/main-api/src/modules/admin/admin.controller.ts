@@ -10,7 +10,7 @@ import {
 } from "@app/types/dtos/admin";
 import { FirebaseJwtAuthGuard, RoleGuard } from "../../guards";
 import { Roles } from "../../decorators";
-import { AccountRoleEnum, CERFLevelEum, ContentTypeEnum } from "@app/types/enums";
+import { AccountRoleEnum, CEFRLevelEum, ContentTypeEnum } from "@app/types/enums";
 import { ApiBearerAuth, ApiBody, ApiOperation, ApiQuery, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { ParseListStringEnumPipe } from "@app/utils/pipes";
 
@@ -58,7 +58,7 @@ export class AdminController {
     required: false,
     example: `${ContentTypeEnum.MULTIPLE_CHOICE}+${ContentTypeEnum.FILL_IN_THE_BLANK}`,
   })
-  @ApiQuery({ name: "cerfLevel", type: String, enum: CERFLevelEum, required: false })
+  @ApiQuery({ name: "cefrLevel", type: String, enum: CEFRLevelEum, required: false })
   @ApiQuery({ name: "offset", type: Number, required: true })
   @ApiQuery({ name: "limit", type: Number, required: true })
   @ApiResponse({ status: 200, description: "Get all questions successfully" })
@@ -68,9 +68,9 @@ export class AdminController {
     @Query("offset", new ParseIntPipe()) offset: number,
     @Query("limit", new ParseIntPipe()) limit: number,
     @Query("contentType", new ParseListStringEnumPipe(ContentTypeEnum, "+")) listContentTypes?: ContentTypeEnum[],
-    @Query("cerfLevel", new ParseEnumPipe(CERFLevelEum, { optional: true })) cerfLevel?: CERFLevelEum
+    @Query("cerfLevel", new ParseEnumPipe(CEFRLevelEum, { optional: true })) cefrLevel?: CEFRLevelEum
   ) {
-    return this.adminService.getQuestions({ listContentTypes, cerfLevel, offset, limit });
+    return this.adminService.getQuestions({ listContentTypes, cefrLevel, offset, limit });
   }
 
   @ApiOperation({ summary: "Update a question" })
