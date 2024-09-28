@@ -31,17 +31,17 @@ describe("AuthController", () => {
 
   describe("signIn", () => {
     it("signIn should be defined", () => {
-      expect(controller.signin).toBeDefined();
+      expect(controller.signIn).toBeDefined();
     });
     it("should sign in a user and return an access token", async () => {
-      const response = await controller.signin(signInRequestMock);
+      const response = await controller.signIn(signInRequestMock);
       expect(response).toEqual({
         accessToken: mock_access_token,
       });
     });
     it("should throw an error when the user is not found", async () => {
       jest.spyOn(authService, "login").mockRejectedValue(new BadRequestException("User not found"));
-      const response = controller.signin(signInRequestMock);
+      const response = controller.signIn(signInRequestMock);
       expect(authService.login).toHaveBeenCalledWith(signInRequestMock.email, signInRequestMock.password);
       await expect(response).rejects.toThrow(BadRequestException);
     });
@@ -49,10 +49,10 @@ describe("AuthController", () => {
 
   describe("signUp", () => {
     it("signUp should be defined", () => {
-      expect(controller.signup).toBeDefined();
+      expect(controller.signUp).toBeDefined();
     });
     it("should sign up a user", async () => {
-      const response = await controller.signup(signInRequestMock);
+      const response = await controller.signUp(signInRequestMock);
       expect(authService.registerUser).toHaveBeenCalledWith(signInRequestMock.email, signInRequestMock.password);
       expect(response).toEqual({
         accessToken: mock_access_token,
@@ -60,7 +60,7 @@ describe("AuthController", () => {
     });
     it("should throw an error when the user already exists", async () => {
       jest.spyOn(authService, "registerUser").mockRejectedValue(new BadRequestException("User already exists"));
-      const response = controller.signup(signInRequestMock);
+      const response = controller.signUp(signInRequestMock);
       expect(authService.registerUser).toHaveBeenCalledWith(signInRequestMock.email, signInRequestMock.password);
       await expect(response).rejects.toThrow(BadRequestException);
     });

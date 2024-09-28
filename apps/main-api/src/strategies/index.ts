@@ -1,2 +1,2 @@
 export * from "./firebase.strategy";
-export * from "./google.strategy";
+export * from "./provider.strategy";

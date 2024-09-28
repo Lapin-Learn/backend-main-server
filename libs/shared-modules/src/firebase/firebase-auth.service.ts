@@ -5,7 +5,6 @@ import { AxiosInstance } from "axios";
 import { AppOptions } from "firebase-admin";
 import { App, initializeApp } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
-import { OAuth2Client, TokenPayload } from "google-auth-library";
 
 @Injectable()
 export class FirebaseAuthService {
@@ -14,7 +13,6 @@ export class FirebaseAuthService {
   private readonly apiKey: string;
   private readonly firebaseUrl: string;
   private readonly httpService: AxiosInstance;
-  private readonly googleClient: OAuth2Client;
 
   constructor(
     @Inject("FIREBASE_ADMIN_OPTIONS_TOKEN") readonly options: AppOptions,
@@ -24,21 +22,19 @@ export class FirebaseAuthService {
     this.firebaseUrl = this.configService.get("FIREBASE_URL");
     this.httpService = genericHttpConsumer();
     this.app = initializeApp(options);
-    this.googleClient = new OAuth2Client(this.configService.get("GOOGLE_CLIENT_ID"));
   }
 
   async createUserByEmailAndPassword(email: string, password: string) {
-    const auth = getAuth(this.app);
-    return auth.createUser({ email, password });
-  }
-
-  async createUserByGoogle(payload: TokenPayload) {
-    const auth = getAuth(this.app);
-    return auth.createUser({
-      uid: payload.sub,
-      email: payload.email,
-      photoURL: payload.picture,
-    });
+    try {
+      const auth = getAuth(this.app);
+      return await auth.createUser({ email, password });
+    } catch (error) {
+      if (error.code === "auth/email-already-exists") {
+        throw new Error("Email already exists");
+      }
+      this.logger.error(error);
+      throw error;
+    }
   }
 
   async getUserByEmail(email: string, nullIfNotFound?: boolean) {
@@ -75,7 +71,7 @@ export class FirebaseAuthService {
     }
   }
 
-  async verifyToken(token: string) {
+  async verifyCustomToken(token: string) {
     try {
       const idToken = await this.getIdToken(token);
       const auth = getAuth(this.app);
@@ -86,13 +82,10 @@ export class FirebaseAuthService {
     }
   }
 
-  async verifyGoogleToken(token: string) {
+  async verifyProviderToken(token: string) {
     try {
-      const ticket = await this.googleClient.verifyIdToken({
-        idToken: token,
-        audience: this.configService.get("GOOGLE_CLIENT_ID"),
-      });
-      return ticket.getPayload();
+      const auth = getAuth(this.app);
+      return auth.verifyIdToken(token);
     } catch (error) {
       this.logger.error(error);
       throw error;

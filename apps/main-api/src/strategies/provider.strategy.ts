@@ -4,12 +4,12 @@ import { Strategy } from "passport-custom";
 import { FirebaseAuthService } from "@app/shared-modules/firebase";
 
 @Injectable()
-export class GoogleStrategy extends PassportStrategy(Strategy, "google-jwt") {
+export class ProviderStrategy extends PassportStrategy(Strategy, "provider-jwt") {
   constructor(private firebaseService: FirebaseAuthService) {
     super();
   }
 
-  async validate(request: Request, done) {
+  async validate(request: Request) {
     const authHeader = String(request.headers["authorization"] || "");
 
     if (!authHeader.startsWith("Bearer ")) {
@@ -22,8 +22,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy, "google-jwt") {
 
     const token = authHeader.substring(7, authHeader.length);
     try {
-      const payload = await this.firebaseService.verifyGoogleToken(token);
-      done(null, payload);
+      return await this.firebaseService.verifyProviderToken(token);
     } catch (error) {
       return false;
     }
