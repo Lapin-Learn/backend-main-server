@@ -1,4 +1,4 @@
-import { Lesson, Question, QuestionType } from "@app/database";
+import { Lesson, Question, QuestionToLesson, QuestionType } from "@app/database";
 import {
   CreateLessonDto,
   CreateQuestionDto,
@@ -8,6 +8,7 @@ import {
   UpdateQuestionDto,
   UpdateQuestionTypeDto,
 } from "@app/types/dtos/admin";
+import { AssignQuestionsToLessonDto } from "@app/types/dtos/admin/assign-question-to-lesson.dto";
 import { ILesson, IListQuestion, IQuestion, IQuestionType } from "@app/types/interfaces";
 import { BadRequestException, Injectable, Logger } from "@nestjs/common";
 import _ from "lodash";
@@ -177,6 +178,31 @@ export class AdminService {
       return {
         ...updatedQuestionType,
       };
+    } catch (error) {
+      this.logger.error(error);
+      throw new BadRequestException(error);
+    }
+  }
+
+  async assignQuestionsToLesson(lessonId: number, dto: AssignQuestionsToLessonDto) {
+    try {
+      const currentQuestions = await QuestionToLesson.find({ where: { lessonId } });
+      const currentMaxOrder =
+        currentQuestions.length > 0
+          ? _.maxBy(currentQuestions, (o) => {
+              return o.order;
+            }).order
+          : 0;
+
+      const newQuestions = dto.questions.map((questionId, index) => {
+        return QuestionToLesson.save({
+          questionId,
+          lessonId,
+          order: currentMaxOrder + index + 1,
+        });
+      });
+
+      return Promise.all(newQuestions);
     } catch (error) {
       this.logger.error(error);
       throw new BadRequestException(error);

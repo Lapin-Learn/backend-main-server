@@ -13,6 +13,7 @@ import { Roles } from "../../decorators";
 import { AccountRoleEnum, CEFRLevelEum, ContentTypeEnum } from "@app/types/enums";
 import { ApiBearerAuth, ApiBody, ApiOperation, ApiQuery, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { ParseListStringEnumPipe } from "@app/utils/pipes";
+import { AssignQuestionsToLessonDto } from "@app/types/dtos/admin/assign-question-to-lesson.dto";
 
 @ApiTags("Admin")
 @ApiBearerAuth()
@@ -122,5 +123,16 @@ export class AdminController {
   @Put("question-types/:id")
   updateQuestionType(@Param("id", new ParseIntPipe()) id: number, @Body() dto: UpdateQuestionTypeDto) {
     return this.adminService.updateQuestionType(id, dto);
+  }
+
+  @ApiOperation({ summary: "Assign questions to a lesson" })
+  @ApiBody({ type: AssignQuestionsToLessonDto })
+  @ApiResponse({ status: 200, description: "Questions assigned to lesson" })
+  @ApiResponse({ status: 400, description: "Bad request" })
+  @ApiResponse({ status: 401, description: "Unauthorized" })
+  @ApiResponse({ status: 500, description: "Internal server error" })
+  @Put("lessons/:id/assignments")
+  assignQuestionToLesson(@Param("id", new ParseIntPipe()) id: number, @Body() dto: AssignQuestionsToLessonDto) {
+    return this.adminService.assignQuestionsToLesson(id, dto);
   }
 }
