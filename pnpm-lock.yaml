@@ -80,6 +80,9 @@ importers:
       firebase-admin:
         specifier: ^12.3.0
         version: 12.3.0
+      google-auth-library:
+        specifier: ^9.14.1
+        version: 9.14.1
       handlebars:
         specifier: ^4.7.8
         version: 4.7.8
@@ -653,7 +656,6 @@ packages:
   '@css-inline/css-inline-linux-arm64-musl@0.14.1':
     resolution: {integrity: sha512-FzknI+st8eA8YQSdEJU9ykcM0LZjjigBuynVF5/p7hiMm9OMP8aNhWbhZ8LKJpKbZrQsxSGS4g9Vnr6n6FiSdQ==}
     engines: {node: '>= 10'}
-    cpu: [arm64]
     os: [linux]
 
   '@css-inline/css-inline-linux-x64-gnu@0.14.1':
@@ -2779,8 +2781,8 @@ packages:
     resolution: {integrity: sha512-jhIXaOzy1sb8IyocaruWSn1TjmnBVs8Ayhcy83rmxNJ8q2uWKCAj3CnJY+KpGSXCueAPc0i05kVvVKtP1t9S3g==}
     engines: {node: '>=10'}
 
-  google-auth-library@9.13.0:
-    resolution: {integrity: sha512-p9Y03Uzp/Igcs36zAaB0XTSwZ8Y0/tpYiz5KIde5By+H9DCVUSYtDWZu6aFXsWTqENMb8BD/pDT3hR8NVrPkfA==}
+  google-auth-library@9.14.1:
+    resolution: {integrity: sha512-Rj+PMjoNFGFTmtItH7gHfbHpGVSb3vmnGK3nwNBqxQF9NoBpttSZI/rc0WiM63ma2uGDQtYEkMHkK9U6937NiA==}
     engines: {node: '>=14'}
 
   google-gax@4.3.8:
@@ -5983,7 +5985,7 @@ snapshots:
       duplexify: 4.1.3
       fast-xml-parser: 4.4.1
       gaxios: 6.7.0
-      google-auth-library: 9.13.0
+      google-auth-library: 9.14.1
       html-entities: 2.5.2
       mime: 3.0.0
       p-limit: 3.1.0
@@ -7258,7 +7260,6 @@ snapshots:
       debug: 4.3.6
     transitivePeerDependencies:
       - supports-color
-    optional: true
 
   ajv-formats@2.1.1(ajv@8.12.0):
     optionalDependencies:
@@ -7445,8 +7446,7 @@ snapshots:
       - encoding
       - supports-color
 
-  bignumber.js@9.1.2:
-    optional: true
+  bignumber.js@9.1.2: {}
 
   binary-extensions@2.3.0: {}
 
@@ -8260,8 +8260,7 @@ snapshots:
   extend-object@1.0.0:
     optional: true
 
-  extend@3.0.2:
-    optional: true
+  extend@3.0.2: {}
 
   external-editor@3.1.0:
     dependencies:
@@ -8479,7 +8478,6 @@ snapshots:
     transitivePeerDependencies:
       - encoding
       - supports-color
-    optional: true
 
   gcp-metadata@6.1.0:
     dependencies:
@@ -8488,7 +8486,6 @@ snapshots:
     transitivePeerDependencies:
       - encoding
       - supports-color
-    optional: true
 
   generic-pool@3.9.0: {}
 
@@ -8586,7 +8583,7 @@ snapshots:
       merge2: 1.4.1
       slash: 3.0.0
 
-  google-auth-library@9.13.0:
+  google-auth-library@9.14.1:
     dependencies:
       base64-js: 1.5.1
       ecdsa-sig-formatter: 1.0.11
@@ -8597,7 +8594,6 @@ snapshots:
     transitivePeerDependencies:
       - encoding
       - supports-color
-    optional: true
 
   google-gax@4.3.8:
     dependencies:
@@ -8606,7 +8602,7 @@ snapshots:
       '@types/long': 4.0.2
       abort-controller: 3.0.0
       duplexify: 4.1.3
-      google-auth-library: 9.13.0
+      google-auth-library: 9.14.1
       node-fetch: 2.7.0
       object-hash: 3.0.0
       proto3-json-serializer: 2.0.2
@@ -8633,7 +8629,6 @@ snapshots:
     transitivePeerDependencies:
       - encoding
       - supports-color
-    optional: true
 
   handlebars@4.7.8:
     dependencies:
@@ -8757,7 +8752,6 @@ snapshots:
       debug: 4.3.6
     transitivePeerDependencies:
       - supports-color
-    optional: true
 
   human-signals@2.1.0: {}
 
@@ -9322,7 +9316,6 @@ snapshots:
   json-bigint@1.0.0:
     dependencies:
       bignumber.js: 9.1.2
-    optional: true
 
   json-buffer@3.0.1: {}
 
@@ -9389,7 +9382,6 @@ snapshots:
       buffer-equal-constant-time: 1.0.1
       ecdsa-sig-formatter: 1.0.11
       safe-buffer: 5.2.1
-    optional: true
 
   jwks-rsa@3.1.0:
     dependencies:
@@ -9411,7 +9403,6 @@ snapshots:
     dependencies:
       jwa: 2.0.0
       safe-buffer: 5.2.1
-    optional: true
 
   keyv@4.5.4:
     dependencies:

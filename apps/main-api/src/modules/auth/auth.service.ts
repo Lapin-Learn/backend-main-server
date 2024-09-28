@@ -6,7 +6,9 @@ import { generate as otpGenerator } from "otp-generator";
 import { MailService } from "@app/shared-modules/mail";
 import { RedisService } from "@app/shared-modules/redis";
 import { ResetPasswordActionEnum } from "@app/types/enums";
-import { IAccount } from "@app/types/interfaces";
+import { IAccount, ICurrentUser } from "@app/types/interfaces";
+import { EntityNotFoundError } from "typeorm";
+import { TokenPayload } from "google-auth-library";
 
 @Injectable()
 export class AuthService {
@@ -39,10 +41,40 @@ export class AuthService {
     }
   }
 
+  async signInOrSignUpWithGoogle(payload: TokenPayload) {
+    try {
+      const { email } = payload;
+      let firebaseUser = await this.firebaseService.getUserByEmail(email, true);
+      let dbUser: IAccount = await Account.findOne({ where: { email, providerId: firebaseUser?.uid } });
+      let claims: ICurrentUser;
+      if (!firebaseUser && !dbUser) {
+        firebaseUser = await this.firebaseService.createUserByGoogle(payload);
+        dbUser = await Account.save({ email, providerId: firebaseUser.uid, username: email });
+        claims = {
+          userId: dbUser.id,
+          profileId: dbUser.learnerProfileId,
+          role: dbUser.role,
+        };
+      } else if (firebaseUser && dbUser) {
+        claims = {
+          userId: dbUser.id,
+          profileId: dbUser.learnerProfileId,
+          role: dbUser.role,
+        };
+      } else {
+        throw new BadRequestException("Inconsistency account data");
+      }
+      return await this.firebaseService.generateCustomToken(dbUser.providerId, claims);
+    } catch (error) {
+      this.logger.error(error);
+      throw new BadRequestException(error);
+    }
+  }
+
   async login(email: string, password: string) {
     try {
       const user = await this.firebaseService.verifyUser(email, password);
-      const dbUser = await Account.findOne({ where: { providerId: user.localId } });
+      const dbUser = await Account.findOneOrFail({ where: { providerId: user.localId, email } });
       const accessToken = await this.firebaseService.generateCustomToken(dbUser.providerId, {
         userId: dbUser.id,
         profileId: dbUser.learnerProfileId,
@@ -51,6 +83,9 @@ export class AuthService {
       return this.authHelper.buildTokenResponse(accessToken);
     } catch (error) {
       this.logger.error(error);
+      if (error instanceof EntityNotFoundError) {
+        throw new BadRequestException("User is not founded");
+      }
       throw new BadRequestException(error);
     }
   }

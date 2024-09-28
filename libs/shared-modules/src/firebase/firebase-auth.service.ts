@@ -5,6 +5,7 @@ import { AxiosInstance } from "axios";
 import { AppOptions } from "firebase-admin";
 import { App, initializeApp } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
+import { OAuth2Client, TokenPayload } from "google-auth-library";
 
 @Injectable()
 export class FirebaseAuthService {
@@ -13,6 +14,7 @@ export class FirebaseAuthService {
   private readonly apiKey: string;
   private readonly firebaseUrl: string;
   private readonly httpService: AxiosInstance;
+  private readonly googleClient: OAuth2Client;
 
   constructor(
     @Inject("FIREBASE_ADMIN_OPTIONS_TOKEN") readonly options: AppOptions,
@@ -22,6 +24,7 @@ export class FirebaseAuthService {
     this.firebaseUrl = this.configService.get("FIREBASE_URL");
     this.httpService = genericHttpConsumer();
     this.app = initializeApp(options);
+    this.googleClient = new OAuth2Client(this.configService.get("GOOGLE_CLIENT_ID"));
   }
 
   async createUserByEmailAndPassword(email: string, password: string) {
@@ -29,11 +32,19 @@ export class FirebaseAuthService {
     return auth.createUser({ email, password });
   }
 
+  async createUserByGoogle(payload: TokenPayload) {
+    const auth = getAuth(this.app);
+    return auth.createUser({
+      uid: payload.sub,
+      email: payload.email,
+      photoURL: payload.picture,
+    });
+  }
+
   async getUserByEmail(email: string, nullIfNotFound?: boolean) {
     try {
       const auth = getAuth(this.app);
-      const user = await auth.getUserByEmail(email);
-      return user;
+      return await auth.getUserByEmail(email);
     } catch (error) {
       if (nullIfNotFound && error.code === "auth/user-not-found") {
         return null;
@@ -69,6 +80,19 @@ export class FirebaseAuthService {
       const idToken = await this.getIdToken(token);
       const auth = getAuth(this.app);
       return auth.verifyIdToken(idToken);
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
+  async verifyGoogleToken(token: string) {
+    try {
+      const ticket = await this.googleClient.verifyIdToken({
+        idToken: token,
+        audience: this.configService.get("GOOGLE_CLIENT_ID"),
+      });
+      return ticket.getPayload();
     } catch (error) {
       this.logger.error(error);
       throw error;

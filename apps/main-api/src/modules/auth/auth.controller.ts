@@ -2,9 +2,11 @@ import { Body, Controller, Get, Post, Query, UseGuards, Request } from "@nestjs/
 import { AuthService } from "./auth.service";
 import { LogInUserDto, RegisterUserDto, VerifyOtpDto, ResetPasswordDto } from "@app/types/dtos";
 import { ApiBearerAuth, ApiBody, ApiOperation, ApiQuery, ApiResponse, ApiTags } from "@nestjs/swagger";
-import { FirebaseJwtAuthGuard } from "../../guards";
+import { FirebaseJwtAuthGuard, GoogleJwtAuthGuard } from "../../guards";
 import { ResetPasswordGuard } from "../../guards/reset-password.guard";
 import { IResetPasswordAction } from "@app/types/interfaces";
+import { GoogleTokenPayload } from "../../decorators/google-token-payload.decorator";
+import { TokenPayload } from "google-auth-library";
 
 @ApiTags("Authentication")
 @Controller("auth")
@@ -29,6 +31,12 @@ export class AuthController {
   async signin(@Body() data: LogInUserDto) {
     const { email, password } = data;
     return this.authService.login(email, password);
+  }
+
+  @Get("google")
+  @UseGuards(GoogleJwtAuthGuard)
+  async signInAndSignUpWithGoogle(@GoogleTokenPayload() payload: TokenPayload) {
+    return this.authService.signInOrSignUpWithGoogle(payload);
   }
 
   @Post("otp")
