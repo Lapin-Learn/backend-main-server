@@ -44,11 +44,13 @@ export class LessonRecordSubscriber implements EntitySubscriberInterface<LessonR
       const lessonIndex = lessonProcess.xp.findIndex((xp) => xp.lessonId === entity.lessonId);
 
       if (lessonIndex !== -1) {
+        // Always update the duration
+        lessonProcess.xp[lessonIndex].duration += entity.duration;
+
         // Update lesson in lesson process
         // The most XP (accuracy) will be prioritized
         if (xp > lessonProcess.xp[lessonIndex].xp) {
           lessonProcess.xp[lessonIndex].xp = xp;
-          lessonProcess.xp[lessonIndex].duration += entity.duration;
         }
       } else {
         // Add new lesson to lesson process

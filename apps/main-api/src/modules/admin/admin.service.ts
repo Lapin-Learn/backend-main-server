@@ -12,6 +12,7 @@ import { AssignQuestionsToLessonDto } from "@app/types/dtos/admin/assign-questio
 import { ILesson, IListQuestion, IQuestion, IQuestionType } from "@app/types/interfaces";
 import { BadRequestException, Injectable, Logger } from "@nestjs/common";
 import _ from "lodash";
+import { In } from "typeorm";
 
 @Injectable()
 export class AdminService {
@@ -186,23 +187,50 @@ export class AdminService {
 
   async assignQuestionsToLesson(lessonId: number, dto: AssignQuestionsToLessonDto) {
     try {
-      const currentQuestions = await QuestionToLesson.find({ where: { lessonId } });
-      const currentMaxOrder =
-        currentQuestions.length > 0
-          ? _.maxBy(currentQuestions, (o) => {
-              return o.order;
-            }).order
-          : 0;
-
-      const newQuestions = dto.questions.map((questionId, index) => {
-        return QuestionToLesson.save({
-          questionId,
-          lessonId,
-          order: currentMaxOrder + index + 1,
-        });
+      // Validate lesson
+      const lesson = await Lesson.findOne({
+        where: { id: lessonId },
+        relations: {
+          questionToLessons: true,
+        },
       });
+      if (!lesson) {
+        throw new BadRequestException("Lesson not found");
+      }
 
-      return Promise.all(newQuestions);
+      // Check if all questions are unique
+      const questionSet = new Set(dto.questions);
+      if (dto.questions.length !== questionSet.size) {
+        throw new BadRequestException("Questions must be unique");
+      }
+
+      // Validate questions
+      const questions = await Question.find({ where: { id: In(dto.questions) } });
+      if (questions.length !== dto.questions.length) {
+        throw new BadRequestException("Some questions not found");
+      }
+
+      const { questionToLessons } = lesson;
+
+      // Remove all questions not in dto.questions
+      const questionsToRemove = questionToLessons.filter(
+        (questionLesson) => !dto.questions.includes(questionLesson.questionId)
+      );
+      await QuestionToLesson.remove(questionsToRemove);
+
+      // Update all questions in dto.questions
+      return Promise.all(
+        dto.questions.map(async (questionId, index) => {
+          const questionLesson = questionToLessons.find((questionLesson) => questionLesson.questionId === questionId);
+
+          return QuestionToLesson.save({
+            id: questionLesson?.id,
+            questionId,
+            lessonId,
+            order: index + 1,
+          });
+        })
+      );
     } catch (error) {
       this.logger.error(error);
       throw new BadRequestException(error);
