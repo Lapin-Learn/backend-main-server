@@ -21,23 +21,20 @@ export class LessonService {
 
       const { bonusXP, bonusCarrot } = lessonRecord.getBonusResources();
 
-      await learner.updateResources(bonusCarrot, bonusXP);
-
-      const isLevelUp = await learner.isLevelUp();
+      const milestones = await learner.updateResources({ bonusXP, bonusCarrot });
 
       return {
         ...lessonRecord,
         bonusXP,
         bonusCarrot,
-        isLevelUp,
-        currentXP: learner.xp,
-        currentLevel: learner.level,
+        milestones,
       };
     } catch (error) {
       this.logger.error(error);
       if (error instanceof EntityNotFoundError) {
         throw new BadRequestException("Learn profile not found");
       }
+      throw new BadRequestException(error);
     }
   }
 }

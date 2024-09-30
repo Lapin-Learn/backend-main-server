@@ -31,5 +31,6 @@ export * from "./reset-password-action.interface";
 
 export * from "./list-question.interface";
 export * from "./learner-profile-info.interface";
+export * from "./milestone-info.interfaces";
 
 export * from "./decoded-token.interface";
