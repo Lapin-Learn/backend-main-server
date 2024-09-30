@@ -55,7 +55,7 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
 
   @ManyToOne(() => Level, (level) => level.id, { eager: true })
   @JoinColumn({ name: "level_id", referencedColumnName: "id" })
-  readonly level: Level;
+  level: Level;
 
   @OneToOne(() => Streak, { eager: true })
   @JoinColumn({ name: "streak_id", referencedColumnName: "id" })
@@ -78,6 +78,29 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
 
   @OneToMany(() => LessonProcess, (lessonProcess) => lessonProcess.learnerProfile)
   readonly lessonProcesses: LessonProcess[];
+
+  public async isLevelUp(): Promise<boolean> {
+    if (this.xp >= this.level.xp) {
+      const nextLevel = await Level.findOne({ where: { id: this.levelId + 1 } });
+      this.level = nextLevel || this.level;
+      await this.save();
+      return true;
+    }
+    return false;
+  }
+
+  public async updateResources(
+    bonusCarrot: number = 0,
+    bonusXP: number = 0,
+    bonusStreakPoint: number = 0
+  ): Promise<void> {
+    this.carrots += bonusCarrot;
+    this.xp += bonusXP;
+    this.streak.current += bonusStreakPoint;
+    this.streak.record = Math.max(this.streak.record, this.streak.current);
+    await this.streak.save();
+    await this.save();
+  }
 
   // Active Record Pattern
   static async getBrokenStreakProfiles() {

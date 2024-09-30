@@ -19,7 +19,7 @@ export interface ILearnerProfile {
   updatedAt: Date;
 
   //relationships
-  readonly level: ILevel;
+  level: ILevel;
   readonly streak: IStreak;
   readonly activities: IActivity[];
   readonly profileBadges: IProfileBadge[];
