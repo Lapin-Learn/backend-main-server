@@ -25,15 +25,22 @@ export class FirebaseAuthService {
   }
 
   async createUserByEmailAndPassword(email: string, password: string) {
-    const auth = getAuth(this.app);
-    return auth.createUser({ email, password });
+    try {
+      const auth = getAuth(this.app);
+      return await auth.createUser({ email, password });
+    } catch (error) {
+      if (error.code === "auth/email-already-exists") {
+        throw new Error("Email already exists");
+      }
+      this.logger.error(error);
+      throw error;
+    }
   }
 
   async getUserByEmail(email: string, nullIfNotFound?: boolean) {
     try {
       const auth = getAuth(this.app);
-      const user = await auth.getUserByEmail(email);
-      return user;
+      return await auth.getUserByEmail(email);
     } catch (error) {
       if (nullIfNotFound && error.code === "auth/user-not-found") {
         return null;
@@ -64,11 +71,21 @@ export class FirebaseAuthService {
     }
   }
 
-  async verifyToken(token: string) {
+  async verifyCustomToken(token: string) {
     try {
       const idToken = await this.getIdToken(token);
       const auth = getAuth(this.app);
       return auth.verifyIdToken(idToken);
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
+  async verifyProviderToken(token: string) {
+    try {
+      const auth = getAuth(this.app);
+      return auth.verifyIdToken(token);
     } catch (error) {
       this.logger.error(error);
       throw error;

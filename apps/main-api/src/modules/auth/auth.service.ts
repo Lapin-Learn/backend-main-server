@@ -6,7 +6,8 @@ import { generate as otpGenerator } from "otp-generator";
 import { MailService } from "@app/shared-modules/mail";
 import { RedisService } from "@app/shared-modules/redis";
 import { ResetPasswordActionEnum } from "@app/types/enums";
-import { IAccount } from "@app/types/interfaces";
+import { IAccount, ICurrentUser } from "@app/types/interfaces";
+import { EntityNotFoundError } from "typeorm";
 
 @Injectable()
 export class AuthService {
@@ -21,11 +22,7 @@ export class AuthService {
 
   async registerUser(email: string, password: string) {
     try {
-      let firebaseUser = await this.firebaseService.getUserByEmail(email, true);
-      if (firebaseUser) {
-        throw new NotAcceptableException("Email has already existed");
-      }
-      firebaseUser = await this.firebaseService.createUserByEmailAndPassword(email, password);
+      const firebaseUser = await this.firebaseService.createUserByEmailAndPassword(email, password);
       const newUser: IAccount = await Account.save({ email, providerId: firebaseUser.uid, username: email });
       const accessToken = await this.firebaseService.generateCustomToken(firebaseUser.uid, {
         userId: newUser.id,
@@ -39,10 +36,28 @@ export class AuthService {
     }
   }
 
+  async loginWithProvider(email: string, uid: string) {
+    try {
+      let dbUser: IAccount = await Account.findOne({ where: { email } });
+      let claims: ICurrentUser;
+      if (!dbUser) {
+        dbUser = await Account.save({ email, providerId: uid, username: email });
+        claims = { userId: dbUser.id, profileId: dbUser.learnerProfileId, role: dbUser.role };
+      } else {
+        claims = { userId: dbUser.id, profileId: dbUser.learnerProfileId, role: dbUser.role };
+      }
+      const accessToken = await this.firebaseService.generateCustomToken(uid, claims);
+      return this.authHelper.buildTokenResponse(accessToken);
+    } catch (error) {
+      this.logger.error(error);
+      throw new BadRequestException(error);
+    }
+  }
+
   async login(email: string, password: string) {
     try {
       const user = await this.firebaseService.verifyUser(email, password);
-      const dbUser = await Account.findOne({ where: { providerId: user.localId } });
+      const dbUser = await Account.findOneOrFail({ where: { providerId: user.localId, email } });
       const accessToken = await this.firebaseService.generateCustomToken(dbUser.providerId, {
         userId: dbUser.id,
         profileId: dbUser.learnerProfileId,
@@ -51,6 +66,9 @@ export class AuthService {
       return this.authHelper.buildTokenResponse(accessToken);
     } catch (error) {
       this.logger.error(error);
+      if (error instanceof EntityNotFoundError) {
+        throw new BadRequestException("Invalid email or password");
+      }
       throw new BadRequestException(error);
     }
   }

@@ -79,7 +79,7 @@ describe("AuthService", function () {
       expect(service.login).toBeDefined();
     });
     it("should return access token when the user is logged in", async () => {
-      jest.spyOn(Account, "findOne").mockResolvedValueOnce({
+      jest.spyOn(Account, "findOneOrFail").mockResolvedValueOnce({
         ...userStub(),
         email: signInRequestMock.email,
       } as Account);

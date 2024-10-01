@@ -28,6 +28,7 @@
     "@aws-sdk/s3-request-presigner": "^3.627.0",
     "@commitlint/cli": "^19.3.0",
     "@commitlint/config-conventional": "^19.2.2",
+    "@css-inline/css-inline-linux-arm64-musl": "0.14.1",
     "@nestjs-modules/mailer": "^2.0.2",
     "@nestjs/common": "^10.0.0",
     "@nestjs/config": "^3.2.3",
@@ -59,8 +60,7 @@
     "reflect-metadata": "^0.2.0",
     "rxjs": "^7.8.1",
     "typeorm": "^0.3.20",
-    "uuid": "^10.0.0",
-    "@css-inline/css-inline-linux-arm64-musl": "0.14.1"
+    "uuid": "^10.0.0"
   },
   "devDependencies": {
     "@nestjs/cli": "^10.0.0",

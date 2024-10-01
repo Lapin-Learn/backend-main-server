@@ -1,13 +1,14 @@
-import { FirebaseAuthService } from "@app/shared-modules/firebase";
 import { Injectable } from "@nestjs/common";
 import { PassportStrategy } from "@nestjs/passport";
 import { Strategy } from "passport-custom";
+import { FirebaseAuthService } from "@app/shared-modules/firebase";
 
 @Injectable()
-export class FirebaseStrategy extends PassportStrategy(Strategy, "firebase-jwt") {
+export class ProviderStrategy extends PassportStrategy(Strategy, "provider-jwt") {
   constructor(private firebaseService: FirebaseAuthService) {
     super();
   }
+
   async validate(request: Request) {
     const authHeader = String(request.headers["authorization"] || "");
 
@@ -21,8 +22,7 @@ export class FirebaseStrategy extends PassportStrategy(Strategy, "firebase-jwt")
 
     const token = authHeader.substring(7, authHeader.length);
     try {
-      const decodedToken = await this.firebaseService.verifyCustomToken(token);
-      return decodedToken.data;
+      return await this.firebaseService.verifyProviderToken(token);
     } catch (error) {
       return false;
     }

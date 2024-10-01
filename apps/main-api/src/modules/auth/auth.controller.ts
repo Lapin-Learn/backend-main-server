@@ -2,9 +2,10 @@ import { Body, Controller, Get, Post, Query, UseGuards, Request } from "@nestjs/
 import { AuthService } from "./auth.service";
 import { LogInUserDto, RegisterUserDto, VerifyOtpDto, ResetPasswordDto } from "@app/types/dtos";
 import { ApiBearerAuth, ApiBody, ApiOperation, ApiQuery, ApiResponse, ApiTags } from "@nestjs/swagger";
-import { FirebaseJwtAuthGuard } from "../../guards";
+import { FirebaseJwtAuthGuard, ProviderJwtAuthGuard } from "../../guards";
 import { ResetPasswordGuard } from "../../guards/reset-password.guard";
-import { IResetPasswordAction } from "@app/types/interfaces";
+import { IDecodedIdToken, IResetPasswordAction } from "@app/types/interfaces";
+import { ProviderTokenPayload } from "../../decorators/provider-token-payload.decorator";
 
 @ApiTags("Authentication")
 @Controller("auth")
@@ -16,7 +17,7 @@ export class AuthController {
   @ApiBody({ type: RegisterUserDto })
   @ApiResponse({ status: 201, description: "User created" })
   @ApiResponse({ status: 400, description: "Email existed" })
-  async signup(@Body() data: RegisterUserDto) {
+  async signUp(@Body() data: RegisterUserDto) {
     const { email, password } = data;
     return this.authService.registerUser(email, password);
   }
@@ -26,9 +27,15 @@ export class AuthController {
   @ApiBody({ type: LogInUserDto })
   @ApiResponse({ status: 200, description: "User signed in" })
   @ApiResponse({ status: 400, description: "Invalid email or password" })
-  async signin(@Body() data: LogInUserDto) {
+  async signIn(@Body() data: LogInUserDto) {
     const { email, password } = data;
     return this.authService.login(email, password);
+  }
+
+  @Post("provider")
+  @UseGuards(ProviderJwtAuthGuard)
+  async signInWithProvider(@ProviderTokenPayload() user: IDecodedIdToken) {
+    return this.authService.loginWithProvider(user.email, user.uid);
   }
 
   @Post("otp")
