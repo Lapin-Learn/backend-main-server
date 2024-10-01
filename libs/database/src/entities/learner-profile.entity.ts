@@ -1,5 +1,5 @@
-import { ActionNameEnum, RankEnum } from "@app/types/enums";
-import { ILearnerProfile, ILearnerProfileInfo } from "@app/types/interfaces";
+import { ActionNameEnum, MileStonesEnum, RankEnum } from "@app/types/enums";
+import { ILearnerProfile, ILearnerProfileInfo, IMileStoneInfo } from "@app/types/interfaces";
 import {
   BaseEntity,
   Column,
@@ -20,6 +20,8 @@ import { ProfileMission } from "./profile-mission.entity";
 import { ProfileItem } from "./profile-item.entity";
 import { LessonRecord } from "./lesson-record.entity";
 import { LessonProcess } from "./lesson-process.entity";
+import { LevelRankMap } from "@app/utils/maps";
+import { UpdateResourcesDto } from "@app/types/dtos/learners";
 
 @Entity("learner_profiles")
 export class LearnerProfile extends BaseEntity implements ILearnerProfile {
@@ -55,7 +57,7 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
 
   @ManyToOne(() => Level, (level) => level.id, { eager: true })
   @JoinColumn({ name: "level_id", referencedColumnName: "id" })
-  readonly level: Level;
+  level: Level;
 
   @OneToOne(() => Streak, { eager: true })
   @JoinColumn({ name: "streak_id", referencedColumnName: "id" })
@@ -78,6 +80,52 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
 
   @OneToMany(() => LessonProcess, (lessonProcess) => lessonProcess.learnerProfile)
   readonly lessonProcesses: LessonProcess[];
+
+  private async getMileStones(): Promise<IMileStoneInfo[]> {
+    const milestones: IMileStoneInfo[] = [];
+    const isLevelUp = await this.isLevelUp();
+    const isRankUp = this.isRankUp();
+    await this.save();
+    isLevelUp && milestones.push({ type: MileStonesEnum.IS_LEVEL_UP, newValue: this.level });
+    isRankUp && milestones.push({ type: MileStonesEnum.IS_RANK_UP, newValue: this.rank });
+    return milestones;
+  }
+
+  private async isLevelUp(): Promise<boolean> {
+    if (this.xp >= this.level.xp) {
+      const nextLevel = await Level.findOne({ where: { id: this.levelId + 1 } });
+      if (nextLevel) {
+        this.xp -= this.level.xp;
+        this.level = nextLevel;
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private isRankUp(): boolean {
+    const newRank = LevelRankMap.get(this.level.id);
+    if (newRank && newRank !== this.rank) {
+      this.rank = newRank;
+      return true;
+    }
+    return false;
+  }
+
+  public async updateResources(newBonusResources: UpdateResourcesDto): Promise<IMileStoneInfo[]> {
+    const { bonusCarrot = 0, bonusXP = 0, bonusStreakPoint = 0 } = newBonusResources;
+    this.carrots += bonusCarrot;
+    this.xp += bonusXP;
+    this.streak.current += bonusStreakPoint;
+    this.streak.record = Math.max(this.streak.record, this.streak.current);
+
+    //save new data
+    await this.streak.save();
+    await this.save();
+
+    //return milestones
+    return await this.getMileStones();
+  }
 
   // Active Record Pattern
   static async getBrokenStreakProfiles() {

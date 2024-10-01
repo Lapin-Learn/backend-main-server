@@ -11,3 +11,4 @@ export * from "./skill.enum";
 export * from "./band-score.enum";
 export * from "./content-type.enum";
 export * from "./cefr-level.enum";
+export * from "./milestones.enum";

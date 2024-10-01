@@ -52,4 +52,25 @@ export class LessonRecord extends BaseEntity implements ILessonRecord {
   @ManyToOne(() => LearnerProfile, (learnerProfile) => learnerProfile.id)
   @JoinColumn({ name: "learner_profile_id", referencedColumnName: "id" })
   readonly learnerProfile: LearnerProfile;
+
+  public getBonusResources(): { bonusXP: number; bonusCarrot: number } {
+    const totalAnswers = this.correctAnswers + this.wrongAnswers;
+    const bonusXP = totalAnswers === 0 ? 0 : Math.round(50 * (this.correctAnswers / totalAnswers));
+
+    // 3 minutes
+    let bonusCarrot = 0;
+    switch (true) {
+      case this.duration < 3 * 60:
+        bonusCarrot = 20;
+        break;
+      case this.duration < 5 * 60:
+        bonusCarrot = 10;
+        break;
+      default:
+        bonusCarrot = 5;
+        break;
+    }
+
+    return { bonusXP, bonusCarrot };
+  }
 }

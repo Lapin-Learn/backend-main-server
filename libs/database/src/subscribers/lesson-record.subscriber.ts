@@ -1,6 +1,5 @@
 import { EntitySubscriberInterface, EventSubscriber, InsertEvent } from "typeorm";
-import { LearnerProfile, Lesson, LessonProcess, LessonRecord } from "../entities";
-import { calcCarrots, calcXP } from "@app/utils/helper";
+import { Lesson, LessonProcess, LessonRecord } from "../entities";
 
 @EventSubscriber()
 export class LessonRecordSubscriber implements EntitySubscriberInterface<LessonRecord> {
@@ -18,8 +17,7 @@ export class LessonRecordSubscriber implements EntitySubscriberInterface<LessonR
       questionTypeId: lesson.questionTypeId,
     });
 
-    const carrots = calcCarrots(entity.duration);
-    const xp = calcXP(entity.correctAnswers, entity.wrongAnswers);
+    const { bonusXP: xp } = entity.getBonusResources();
 
     // Update lesson process
     if (!lessonProcess) {
@@ -31,7 +29,7 @@ export class LessonRecordSubscriber implements EntitySubscriberInterface<LessonR
         xp: [
           {
             lessonId: entity.lessonId,
-            xp: xp,
+            xp,
             duration: entity.duration,
           },
         ],
@@ -48,6 +46,7 @@ export class LessonRecordSubscriber implements EntitySubscriberInterface<LessonR
         lessonProcess.xp[lessonIndex].duration += entity.duration;
 
         // Update lesson in lesson process
+        lessonProcess.xp[lessonIndex].duration += entity.duration;
         // The most XP (accuracy) will be prioritized
         if (xp > lessonProcess.xp[lessonIndex].xp) {
           lessonProcess.xp[lessonIndex].xp = xp;
@@ -56,17 +55,12 @@ export class LessonRecordSubscriber implements EntitySubscriberInterface<LessonR
         // Add new lesson to lesson process
         lessonProcess.xp.push({
           lessonId: entity.lessonId,
-          xp: xp,
+          xp,
           duration: entity.duration,
         });
       }
 
       await lessonProcess.save();
     }
-
-    const learnerProfile = await manager.getRepository(LearnerProfile).findOneBy({ id: entity.learnerProfileId });
-    learnerProfile.xp += xp;
-    learnerProfile.carrots += carrots;
-    await learnerProfile.save();
   }
 }
