@@ -4,7 +4,6 @@ import { IQuestionType } from "./question-type.interface";
 export interface IInstruction {
   id: string;
   content: string;
-  order: number;
   imageId: string;
   audioId: string;
   questionTypeId: number;

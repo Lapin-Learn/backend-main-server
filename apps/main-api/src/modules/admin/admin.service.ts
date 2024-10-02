@@ -1,4 +1,5 @@
-import { Lesson, Question, QuestionToLesson, QuestionType } from "@app/database";
+import { Instruction, Lesson, Question, QuestionToLesson, QuestionType } from "@app/database";
+import { CreateInstructionDto, UpdateInstructionDto } from "@app/types/dtos";
 import {
   CreateLessonDto,
   CreateQuestionDto,
@@ -231,6 +232,52 @@ export class AdminService {
           });
         })
       );
+    } catch (error) {
+      this.logger.error(error);
+      throw new BadRequestException(error);
+    }
+  }
+
+  async createInstruction(dto: CreateInstructionDto) {
+    try {
+      const currentInstructionForQuestionType = await Instruction.findOne({
+        where: { questionTypeId: dto.questionTypeId },
+      });
+
+      if (currentInstructionForQuestionType) {
+        throw new BadRequestException("Instruction for this question type already exists");
+      }
+
+      return Instruction.save({
+        ...dto,
+      });
+    } catch (error) {
+      this.logger.error(error);
+      throw new BadRequestException(error);
+    }
+  }
+
+  async updateInstruction(id: string, dto: UpdateInstructionDto) {
+    try {
+      const instruction = await Instruction.findOne({ where: { id } });
+      if (!instruction) {
+        throw new BadRequestException("Instruction not found");
+      }
+
+      if (dto.questionTypeId) {
+        const currentInstructionForQuestionType = await Instruction.findOne({
+          where: { questionTypeId: dto.questionTypeId },
+        });
+
+        if (currentInstructionForQuestionType && currentInstructionForQuestionType.id !== id) {
+          throw new BadRequestException("Instruction for this question type already exists");
+        }
+      }
+
+      return Instruction.save({
+        ...instruction,
+        ...dto,
+      });
     } catch (error) {
       this.logger.error(error);
       throw new BadRequestException(error);

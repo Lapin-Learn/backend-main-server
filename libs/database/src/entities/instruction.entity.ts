@@ -20,9 +20,6 @@ export class Instruction extends BaseEntity implements IInstruction {
   @Column({ name: "content", type: "text", nullable: false })
   content: string;
 
-  @Column({ name: "order", type: "int", nullable: false, default: 0 })
-  order: number;
-
   @Column({ name: "image_id", type: "uuid", nullable: true })
   imageId: string;
 

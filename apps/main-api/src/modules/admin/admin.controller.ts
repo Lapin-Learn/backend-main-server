@@ -1,4 +1,16 @@
-import { Body, Controller, Get, Param, ParseEnumPipe, ParseIntPipe, Post, Put, Query, UseGuards } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseEnumPipe,
+  ParseIntPipe,
+  ParseUUIDPipe,
+  Post,
+  Put,
+  Query,
+  UseGuards,
+} from "@nestjs/common";
 import { AdminService } from "./admin.service";
 import {
   CreateLessonDto,
@@ -14,6 +26,7 @@ import { AccountRoleEnum, CEFRLevelEum, ContentTypeEnum } from "@app/types/enums
 import { ApiBearerAuth, ApiBody, ApiOperation, ApiQuery, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { ParseListStringEnumPipe } from "@app/utils/pipes";
 import { AssignQuestionsToLessonDto } from "@app/types/dtos/admin/assign-question-to-lesson.dto";
+import { CreateInstructionDto, UpdateInstructionDto } from "@app/types/dtos";
 
 @ApiTags("Admin")
 @ApiBearerAuth()
@@ -134,5 +147,27 @@ export class AdminController {
   @Put("lessons/:id/assignments")
   assignQuestionToLesson(@Param("id", new ParseIntPipe()) id: number, @Body() dto: AssignQuestionsToLessonDto) {
     return this.adminService.assignQuestionsToLesson(id, dto);
+  }
+
+  @ApiOperation({ summary: "Create an instruction" })
+  @ApiBody({ type: CreateInstructionDto })
+  @ApiResponse({ status: 201, description: "Instruction created" })
+  @ApiResponse({ status: 400, description: "Bad request" })
+  @ApiResponse({ status: 401, description: "Unauthorized" })
+  @ApiResponse({ status: 500, description: "Internal server error" })
+  @Post("instructions")
+  async createInstruction(@Body() dto: CreateInstructionDto) {
+    return this.adminService.createInstruction(dto);
+  }
+
+  @ApiOperation({ summary: "Update an instruction" })
+  @ApiBody({ type: UpdateInstructionDto })
+  @ApiResponse({ status: 200, description: "Instruction updated" })
+  @ApiResponse({ status: 400, description: "Bad request" })
+  @ApiResponse({ status: 401, description: "Unauthorized" })
+  @ApiResponse({ status: 500, description: "Internal server error" })
+  @Put("instructions/:id")
+  async updateInstruction(@Param("id", new ParseUUIDPipe()) id: string, @Body() dto: UpdateInstructionDto) {
+    return this.adminService.updateInstruction(id, dto);
   }
 }
