@@ -6,11 +6,6 @@ export class CreateInstructionDto {
   @ApiProperty({ type: String, example: "Instruction content" })
   content: string;
 
-  @IsInt({ message: "Order must be an integer" })
-  @Min(1, { message: "Order must be positive" })
-  @ApiProperty({ type: Number, example: 1 })
-  order: number;
-
   @IsOptional()
   @IsUUID(4, { message: "Image ID must be UUID" })
   @ApiProperty({ type: String, example: "00000000-0000-0000-0000-000000000000" })

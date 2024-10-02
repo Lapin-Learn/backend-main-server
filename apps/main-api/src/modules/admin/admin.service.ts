@@ -240,11 +240,12 @@ export class AdminService {
 
   async createInstruction(dto: CreateInstructionDto) {
     try {
-      const currentInstructionForQuestionType = await Instruction.find({
+      const currentInstructionForQuestionType = await Instruction.findOne({
         where: { questionTypeId: dto.questionTypeId },
       });
-      if (dto.order !== currentInstructionForQuestionType.length + 1) {
-        throw new BadRequestException(`Current order must be ${currentInstructionForQuestionType.length + 1}`);
+
+      if (currentInstructionForQuestionType) {
+        throw new BadRequestException("Instruction for this question type already exists");
       }
 
       return Instruction.save({
@@ -263,8 +264,14 @@ export class AdminService {
         throw new BadRequestException("Instruction not found");
       }
 
-      if (dto.order && dto.order !== instruction.order) {
-        throw new BadRequestException(`Order cannot be update through this method or it must be ${instruction.order}`);
+      if (dto.questionTypeId) {
+        const currentInstructionForQuestionType = await Instruction.findOne({
+          where: { questionTypeId: dto.questionTypeId },
+        });
+
+        if (currentInstructionForQuestionType && currentInstructionForQuestionType.id !== id) {
+          throw new BadRequestException("Instruction for this question type already exists");
+        }
       }
 
       return Instruction.save({
