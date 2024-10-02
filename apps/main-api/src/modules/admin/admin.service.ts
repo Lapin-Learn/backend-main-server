@@ -1,4 +1,5 @@
-import { Lesson, Question, QuestionToLesson, QuestionType } from "@app/database";
+import { Instruction, Lesson, Question, QuestionToLesson, QuestionType } from "@app/database";
+import { CreateInstructionDto, UpdateInstructionDto } from "@app/types/dtos";
 import {
   CreateLessonDto,
   CreateQuestionDto,
@@ -231,6 +232,45 @@ export class AdminService {
           });
         })
       );
+    } catch (error) {
+      this.logger.error(error);
+      throw new BadRequestException(error);
+    }
+  }
+
+  async createInstruction(dto: CreateInstructionDto) {
+    try {
+      const currentInstructionForQuestionType = await Instruction.find({
+        where: { questionTypeId: dto.questionTypeId },
+      });
+      if (dto.order !== currentInstructionForQuestionType.length + 1) {
+        throw new BadRequestException(`Current order must be ${currentInstructionForQuestionType.length + 1}`);
+      }
+
+      return Instruction.save({
+        ...dto,
+      });
+    } catch (error) {
+      this.logger.error(error);
+      throw new BadRequestException(error);
+    }
+  }
+
+  async updateInstruction(id: string, dto: UpdateInstructionDto) {
+    try {
+      const instruction = await Instruction.findOne({ where: { id } });
+      if (!instruction) {
+        throw new BadRequestException("Instruction not found");
+      }
+
+      if (dto.order && dto.order !== instruction.order) {
+        throw new BadRequestException(`Order cannot be update through this method or it must be ${instruction.order}`);
+      }
+
+      return Instruction.save({
+        ...instruction,
+        ...dto,
+      });
     } catch (error) {
       this.logger.error(error);
       throw new BadRequestException(error);
