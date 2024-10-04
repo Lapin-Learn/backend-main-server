@@ -9,7 +9,7 @@ export interface ILessonProcess {
   learnerProfileId: string;
   questionTypeId: number;
   currentLessonId: number;
-  band_score: BandScoreEnum;
+  bandScore: BandScoreEnum;
   xp: IXPLessonProcess[];
   createdAt: Date;
   updatedAt: Date;

@@ -2,7 +2,7 @@ import { LearnerProfile, LessonRecord } from "@app/database";
 import { CompleteLessonDto } from "@app/types/dtos";
 import { ICurrentUser } from "@app/types/interfaces";
 import { BadRequestException, Injectable, Logger } from "@nestjs/common";
-import { EntityNotFoundError } from "typeorm";
+import { EntityNotFoundError, QueryFailedError } from "typeorm";
 
 @Injectable()
 export class LessonService {
@@ -33,6 +33,8 @@ export class LessonService {
       this.logger.error(error);
       if (error instanceof EntityNotFoundError) {
         throw new BadRequestException("Learn profile not found");
+      } else if (error instanceof QueryFailedError && error.message.includes("violates foreign key constraint")) {
+        throw new BadRequestException("Lesson not found");
       }
       throw new BadRequestException(error);
     }
