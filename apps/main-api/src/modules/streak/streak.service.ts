@@ -25,7 +25,7 @@ export class StreakService {
     }
   }
 
-  @Cron("0 7 * * *") // Midnight in GMT+7 (system uses UTC)
+  @Cron("0 0 * * *") // Midnight in UTC
   async resetStreak() {
     try {
       this.logger.log("Reset streak");
@@ -42,18 +42,14 @@ export class StreakService {
 
   async getStreakHistory(user: ICurrentUser, startDate: Date) {
     try {
-      const yesterday = getUTCEndOfDay(new Date(), 1);
+      const today = getUTCEndOfDay(new Date());
 
-      if (startDate > yesterday) {
+      if (startDate > today) {
         throw new BadRequestException("Start date cannot be later than yesterday");
       }
 
-      const getDailyLoginActivities = await LearnerProfile.getDailyLoginActivities(
-        user.profileId,
-        startDate,
-        yesterday
-      );
-      return this.streakHelper.buildStreakHistoryResponseData(getDailyLoginActivities);
+      const dailyStreakActivities = await LearnerProfile.getDailyStreakActivities(user.profileId, startDate, today);
+      return this.streakHelper.buildStreakHistoryResponseData(dailyStreakActivities);
     } catch (error) {
       this.logger.error(error);
       throw new BadRequestException(error);

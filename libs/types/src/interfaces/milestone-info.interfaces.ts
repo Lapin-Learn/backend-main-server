@@ -3,5 +3,5 @@ import { ILevel } from "@app/types/interfaces/level.interface";
 
 export interface IMileStoneInfo {
   type: MileStonesEnum;
-  newValue: ILevel | RankEnum;
+  newValue: ILevel | RankEnum | number;
 }
