@@ -1,4 +1,4 @@
-import { ActionNameEnum, MileStonesEnum, RankEnum } from "@app/types/enums";
+import { ActionNameEnum, BandScoreEnum, MileStonesEnum, RankEnum } from "@app/types/enums";
 import { ILearnerProfile, ILearnerProfileInfo, IMileStoneInfo } from "@app/types/interfaces";
 import {
   BaseEntity,
@@ -21,9 +21,12 @@ import { ProfileItem } from "./profile-item.entity";
 import { getUTCBeginOfDay, getUTCEndOfDay, newDateUTC } from "@app/utils/time";
 import { LessonRecord } from "./lesson-record.entity";
 import { LessonProcess } from "./lesson-process.entity";
-import { LevelRankMap } from "@app/utils/maps";
+import { LevelRankMap, NextBandScoreMap } from "@app/utils/maps";
 import { UpdateResourcesDto } from "@app/types/dtos/learners";
 import { Action } from "./action.entity";
+import { CompleteLessonDto } from "@app/types/dtos";
+import { Lesson } from "@app/database/entities/lesson.entity";
+import { QuestionType } from "@app/database/entities/question-type.entity";
 
 @Entity("learner_profiles")
 export class LearnerProfile extends BaseEntity implements ILearnerProfile {
@@ -80,10 +83,19 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
   @OneToMany(() => LessonRecord, (lessonRecord) => lessonRecord.learnerProfile)
   readonly lessonRecords: LessonRecord[];
 
-  @OneToMany(() => LessonProcess, (lessonProcess) => lessonProcess.learnerProfile)
+  @OneToMany(() => LessonProcess, (lessonProcess) => lessonProcess.learnerProfile, { eager: true })
   readonly lessonProcesses: LessonProcess[];
 
-  private async getMileStones(): Promise<IMileStoneInfo[]> {
+  public async updateResources(newBonusResources: UpdateResourcesDto): Promise<void> {
+    const { bonusCarrot = 0, bonusXP = 0 } = newBonusResources;
+    this.carrots += bonusCarrot;
+    this.xp += bonusXP;
+    await this.save();
+
+    return;
+  }
+
+  public async getProfileMileStones(): Promise<IMileStoneInfo[]> {
     const milestones: IMileStoneInfo[] = [];
     const isLevelUp = await this.isLevelUp();
     const isRankUp = this.isRankUp();
@@ -92,6 +104,27 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
     isLevelUp && milestones.push({ type: MileStonesEnum.IS_LEVEL_UP, newValue: this.level });
     isRankUp && milestones.push({ type: MileStonesEnum.IS_RANK_UP, newValue: this.rank });
     isAchieveDailyStreak && milestones.push({ type: MileStonesEnum.IS_DAILY_STREAK, newValue: this.streak.current });
+    return milestones;
+  }
+
+  public async getLearnProcessMileStones(
+    data: CompleteLessonDto,
+    xp: number,
+    questionTypeId: number
+  ): Promise<IMileStoneInfo[]> {
+    const milestones: IMileStoneInfo[] = [];
+    const isBandScoreQuestionTypeUp = await this.isBandScoreQuestionTypeUp(
+      xp,
+      data.duration,
+      data.lessonId,
+      questionTypeId
+    );
+
+    isBandScoreQuestionTypeUp &&
+      milestones.push({
+        type: MileStonesEnum.IS_BAND_SCORE_QUESTION_TYPE_UP,
+        newValue: this.lessonProcesses.find((lesson) => lesson.questionTypeId === questionTypeId).bandScore,
+      });
     return milestones;
   }
 
@@ -134,16 +167,35 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
     return false;
   }
 
-  public async updateResources(newBonusResources: UpdateResourcesDto): Promise<IMileStoneInfo[]> {
-    const { bonusCarrot = 0, bonusXP = 0 } = newBonusResources;
-    this.carrots += bonusCarrot;
-    this.xp += bonusXP;
+  private async isBandScoreQuestionTypeUp(
+    xp: number,
+    duration: number,
+    completedLessonId: number,
+    questionTypeId: number
+  ): Promise<boolean> {
+    let currentQuestionTypeProcess = this.lessonProcesses.find(
+      (lessonProcess) => lessonProcess.questionType.id === questionTypeId
+    );
 
-    //save new data
-    await this.save();
+    if (currentQuestionTypeProcess === undefined) {
+      currentQuestionTypeProcess = new LessonProcess({
+        learnerProfile: this,
+        questionTypeId: questionTypeId,
+        currentLesson: await Lesson.findOne({ where: { questionTypeId } }),
+        questionType: await QuestionType.findOne({ where: { id: questionTypeId } }),
+        bandScore: BandScoreEnum.PRE_IELTS,
+        xp: [],
+      });
+      this.lessonProcesses.push(currentQuestionTypeProcess);
+    }
 
-    //return milestones
-    return await this.getMileStones();
+    const currentBandScore = currentQuestionTypeProcess.bandScore;
+
+    await currentQuestionTypeProcess.updateLessonProcessOfLearner(xp, duration, completedLessonId);
+    return (
+      currentQuestionTypeProcess.bandScore !== currentBandScore &&
+      currentQuestionTypeProcess.bandScore == NextBandScoreMap.get(currentBandScore)
+    );
   }
 
   // Active Record Pattern

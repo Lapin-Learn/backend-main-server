@@ -1,5 +1,5 @@
 import { SkillEnum } from "@app/types/enums";
-import { IQuestionType } from "@app/types/interfaces";
+import { IBandScoreRequire, IQuestionType } from "@app/types/interfaces";
 import {
   BaseEntity,
   Column,
@@ -30,6 +30,9 @@ export class QuestionType extends BaseEntity implements IQuestionType {
 
   @Column({ name: "image_id", type: "uuid", nullable: true })
   imageId: string;
+
+  @Column({ name: "band_score_requires", type: "jsonb", nullable: true })
+  bandScoreRequires: IBandScoreRequire[];
 
   @CreateDateColumn({ name: "created_at", type: "timestamp", nullable: false, default: () => "CURRENT_TIMESTAMP" })
   createdAt: Date;

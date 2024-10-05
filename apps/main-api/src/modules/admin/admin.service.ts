@@ -14,6 +14,7 @@ import { ILesson, IListQuestion, IQuestion, IQuestionType } from "@app/types/int
 import { BadRequestException, Injectable, Logger } from "@nestjs/common";
 import _ from "lodash";
 import { In } from "typeorm";
+import { DEFAULT_BAND_SCORE_REQUIRES } from "@app/types/constants";
 
 @Injectable()
 export class AdminService {
@@ -89,6 +90,7 @@ export class AdminService {
     try {
       return QuestionType.save({
         ...dto,
+        bandScoreRequires: DEFAULT_BAND_SCORE_REQUIRES,
       });
     } catch (error) {
       this.logger.error(error);
@@ -120,7 +122,7 @@ export class AdminService {
     try {
       const { reorderLessons, ...restDto } = dto;
 
-      // Must be changed if use subscribers
+      // Must be changed if you use subscribers
       const questionType = await QuestionType.findOneBy({ id });
 
       if (!questionType) {

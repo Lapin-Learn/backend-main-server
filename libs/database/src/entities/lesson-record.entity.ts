@@ -45,7 +45,7 @@ export class LessonRecord extends BaseEntity implements ILessonRecord {
   duration: number;
 
   // Relations
-  @ManyToOne(() => Lesson, (lesson) => lesson.id)
+  @ManyToOne(() => Lesson, (lesson) => lesson.id, { eager: true })
   @JoinColumn({ name: "lesson_id", referencedColumnName: "id" })
   readonly lesson: Lesson;
 
