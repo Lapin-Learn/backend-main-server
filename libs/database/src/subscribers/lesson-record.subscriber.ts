@@ -12,19 +12,29 @@ export class LessonRecordSubscriber implements EntitySubscriberInterface<LessonR
 
     const lesson = await manager.getRepository(Lesson).findOneBy({ id: entity.lessonId });
 
-    const lessonProcess = await manager.getRepository(LessonProcess).findOneBy({
-      learnerProfileId: entity.learnerProfileId,
-      questionTypeId: lesson.questionTypeId,
-    });
+    const lessonProcess = await manager
+      .getRepository(LessonProcess)
+      .createQueryBuilder("lesson_processes")
+      .leftJoinAndSelect("lesson_processes.currentLesson", "currentLesson")
+      .where("lesson_processes.learner_profile_id = :learnerProfileId", { learnerProfileId: entity.learnerProfileId })
+      .andWhere("lesson_processes.question_type_id = :questionTypeId", { questionTypeId: lesson.questionTypeId })
+      .andWhere("lesson_processes.band_score = :bandScore", { bandScore: lesson.bandScore })
+      .getOne();
 
     const { bonusXP: xp } = entity.getBonusResources();
+
+    const nextLesson = await manager.getRepository(Lesson).findOneBy({
+      questionTypeId: lessonProcess ? lessonProcess.questionTypeId : lesson.questionTypeId,
+      bandScore: lessonProcess ? lessonProcess.bandScore : lesson.bandScore,
+      order: lessonProcess ? lessonProcess.currentLesson.order + 1 : lesson.order + 1,
+    });
 
     // Update lesson process
     if (!lessonProcess) {
       await manager.getRepository(LessonProcess).save({
         learnerProfileId: entity.learnerProfileId,
         questionTypeId: lesson.questionTypeId,
-        currentLessonId: entity.lessonId,
+        currentLesson: nextLesson || lesson,
         bandScore: lesson.bandScore,
         xp: [
           {
@@ -35,9 +45,6 @@ export class LessonRecordSubscriber implements EntitySubscriberInterface<LessonR
         ],
       });
     } else {
-      lessonProcess.currentLessonId =
-        entity.lessonId > lessonProcess.currentLessonId ? entity.lessonId : lessonProcess.currentLessonId;
-
       // Check if lesson is already completed
       const lessonIndex = lessonProcess.xp.findIndex((xp) => xp.lessonId === entity.lessonId);
 
@@ -51,6 +58,11 @@ export class LessonRecordSubscriber implements EntitySubscriberInterface<LessonR
         if (xp > lessonProcess.xp[lessonIndex].xp) {
           lessonProcess.xp[lessonIndex].xp = xp;
         }
+
+        // Update current lesson to next lesson, this is the case when add new lesson to the list
+        if (nextLesson && lessonProcess.currentLesson.id === entity.lessonId) {
+          lessonProcess.currentLesson = nextLesson;
+        }
       } else {
         // Add new lesson to lesson process
         lessonProcess.xp.push({
@@ -58,6 +70,8 @@ export class LessonRecordSubscriber implements EntitySubscriberInterface<LessonR
           xp,
           duration: entity.duration,
         });
+
+        nextLesson && (lessonProcess.currentLesson = nextLesson);
       }
 
       await lessonProcess.save();

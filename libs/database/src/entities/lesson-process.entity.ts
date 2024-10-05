@@ -29,7 +29,7 @@ export class LessonProcess extends BaseEntity implements ILessonProcess {
   currentLessonId: number;
 
   @Column({ name: "band_score", type: "enum", enum: BandScoreEnum, nullable: false })
-  band_score: BandScoreEnum;
+  bandScore: BandScoreEnum;
 
   @Column({ name: "xp", type: "jsonb", nullable: false })
   xp: IXPLessonProcess[];
@@ -57,5 +57,5 @@ export class LessonProcess extends BaseEntity implements ILessonProcess {
 
   @ManyToOne(() => Lesson, (lesson) => lesson.lessonProcesses)
   @JoinColumn({ name: "current_lesson_id", referencedColumnName: "id" })
-  readonly currentLesson: Lesson;
+  currentLesson: Lesson;
 }

@@ -18,7 +18,7 @@ export class DailyLessonService {
         return {
           ...rest,
           progress: {
-            bandScore: currentProcess?.band_score || BandScoreEnum.PRE_IELTS,
+            bandScore: currentProcess.bandScore || BandScoreEnum.PRE_IELTS,
             totalLearningXP,
           },
         };
@@ -48,7 +48,7 @@ export class DailyLessonService {
       });
 
       const lessons = await Lesson.find({
-        where: { questionTypeId, bandScore: currentProcess?.band_score || BandScoreEnum.PRE_IELTS },
+        where: { questionTypeId, bandScore: currentProcess?.bandScore || BandScoreEnum.PRE_IELTS },
         order: { order: "ASC" },
       });
 
