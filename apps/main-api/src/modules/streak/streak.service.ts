@@ -1,4 +1,4 @@
-import { Account, LearnerProfile, Streak } from "@app/database";
+import { LearnerProfile, Streak } from "@app/database";
 import { SetTargetStreak } from "@app/types/dtos";
 import { ICurrentUser } from "@app/types/interfaces";
 import { getUTCEndOfDay } from "@app/utils/time";
@@ -15,10 +15,10 @@ export class StreakService {
 
   async setTargetStreak(user: ICurrentUser, dto: SetTargetStreak) {
     try {
-      const account = await Account.findOne({ where: { id: user.userId } });
-      const streak = account.learnerProfile.streak;
-      await Streak.update({ id: streak.id }, { target: dto.target });
-      return Streak.findOne({ where: { id: streak.id } });
+      const learnerProfile = await LearnerProfile.findOne({ where: { id: user.profileId } });
+      learnerProfile.streak.target = dto.target;
+      await learnerProfile.streak.save();
+      return learnerProfile.streak;
     } catch (error) {
       this.logger.error(error);
       throw new BadRequestException(error);
