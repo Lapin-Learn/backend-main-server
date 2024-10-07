@@ -18,10 +18,12 @@ import { Activity } from "./activity.entity";
 import { ProfileBadge } from "./profile-badge.entity";
 import { ProfileMission } from "./profile-mission.entity";
 import { ProfileItem } from "./profile-item.entity";
+import { getUTCBeginOfDay, getUTCEndOfDay, newDateUTC } from "@app/utils/time";
 import { LessonRecord } from "./lesson-record.entity";
 import { LessonProcess } from "./lesson-process.entity";
 import { LevelRankMap } from "@app/utils/maps";
 import { UpdateResourcesDto } from "@app/types/dtos/learners";
+import { Action } from "./action.entity";
 
 @Entity("learner_profiles")
 export class LearnerProfile extends BaseEntity implements ILearnerProfile {
@@ -85,9 +87,11 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
     const milestones: IMileStoneInfo[] = [];
     const isLevelUp = await this.isLevelUp();
     const isRankUp = this.isRankUp();
+    const isAchieveDailyStreak = await this.isAchieveDailyStreakOrCreate();
     await this.save();
     isLevelUp && milestones.push({ type: MileStonesEnum.IS_LEVEL_UP, newValue: this.level });
     isRankUp && milestones.push({ type: MileStonesEnum.IS_RANK_UP, newValue: this.rank });
+    isAchieveDailyStreak && milestones.push({ type: MileStonesEnum.IS_DAILY_STREAK, newValue: this.streak.current });
     return milestones;
   }
 
@@ -112,15 +116,30 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
     return false;
   }
 
+  private async isAchieveDailyStreakOrCreate(): Promise<boolean> {
+    const bonusStreakPoint = await Activity.getBonusStreakPoint(this.id);
+    if (bonusStreakPoint > 0) {
+      const action = await Action.findOne({ where: { name: ActionNameEnum.DAILY_STREAK } });
+      await Activity.save({
+        profileId: this.id,
+        actionId: action.id,
+      });
+
+      this.streak.current += bonusStreakPoint;
+      this.streak.record = Math.max(this.streak.record, this.streak.current);
+      await this.streak.save();
+
+      return true;
+    }
+    return false;
+  }
+
   public async updateResources(newBonusResources: UpdateResourcesDto): Promise<IMileStoneInfo[]> {
-    const { bonusCarrot = 0, bonusXP = 0, bonusStreakPoint = 0 } = newBonusResources;
+    const { bonusCarrot = 0, bonusXP = 0 } = newBonusResources;
     this.carrots += bonusCarrot;
     this.xp += bonusXP;
-    this.streak.current += bonusStreakPoint;
-    this.streak.record = Math.max(this.streak.record, this.streak.current);
 
     //save new data
-    await this.streak.save();
     await this.save();
 
     //return milestones
@@ -130,14 +149,10 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
   // Active Record Pattern
   static async getBrokenStreakProfiles() {
     // Midnight yesterday in UTC
-    const beginOfYesterday = new Date(
-      Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), new Date().getUTCDate() - 1, 0, 0, 0, 0)
-    );
+    const beginOfYesterday = getUTCBeginOfDay(newDateUTC(), -1);
 
     // 23:59:59 yesterday in UTC
-    const endOfYesterday = new Date(
-      Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), new Date().getUTCDate() - 1, 23, 59, 59, 999)
-    );
+    const endOfYesterday = getUTCEndOfDay(newDateUTC(), -1);
 
     const rawValidLearnerProfileIds = await this.createQueryBuilder("learnerProfiles")
       .leftJoinAndSelect("learnerProfiles.activities", "activities")
@@ -146,7 +161,7 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
         beginOfYesterday,
         endOfYesterday,
       })
-      .andWhere("actions.name = :actionName", { actionName: ActionNameEnum.DAILY_LOGIN })
+      .andWhere("actions.name = :actionName", { actionName: ActionNameEnum.DAILY_STREAK })
       .select("learnerProfiles.id")
       .getMany();
 
@@ -177,5 +192,17 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
     });
 
     return { ...profile, currentItems };
+  }
+
+  static async getDailyStreakActivities(profileId: string, startDate: Date, endDate: Date) {
+    const data = await this.createQueryBuilder("learnerProfile")
+      .leftJoinAndSelect("learnerProfile.activities", "activity")
+      .leftJoinAndSelect("activity.action", "action")
+      .where("learnerProfile.id = :profileId", { profileId })
+      .andWhere("action.name = :actionName", { actionName: ActionNameEnum.DAILY_STREAK })
+      .andWhere("activity.finishedAt BETWEEN :startDate AND :endDate", { startDate, endDate })
+      .getOne();
+
+    return data?.activities || [];
   }
 }

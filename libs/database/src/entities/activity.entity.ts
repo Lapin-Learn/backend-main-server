@@ -1,7 +1,9 @@
 import { IActivity } from "@app/types/interfaces";
-import { BaseEntity, Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { BaseEntity, Between, Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 import { LearnerProfile } from "./learner-profile.entity";
 import { Action } from "./action.entity";
+import { ActionNameEnum } from "@app/types/enums";
+import { getUTCBeginOfDay, getUTCEndOfDay } from "@app/utils/time";
 
 @Entity("activities")
 export class Activity extends BaseEntity implements IActivity {
@@ -25,4 +27,22 @@ export class Activity extends BaseEntity implements IActivity {
   @ManyToOne(() => Action, (action) => action.id)
   @JoinColumn({ name: "action_id", referencedColumnName: "id" })
   action: Action;
+
+  // Active Record Pattern
+  static async getBonusStreakPoint(learnerProfileId: string) {
+    const action = await Action.findOne({ where: { name: ActionNameEnum.DAILY_STREAK } });
+
+    const beginOfDay = getUTCBeginOfDay(new Date());
+    const endOfDay = getUTCEndOfDay(new Date());
+
+    const activity = await Activity.findOne({
+      where: {
+        profileId: learnerProfileId,
+        actionId: action.id,
+        finishedAt: Between(beginOfDay, endOfDay),
+      },
+    });
+
+    return activity ? 0 : 1;
+  }
 }

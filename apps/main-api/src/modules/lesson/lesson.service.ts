@@ -32,7 +32,7 @@ export class LessonService {
     } catch (error) {
       this.logger.error(error);
       if (error instanceof EntityNotFoundError) {
-        throw new BadRequestException("Learn profile not found");
+        throw new BadRequestException("Learner profile not found");
       } else if (error instanceof QueryFailedError && error.message.includes("violates foreign key constraint")) {
         throw new BadRequestException("Lesson not found");
       }

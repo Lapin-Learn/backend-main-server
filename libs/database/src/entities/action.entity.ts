@@ -11,7 +11,7 @@ export class Action extends BaseEntity implements IAction {
   @PrimaryGeneratedColumn("increment")
   id: number;
 
-  @Column({ name: "name", type: "enum", enum: ActionNameEnum, nullable: false })
+  @Column({ name: "name", type: "enum", enum: ActionNameEnum, nullable: false, unique: true })
   name: ActionNameEnum;
 
   // Relations
@@ -23,4 +23,9 @@ export class Action extends BaseEntity implements IAction {
 
   @OneToMany(() => Activity, (activity) => activity.action)
   readonly activities: Activity[];
+
+  // Active Record Pattern
+  static async findByName(name: ActionNameEnum) {
+    return await Action.findOne({ where: { name } });
+  }
 }
