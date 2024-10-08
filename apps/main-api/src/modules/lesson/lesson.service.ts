@@ -1,4 +1,4 @@
-import { LearnerProfile, LessonRecord } from "@app/database";
+import { LearnerProfile, Lesson, LessonRecord } from "@app/database";
 import { CompleteLessonDto } from "@app/types/dtos";
 import { ICurrentUser } from "@app/types/interfaces";
 import { BadRequestException, Injectable, Logger } from "@nestjs/common";
@@ -10,7 +10,11 @@ export class LessonService {
 
   async completeLesson(dto: CompleteLessonDto, user: ICurrentUser) {
     try {
-      const learner = await LearnerProfile.findOneOrFail({ where: { id: user.profileId } });
+      const learner = await LearnerProfile.findOneOrFail({
+        where: { id: user.profileId },
+        relations: { lessonProcesses: true },
+      });
+
       const lessonRecord = await LessonRecord.create({
         lessonId: dto.lessonId,
         learnerProfileId: user.profileId,
@@ -19,15 +23,26 @@ export class LessonService {
         duration: dto.duration,
       }).save();
 
+      const currentLesson = await Lesson.findOneOrFail({
+        where: { id: dto.lessonId },
+        relations: { questionType: true },
+      });
+
       const { bonusXP, bonusCarrot } = lessonRecord.getBonusResources();
 
-      const milestones = await learner.updateResources({ bonusXP, bonusCarrot });
+      await learner.updateResources({ bonusXP, bonusCarrot });
 
+      const profileMilestones = await learner.getProfileMileStones();
+      const learnProgressMilestones = await learner.getLearnProcessMileStones(
+        dto,
+        bonusXP,
+        currentLesson.questionType.id
+      );
       return {
         ...lessonRecord,
         bonusXP,
         bonusCarrot,
-        milestones,
+        milestones: [...profileMilestones, ...learnProgressMilestones],
       };
     } catch (error) {
       this.logger.error(error);

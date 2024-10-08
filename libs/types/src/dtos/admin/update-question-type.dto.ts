@@ -16,6 +16,17 @@ class ReorderLessonDto {
   order: number;
 }
 
+class BandScoreRequireDto {
+  @ApiProperty({ type: "string", enum: BandScoreEnum, example: "5.0" })
+  @IsEnum(BandScoreEnum, { message: "Invalid band score" })
+  bandScore: BandScoreEnum;
+
+  @ApiProperty({ type: Number, example: 100 })
+  @IsInt()
+  @Min(1, { message: "Require XP must be positive" })
+  requireXP: number;
+}
+
 export class UpdateQuestionTypeDto extends PartialType(CreateQuestionTypeDto) {
   @ApiProperty({ type: [ReorderLessonDto] })
   @IsOptional()
@@ -28,4 +39,11 @@ export class UpdateQuestionTypeDto extends PartialType(CreateQuestionTypeDto) {
   @ValidateIf((dto) => dto.bandScore || (dto.reorderLessons && dto.reorderLessons.length > 0))
   @IsEnum(BandScoreEnum, { message: "Invalid band score" })
   bandScore: BandScoreEnum;
+
+  @ApiProperty({ type: [BandScoreRequireDto] })
+  @IsOptional()
+  @ArrayNotEmpty({ message: "Band score requires must not be empty" })
+  @ValidateNested({ each: true })
+  @Type(() => BandScoreRequireDto)
+  bandScoreRequires: BandScoreRequireDto[];
 }

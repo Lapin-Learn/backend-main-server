@@ -13,9 +13,17 @@ import {
 import { LearnerProfile } from "./learner-profile.entity";
 import { Lesson } from "./lesson.entity";
 import { QuestionType } from "./question-type.entity";
+import { NextBandScoreMap } from "@app/utils/maps";
 
 @Entity("lesson_processes")
 export class LessonProcess extends BaseEntity implements ILessonProcess {
+  constructor(lessonProcess?: Partial<LessonProcess>) {
+    super();
+    if (lessonProcess) {
+      Object.assign(this, lessonProcess);
+    }
+  }
+
   @PrimaryGeneratedColumn("uuid")
   id: string;
 
@@ -51,11 +59,53 @@ export class LessonProcess extends BaseEntity implements ILessonProcess {
   @JoinColumn({ name: "learner_profile_id", referencedColumnName: "id" })
   readonly learnerProfile: LearnerProfile;
 
-  @ManyToOne(() => QuestionType, (questionType) => questionType.lessonProcesses)
+  @ManyToOne(() => QuestionType, (questionType) => questionType.lessonProcesses, { eager: true })
   @JoinColumn({ name: "question_type_id", referencedColumnName: "id" })
   readonly questionType: QuestionType;
 
-  @ManyToOne(() => Lesson, (lesson) => lesson.lessonProcesses)
+  @ManyToOne(() => Lesson, (lesson) => lesson.lessonProcesses, { eager: true })
   @JoinColumn({ name: "current_lesson_id", referencedColumnName: "id" })
   currentLesson: Lesson;
+
+  public async updateLessonProcessOfLearner(xp: number, duration: number, completedLessonId: number): Promise<void> {
+    try {
+      const nextLesson = await Lesson.findOneBy({
+        questionTypeId: this.questionTypeId,
+        bandScore: this.bandScore,
+        order: this.currentLesson.order + 1,
+      });
+
+      const lessonIndex = this.xp.findIndex((xp) => xp.lessonId === completedLessonId);
+
+      if (lessonIndex !== -1) {
+        // Always update the duration
+        this.xp[lessonIndex].duration += duration;
+        // The most XP (accuracy) will be prioritized
+        xp > this.xp[lessonIndex].xp && (this.xp[lessonIndex].xp = xp);
+
+        // Update current lesson to next lesson, this is the case when add new lesson to the list
+        nextLesson && this.currentLesson.id === completedLessonId && (this.currentLesson = nextLesson);
+      } else {
+        // Add new lesson to lesson process
+        this.xp.push({
+          lessonId: completedLessonId,
+          xp,
+          duration,
+        });
+
+        nextLesson && (this.currentLesson = nextLesson);
+      }
+
+      const currentRequiredBandScore = this.questionType.bandScoreRequires.find(
+        (require) => require.bandScore === this.bandScore
+      );
+
+      const totalXP = this.xp.reduce((acc, cur) => acc + cur.xp, 0);
+      totalXP >= currentRequiredBandScore.requireXP && (this.bandScore = NextBandScoreMap.get(this.bandScore));
+      await this.save();
+      return;
+    } catch (error) {
+      throw error;
+    }
+  }
 }

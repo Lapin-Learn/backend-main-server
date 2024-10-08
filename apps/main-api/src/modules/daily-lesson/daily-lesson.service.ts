@@ -18,7 +18,7 @@ export class DailyLessonService {
         return {
           ...rest,
           progress: {
-            bandScore: currentProcess.bandScore || BandScoreEnum.PRE_IELTS,
+            bandScore: currentProcess?.bandScore || BandScoreEnum.PRE_IELTS,
             totalLearningXP,
           },
         };

@@ -34,3 +34,4 @@ export * from "./learner-profile-info.interface";
 export * from "./milestone-info.interfaces";
 
 export * from "./decoded-token.interface";
+export * from "./band-score-require.interface";
