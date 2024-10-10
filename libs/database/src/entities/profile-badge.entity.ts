@@ -1,5 +1,14 @@
 import { IProfileBadge } from "@app/types/interfaces";
-import { BaseEntity, Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import {
+  BaseEntity,
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from "typeorm";
 import { LearnerProfile } from "./learner-profile.entity";
 import { Badge } from "./badge.entity";
 
@@ -13,6 +22,18 @@ export class ProfileBadge extends BaseEntity implements IProfileBadge {
 
   @Column({ name: "badge_id", type: "uuid", nullable: false })
   badgeId: string;
+
+  @CreateDateColumn({ name: "created_at", type: "timestamp", nullable: false, default: () => "CURRENT_TIMESTAMP" })
+  createdAt: Date;
+
+  @UpdateDateColumn({
+    name: "updated_at",
+    type: "timestamp",
+    nullable: false,
+    default: () => "CURRENT_TIMESTAMP",
+    onUpdate: "CURRENT_TIMESTAMP",
+  })
+  updatedAt: Date;
 
   // Relations
   @ManyToOne(() => LearnerProfile, (profile) => profile.id)

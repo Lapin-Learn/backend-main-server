@@ -73,4 +73,13 @@ export class LessonRecord extends BaseEntity implements ILessonRecord {
 
     return { bonusXP, bonusCarrot };
   }
+
+  public isPerfectScore(): boolean {
+    return this.correctAnswers > 0 && this.wrongAnswers === 0;
+  }
+
+  public isGainPercentageScore(percent: number): boolean {
+    const totalAnswers = this.correctAnswers + this.wrongAnswers;
+    return totalAnswers > 0 && (this.correctAnswers / totalAnswers) * 100 >= percent;
+  }
 }

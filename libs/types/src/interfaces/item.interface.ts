@@ -6,6 +6,8 @@ export interface IItem {
   description: string;
   price: number;
   duration: number;
+  createdAt: Date;
+  updatedAt: Date;
 
   // Relations
   readonly profileItems: IProfileItem[];

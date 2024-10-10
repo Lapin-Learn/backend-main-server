@@ -1,5 +1,15 @@
 import { IBadge } from "@app/types/interfaces";
-import { BaseEntity, Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import {
+  BaseEntity,
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  OneToMany,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from "typeorm";
 import { Action } from "./action.entity";
 import { ProfileBadge } from "./profile-badge.entity";
 
@@ -19,6 +29,18 @@ export class Badge extends BaseEntity implements IBadge {
 
   @Column({ name: "requirements", type: "int", nullable: false, default: 0 })
   requirements: number;
+
+  @CreateDateColumn({ name: "created_at", type: "timestamp", nullable: false, default: () => "CURRENT_TIMESTAMP" })
+  createdAt: Date;
+
+  @UpdateDateColumn({
+    name: "updated_at",
+    type: "timestamp",
+    nullable: false,
+    default: () => "CURRENT_TIMESTAMP",
+    onUpdate: "CURRENT_TIMESTAMP",
+  })
+  updatedAt: Date;
 
   // Relations
   @ManyToOne(() => Action, (action) => action.id)

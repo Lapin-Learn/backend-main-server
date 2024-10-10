@@ -7,6 +7,8 @@ export interface IProfileMission {
   profileId: string;
   missionId: string;
   status: ProfileMissionStatusEnum;
+  createdAt: Date;
+  updatedAt: Date;
 
   // Relations
   readonly profile: ILearnerProfile;

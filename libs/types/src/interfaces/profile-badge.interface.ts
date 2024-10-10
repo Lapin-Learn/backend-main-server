@@ -5,6 +5,8 @@ export interface IProfileBadge {
   id: string;
   profileId: string;
   badgeId: string;
+  createdAt: Date;
+  updatedAt: Date;
 
   // Relations
   readonly profile: ILearnerProfile;

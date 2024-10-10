@@ -7,6 +7,8 @@ export interface IBadge {
   description: string;
   actionId: string;
   requirements: number;
+  createdAt: Date;
+  updatedAt: Date;
 
   // Relations
   readonly action: IAction;

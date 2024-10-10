@@ -1,6 +1,16 @@
 import { IntervalTypeEnum } from "@app/types/enums";
 import { IMission } from "@app/types/interfaces";
-import { BaseEntity, Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import {
+  BaseEntity,
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  OneToMany,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from "typeorm";
 import { Quest } from "./quest.entity";
 import { ProfileMission } from "./profile-mission.entity";
 
@@ -14,6 +24,18 @@ export class Mission extends BaseEntity implements IMission {
 
   @Column({ name: "quest_id", type: "uuid", nullable: false })
   questId: string;
+
+  @CreateDateColumn({ name: "created_at", type: "timestamp", nullable: false, default: () => "CURRENT_TIMESTAMP" })
+  createdAt: Date;
+
+  @UpdateDateColumn({
+    name: "updated_at",
+    type: "timestamp",
+    nullable: false,
+    default: () => "CURRENT_TIMESTAMP",
+    onUpdate: "CURRENT_TIMESTAMP",
+  })
+  updatedAt: Date;
 
   // Relations
   @ManyToOne(() => Quest, (quest) => quest.id)

@@ -1,5 +1,5 @@
 import { IStreak } from "@app/types/interfaces";
-import { BaseEntity, Column, Entity, PrimaryGeneratedColumn } from "typeorm";
+import { BaseEntity, Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 
 @Entity("streaks")
 export class Streak extends BaseEntity implements IStreak {
@@ -14,4 +14,16 @@ export class Streak extends BaseEntity implements IStreak {
 
   @Column({ name: "record", type: "int", nullable: false, default: 0 })
   record: number;
+
+  @CreateDateColumn({ name: "created_at", type: "timestamp", nullable: false, default: () => "CURRENT_TIMESTAMP" })
+  createdAt: Date;
+
+  @UpdateDateColumn({
+    name: "updated_at",
+    type: "timestamp",
+    nullable: false,
+    default: () => "CURRENT_TIMESTAMP",
+    onUpdate: "CURRENT_TIMESTAMP",
+  })
+  updatedAt: Date;
 }

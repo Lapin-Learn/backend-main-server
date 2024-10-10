@@ -9,6 +9,8 @@ export interface IQuest {
   requirements: number;
   rewards: number;
   types: IntervalTypeEnum;
+  createdAt: Date;
+  updatedAt: Date;
 
   // Relations
   readonly action: IAction;

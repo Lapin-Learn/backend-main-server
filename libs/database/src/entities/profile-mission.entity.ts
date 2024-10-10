@@ -1,6 +1,15 @@
 import { ProfileMissionStatusEnum } from "@app/types/enums";
 import { IProfileMission } from "@app/types/interfaces";
-import { BaseEntity, Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import {
+  BaseEntity,
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from "typeorm";
 import { LearnerProfile } from "./learner-profile.entity";
 import { Mission } from "./mission.entity";
 
@@ -17,6 +26,18 @@ export class ProfileMission extends BaseEntity implements IProfileMission {
 
   @Column({ type: "enum", enum: ProfileMissionStatusEnum, nullable: false, default: ProfileMissionStatusEnum.ASSIGNED })
   status: ProfileMissionStatusEnum;
+
+  @CreateDateColumn({ name: "created_at", type: "timestamp", nullable: false, default: () => "CURRENT_TIMESTAMP" })
+  createdAt: Date;
+
+  @UpdateDateColumn({
+    name: "updated_at",
+    type: "timestamp",
+    nullable: false,
+    default: () => "CURRENT_TIMESTAMP",
+    onUpdate: "CURRENT_TIMESTAMP",
+  })
+  updatedAt: Date;
 
   // Relations
   @ManyToOne(() => LearnerProfile, (profile) => profile.id)
