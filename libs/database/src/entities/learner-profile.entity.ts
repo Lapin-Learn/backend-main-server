@@ -74,7 +74,7 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
   @OneToMany(() => ProfileBadge, (profileBadge) => profileBadge.profile)
   readonly profileBadges: ProfileBadge[];
 
-  @OneToMany(() => ProfileMission, (profileMission) => profileMission.profile)
+  @OneToMany(() => ProfileMission, (profileMission) => profileMission.profile, { eager: true })
   readonly profileMissions: ProfileMission[];
 
   @OneToMany(() => ProfileItem, (profileItem) => profileItem.profile)

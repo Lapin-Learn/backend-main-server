@@ -47,21 +47,6 @@ export class AddColumnCreateAndUpdateDate1728575782228 implements MigrationInter
       }),
     ]);
 
-    await queryRunner.addColumns("profile_missions", [
-      new TableColumn({
-        name: "created_at",
-        type: "timestamp",
-        default: "CURRENT_TIMESTAMP",
-        isNullable: false,
-      }),
-      new TableColumn({
-        name: "updated_at",
-        type: "timestamp",
-        default: "CURRENT_TIMESTAMP",
-        isNullable: false,
-      }),
-    ]);
-
     await queryRunner.addColumns("profile_items", [
       new TableColumn({
         name: "created_at",

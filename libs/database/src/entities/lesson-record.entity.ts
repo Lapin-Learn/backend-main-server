@@ -53,6 +53,20 @@ export class LessonRecord extends BaseEntity implements ILessonRecord {
   @JoinColumn({ name: "learner_profile_id", referencedColumnName: "id" })
   readonly learnerProfile: LearnerProfile;
 
+  static async getDailyLessonRecordWithPercentageScore(profileId: string, percentage: number) {
+    return await this.createQueryBuilder("lesson_records")
+      .select("COUNT(lesson_records.id)", "count")
+      .where("lesson_records.created_at >= CURRENT_DATE")
+      .andWhere("lesson_records.learner_profile_id = :profileId", { profileId })
+      .andWhere("lesson_records.correct_answers > 0")
+      .andWhere("lesson_records.wrong_answers = 0")
+      .andWhere(
+        "lesson_records.correct_answers / (lesson_records.correct_answers + lesson_records.wrong_answers) * 100 >= :percentage",
+        { percentage }
+      )
+      .getRawOne();
+  }
+
   public getBonusResources(): { bonusXP: number; bonusCarrot: number } {
     const totalAnswers = this.correctAnswers + this.wrongAnswers;
     const bonusXP = totalAnswers === 0 ? 0 : Math.round(50 * (this.correctAnswers / totalAnswers));
@@ -72,14 +86,5 @@ export class LessonRecord extends BaseEntity implements ILessonRecord {
     }
 
     return { bonusXP, bonusCarrot };
-  }
-
-  public isPerfectScore(): boolean {
-    return this.correctAnswers > 0 && this.wrongAnswers === 0;
-  }
-
-  public isGainPercentageScore(percent: number): boolean {
-    const totalAnswers = this.correctAnswers + this.wrongAnswers;
-    return totalAnswers > 0 && (this.correctAnswers / totalAnswers) * 100 >= percent;
   }
 }

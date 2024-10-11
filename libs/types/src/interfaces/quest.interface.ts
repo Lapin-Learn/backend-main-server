@@ -9,6 +9,8 @@ export interface IQuest {
   requirements: number;
   rewards: number;
   types: IntervalTypeEnum;
+  quantity: number;
+  category: string;
   createdAt: Date;
   updatedAt: Date;
 

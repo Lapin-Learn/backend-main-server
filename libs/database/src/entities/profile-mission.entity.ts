@@ -24,9 +24,19 @@ export class ProfileMission extends BaseEntity implements IProfileMission {
   @Column({ name: "mission_id", type: "uuid", nullable: false })
   missionId: string;
 
-  @Column({ type: "enum", enum: ProfileMissionStatusEnum, nullable: false, default: ProfileMissionStatusEnum.ASSIGNED })
+  @Column({
+    name: "status",
+    type: "enum",
+    enum: ProfileMissionStatusEnum,
+    nullable: false,
+    default: ProfileMissionStatusEnum.ASSIGNED,
+  })
   status: ProfileMissionStatusEnum;
 
+  @Column({ name: "current", type: "int", nullable: false, default: 0 })
+  current: number;
+
+  @Column({ type: "int", nullable: false, default: 0 })
   @CreateDateColumn({ name: "created_at", type: "timestamp", nullable: false, default: () => "CURRENT_TIMESTAMP" })
   createdAt: Date;
 
@@ -44,7 +54,15 @@ export class ProfileMission extends BaseEntity implements IProfileMission {
   @JoinColumn({ name: "profile_id", referencedColumnName: "id" })
   profile: LearnerProfile;
 
-  @ManyToOne(() => Mission, (mission) => mission.id)
+  @ManyToOne(() => Mission, (mission) => mission.id, { eager: true })
   @JoinColumn({ name: "mission_id", referencedColumnName: "id" })
   mission: Mission;
+
+  public async handMissionComplete(): Promise<void> {
+    this.current += 1;
+    if (this.current >= this.mission.quest.quantity) {
+      this.status = ProfileMissionStatusEnum.COMPLETED;
+    }
+    await this.save();
+  }
 }

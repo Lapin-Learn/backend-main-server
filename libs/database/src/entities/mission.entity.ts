@@ -38,7 +38,7 @@ export class Mission extends BaseEntity implements IMission {
   updatedAt: Date;
 
   // Relations
-  @ManyToOne(() => Quest, (quest) => quest.id)
+  @ManyToOne(() => Quest, (quest) => quest.id, { eager: true })
   @JoinColumn({ name: "quest_id", referencedColumnName: "id" })
   quest: Quest;
 

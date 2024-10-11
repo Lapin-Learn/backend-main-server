@@ -3,11 +3,14 @@ import { CompleteLessonDto } from "@app/types/dtos";
 import { ICurrentUser } from "@app/types/interfaces";
 import { BadRequestException, Injectable, Logger } from "@nestjs/common";
 import { EntityNotFoundError, QueryFailedError } from "typeorm";
+import { MissionFactoryService } from "@app/shared-modules/mission-factory";
+import { ProfileMissionStatusEnum } from "@app/types/enums";
 
 @Injectable()
 export class LessonService {
   private readonly logger = new Logger(LessonService.name);
 
+  constructor(private readonly missionFactoryService: MissionFactoryService) {}
   async completeLesson(dto: CompleteLessonDto, user: ICurrentUser) {
     try {
       const learner = await LearnerProfile.findOneOrFail({
@@ -38,6 +41,16 @@ export class LessonService {
         bonusXP,
         currentLesson.questionType.id
       );
+
+      const learnerMissions = learner.profileMissions.filter((m) => m.status === ProfileMissionStatusEnum.ASSIGNED);
+      for (const learnerMission of learnerMissions) {
+        const { mission } = learnerMission;
+        const missionInstance = this.missionFactoryService.createMission(mission, learner);
+        const isCompleted = await missionInstance.isMissionCompleted();
+        if (isCompleted) {
+          await learnerMission.handMissionComplete();
+        }
+      }
       return {
         ...lessonRecord,
         bonusXP,

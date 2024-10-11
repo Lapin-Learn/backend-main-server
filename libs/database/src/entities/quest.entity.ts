@@ -37,6 +37,12 @@ export class Quest extends BaseEntity implements IQuest {
   @Column({ name: "types", type: "enum", enum: IntervalTypeEnum, nullable: false })
   types: IntervalTypeEnum;
 
+  @Column({ name: "category", type: "varchar", length: 255, nullable: false })
+  category: string;
+
+  @Column({ name: "quantity", type: "int", nullable: false, default: 1 })
+  quantity: number;
+
   @CreateDateColumn({ name: "created_at", type: "timestamp", nullable: false, default: () => "CURRENT_TIMESTAMP" })
   createdAt: Date;
 
