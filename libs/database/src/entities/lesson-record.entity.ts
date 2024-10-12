@@ -55,16 +55,13 @@ export class LessonRecord extends BaseEntity implements ILessonRecord {
 
   static async getDailyLessonRecordWithPercentageScore(profileId: string, percentage: number) {
     return await this.createQueryBuilder("lesson_records")
-      .select("COUNT(lesson_records.id)", "count")
-      .where("lesson_records.created_at >= CURRENT_DATE")
+      .where("DATE(lesson_records.created_at) = CURRENT_DATE")
       .andWhere("lesson_records.learner_profile_id = :profileId", { profileId })
-      .andWhere("lesson_records.correct_answers > 0")
-      .andWhere("lesson_records.wrong_answers = 0")
       .andWhere(
-        "lesson_records.correct_answers / (lesson_records.correct_answers + lesson_records.wrong_answers) * 100 >= :percentage",
+        "100 * (lesson_records.correct_answers / (lesson_records.correct_answers + lesson_records.wrong_answers)::float) >= :percentage",
         { percentage }
       )
-      .getRawOne();
+      .getCount();
   }
 
   public getBonusResources(): { bonusXP: number; bonusCarrot: number } {

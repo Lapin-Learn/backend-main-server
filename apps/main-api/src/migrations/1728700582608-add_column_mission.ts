@@ -1,15 +1,15 @@
 import { MigrationInterface, QueryRunner, TableColumn } from "typeorm";
 
-export class AddColumnQuest1728578835894 implements MigrationInterface {
+export class AddColumnMission1728700582608 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.addColumns("quests", [
+    await queryRunner.addColumn(
+      "missions",
       new TableColumn({
-        name: "category",
-        type: "varchar",
-        length: "255",
+        name: "quantity",
+        type: "int",
         isNullable: false,
-      }),
-    ]);
+      })
+    );
   }
 
   public async down(): Promise<void> {

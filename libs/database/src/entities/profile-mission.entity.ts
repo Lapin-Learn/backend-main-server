@@ -60,7 +60,7 @@ export class ProfileMission extends BaseEntity implements IProfileMission {
 
   public async handMissionComplete(): Promise<void> {
     this.current += 1;
-    if (this.current >= this.mission.quest.quantity) {
+    if (this.current >= this.mission.quantity) {
       this.status = ProfileMissionStatusEnum.COMPLETED;
     }
     await this.save();

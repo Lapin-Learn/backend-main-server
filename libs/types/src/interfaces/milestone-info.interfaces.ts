@@ -1,7 +1,6 @@
-import { BandScoreEnum, MileStonesEnum, RankEnum } from "@app/types/enums";
-import { ILevel } from "@app/types/interfaces/level.interface";
+import { MileStonesEnum } from "@app/types/enums";
 
-export interface IMileStoneInfo {
+export interface IMileStoneInfo<T> {
   type: MileStonesEnum;
-  newValue: ILevel | RankEnum | number | BandScoreEnum;
+  newValue: T;
 }

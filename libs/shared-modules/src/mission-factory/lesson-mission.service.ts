@@ -2,8 +2,10 @@ import { MissionServiceAbstract } from "@app/types/abstracts";
 import { LessonRecord } from "@app/database";
 import { MissionCategoryNameEnum } from "@app/types/enums";
 import { ILearnerProfile } from "@app/types/interfaces";
+import { Logger } from "@nestjs/common";
 
 export class LessonMission extends MissionServiceAbstract {
+  private readonly logger = new Logger(this.constructor.name);
   private readonly _missionCategoryName: MissionCategoryNameEnum;
   private readonly _requirements: number;
   private readonly _learner: ILearnerProfile;
@@ -23,7 +25,12 @@ export class LessonMission extends MissionServiceAbstract {
   }
 
   async completeLessonWithPercentageScore(percentage: number): Promise<boolean> {
-    const res = await LessonRecord.getDailyLessonRecordWithPercentageScore(this._learner.id, percentage);
-    return res.count > 0;
+    try {
+      const res = await LessonRecord.getDailyLessonRecordWithPercentageScore(this._learner.id, percentage);
+      return res > 0;
+    } catch (error) {
+      this.logger.error(error);
+      return false;
+    }
   }
 }
