@@ -3,7 +3,7 @@ import { BaseEntity, Between, Column, Entity, JoinColumn, ManyToOne, PrimaryGene
 import { LearnerProfile } from "./learner-profile.entity";
 import { Action } from "./action.entity";
 import { ActionNameEnum } from "@app/types/enums";
-import { getUTCBeginOfDay, getUTCEndOfDay } from "@app/utils/time";
+import moment from "moment-timezone";
 
 @Entity("activities")
 export class Activity extends BaseEntity implements IActivity {
@@ -32,8 +32,8 @@ export class Activity extends BaseEntity implements IActivity {
   static async getBonusStreakPoint(learnerProfileId: string) {
     const action = await Action.findOne({ where: { name: ActionNameEnum.DAILY_STREAK } });
 
-    const beginOfDay = getUTCBeginOfDay(new Date());
-    const endOfDay = getUTCEndOfDay(new Date());
+    const beginOfDay = moment().tz("Asia/Saigon").startOf("day").toDate();
+    const endOfDay = moment().tz("Asia/Saigon").endOf("day").toDate();
 
     const activity = await Activity.findOne({
       where: {

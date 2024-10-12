@@ -18,7 +18,6 @@ import { Activity } from "./activity.entity";
 import { ProfileBadge } from "./profile-badge.entity";
 import { ProfileMission } from "./profile-mission.entity";
 import { ProfileItem } from "./profile-item.entity";
-import { getUTCBeginOfDay, getUTCEndOfDay, newDateUTC } from "@app/utils/time";
 import { LessonRecord } from "./lesson-record.entity";
 import { LessonProcess } from "./lesson-process.entity";
 import { LevelRankMap, NextBandScoreMap } from "@app/utils/maps";
@@ -27,6 +26,7 @@ import { Action } from "./action.entity";
 import { CompleteLessonDto } from "@app/types/dtos";
 import { Lesson } from "@app/database/entities/lesson.entity";
 import { QuestionType } from "@app/database/entities/question-type.entity";
+import moment from "moment-timezone";
 
 @Entity("learner_profiles")
 export class LearnerProfile extends BaseEntity implements ILearnerProfile {
@@ -200,11 +200,11 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
 
   // Active Record Pattern
   static async getBrokenStreakProfiles() {
-    // Midnight yesterday in UTC
-    const beginOfYesterday = getUTCBeginOfDay(newDateUTC(), -1);
+    // Midnight yesterday in GMT+7
+    const beginOfYesterday = moment().tz("Asia/Saigon").subtract(1, "days").startOf("day").toDate();
 
-    // 23:59:59 yesterday in UTC
-    const endOfYesterday = getUTCEndOfDay(newDateUTC(), -1);
+    // 23:59:59 yesterday in GMT+7
+    const endOfYesterday = moment().tz("Asia/Saigon").subtract(1, "days").endOf("day").toDate();
 
     const rawValidLearnerProfileIds = await this.createQueryBuilder("learnerProfiles")
       .leftJoinAndSelect("learnerProfiles.activities", "activities")
