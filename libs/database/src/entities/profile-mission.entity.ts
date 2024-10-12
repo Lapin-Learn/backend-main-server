@@ -1,4 +1,4 @@
-import { ProfileMissionStatusEnum } from "@app/types/enums";
+import { IntervalTypeEnum, ProfileMissionStatusEnum } from "@app/types/enums";
 import { IProfileMission } from "@app/types/interfaces";
 import {
   BaseEntity,
@@ -64,5 +64,30 @@ export class ProfileMission extends BaseEntity implements IProfileMission {
       this.status = ProfileMissionStatusEnum.COMPLETED;
     }
     await this.save();
+  }
+
+  // Active Record Pattern
+  static async getMissions(learnerProfileId: string) {
+    return this.createQueryBuilder("profile_missions")
+      .leftJoinAndSelect("profile_missions.mission", "mission")
+      .leftJoinAndSelect("mission.quest", "quest")
+      .where("profile_missions.profileId = :profileId", { profileId: learnerProfileId })
+      .andWhere(
+        `(
+          DATE(profile_missions.created_at) = CURRENT_DATE AND 
+          mission.types = :daily
+        )
+        OR 
+        (
+          EXTRACT(MONTH FROM profile_missions.created_at) = EXTRACT(MONTH FROM CURRENT_DATE) AND
+          EXTRACT(YEAR FROM profile_missions.created_at) = EXTRACT(YEAR FROM CURRENT_DATE) AND
+          mission.types = :monthly
+        )`,
+        {
+          daily: IntervalTypeEnum.DAILY,
+          monthly: IntervalTypeEnum.MONTHLY,
+        }
+      )
+      .getMany();
   }
 }
