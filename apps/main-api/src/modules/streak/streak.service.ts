@@ -1,11 +1,11 @@
 import { LearnerProfile, Streak } from "@app/database";
 import { SetTargetStreak } from "@app/types/dtos";
 import { ICurrentUser } from "@app/types/interfaces";
-import { getUTCEndOfDay } from "@app/utils/time";
 import { BadRequestException, Injectable, Logger } from "@nestjs/common";
 import { Cron } from "@nestjs/schedule";
 import { In } from "typeorm";
 import { StreakHelper } from "./streak.helper";
+import moment from "moment-timezone";
 
 @Injectable()
 export class StreakService {
@@ -25,7 +25,11 @@ export class StreakService {
     }
   }
 
-  @Cron("0 0 * * *") // Midnight in UTC
+  // Reset streak in midnight GMT+7
+  @Cron("0 0 * * *", {
+    name: "Reset streak",
+    timeZone: "Asia/Saigon",
+  })
   async resetStreak() {
     try {
       this.logger.log("Reset streak");
@@ -42,10 +46,10 @@ export class StreakService {
 
   async getStreakHistory(user: ICurrentUser, startDate: Date) {
     try {
-      const today = getUTCEndOfDay(new Date());
+      const today = moment().tz("Asia/Saigon").endOf("day").toDate();
 
-      if (startDate > today) {
-        throw new BadRequestException("Start date cannot be later than yesterday");
+      if (moment(startDate).isAfter(today)) {
+        throw new BadRequestException("Start date cannot be later than end of today");
       }
 
       const dailyStreakActivities = await LearnerProfile.getDailyStreakActivities(user.profileId, startDate, today);

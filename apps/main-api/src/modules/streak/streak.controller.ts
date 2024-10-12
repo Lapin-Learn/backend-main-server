@@ -5,8 +5,8 @@ import { ICurrentUser } from "@app/types/interfaces";
 import { StreakService } from "./streak.service";
 import { SetTargetStreak } from "@app/types/dtos";
 import { AccountRoleEnum } from "@app/types/enums";
-import { getUTCBeginOfDay } from "@app/utils/time";
 import { ApiBearerAuth, ApiBody, ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
+import moment from "moment-timezone";
 
 @ApiTags("Streaks")
 @ApiBearerAuth()
@@ -37,7 +37,10 @@ export class StreakController {
   @UseGuards(RoleGuard)
   @Roles(AccountRoleEnum.LEARNER)
   getStreakHistory(@CurrentUser() user: ICurrentUser, @Query("start") start: string) {
-    const startDate = start ? getUTCBeginOfDay(new Date(start)) : getUTCBeginOfDay(new Date(), -7);
+    const startDate = start
+      ? moment(start).tz("Asia/Saigon").startOf("day").toDate()
+      : moment().tz("Asia/Saigon").startOf("day").subtract(7, "days").toDate();
+
     return this.streakService.getStreakHistory(user, startDate);
   }
 }
