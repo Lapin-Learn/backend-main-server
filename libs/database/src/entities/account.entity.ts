@@ -60,7 +60,7 @@ export class Account extends BaseEntity implements IAccount {
   @OneToOne(() => LearnerProfile)
   @JoinColumn({ name: "learner_profile_id", referencedColumnName: "id" })
   readonly learnerProfile: ILearnerProfile;
-  
+
   @OneToOne(() => Bucket)
   @JoinColumn({ name: "avatar_id", referencedColumnName: "id" })
   readonly avatar: Bucket;

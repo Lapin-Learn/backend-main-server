@@ -1,5 +1,14 @@
 import { IProfileItem } from "@app/types/interfaces";
-import { BaseEntity, Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import {
+  BaseEntity,
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from "typeorm";
 import { LearnerProfile } from "./learner-profile.entity";
 import { Item } from "./item.entity";
 
@@ -20,6 +29,17 @@ export class ProfileItem extends BaseEntity implements IProfileItem {
   @Column({ name: "exp_at", type: "timestamp", nullable: false })
   expAt: Date;
 
+  @CreateDateColumn({ name: "created_at", type: "timestamp", nullable: false, default: () => "CURRENT_TIMESTAMP" })
+  createdAt: Date;
+
+  @UpdateDateColumn({
+    name: "updated_at",
+    type: "timestamp",
+    nullable: false,
+    default: () => "CURRENT_TIMESTAMP",
+    onUpdate: "CURRENT_TIMESTAMP",
+  })
+  updatedAt: Date;
   // Relations
   @ManyToOne(() => LearnerProfile, (profile) => profile.id)
   @JoinColumn({ name: "profile_id", referencedColumnName: "id" })

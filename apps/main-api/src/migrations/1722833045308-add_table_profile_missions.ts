@@ -26,8 +26,26 @@ export class AddTableProfileMissions1722833045308 implements MigrationInterface 
           {
             name: "status",
             type: "enum",
-            enum: ["ASSIGNED", "COMPLETED"],
-            default: "'ASSIGNED'",
+            enum: ["assigned", "completed"],
+            default: "'assigned'",
+          },
+          {
+            name: "current",
+            type: "int",
+            isNullable: false,
+            default: 0,
+          },
+          {
+            name: "created_at",
+            type: "timestamp",
+            default: "CURRENT_TIMESTAMP",
+            isNullable: false,
+          },
+          {
+            name: "updated_at",
+            type: "timestamp",
+            default: "CURRENT_TIMESTAMP",
+            isNullable: false,
           },
         ],
         foreignKeys: [

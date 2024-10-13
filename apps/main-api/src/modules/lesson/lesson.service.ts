@@ -1,13 +1,16 @@
 import { LearnerProfile, Lesson, LessonRecord } from "@app/database";
 import { CompleteLessonDto } from "@app/types/dtos";
-import { ICurrentUser } from "@app/types/interfaces";
+import { ICurrentUser, IMileStoneInfo, IProfileMission } from "@app/types/interfaces";
 import { BadRequestException, Injectable, Logger } from "@nestjs/common";
 import { EntityNotFoundError, QueryFailedError } from "typeorm";
+import { MissionFactoryService } from "@app/shared-modules/mission-factory";
+import { MileStonesEnum, ProfileMissionStatusEnum } from "@app/types/enums";
 
 @Injectable()
 export class LessonService {
   private readonly logger = new Logger(LessonService.name);
 
+  constructor(private readonly missionFactoryService: MissionFactoryService) {}
   async completeLesson(dto: CompleteLessonDto, user: ICurrentUser) {
     try {
       const learner = await LearnerProfile.findOneOrFail({
@@ -38,11 +41,32 @@ export class LessonService {
         bonusXP,
         currentLesson.questionType.id
       );
+
+      const missionMilestones: IMileStoneInfo<IProfileMission[]> = {
+        type: MileStonesEnum.IS_MISSION_COMPLETED,
+        newValue: [],
+      };
+
+      const learnerMissions = learner.profileMissions.filter((m) => m.status === ProfileMissionStatusEnum.ASSIGNED);
+      for (const learnerMission of learnerMissions) {
+        const { mission } = learnerMission;
+        const missionInstance = this.missionFactoryService.createMission(mission, learner);
+        const isCompleted = await missionInstance.isMissionCompleted();
+        if (isCompleted) {
+          await learnerMission.handMissionComplete();
+          missionMilestones.newValue.push(learnerMission);
+        }
+      }
+
       return {
         ...lessonRecord,
         bonusXP,
         bonusCarrot,
-        milestones: [...profileMilestones, ...learnProgressMilestones],
+        milestones: [
+          ...profileMilestones,
+          ...learnProgressMilestones,
+          ...(missionMilestones.newValue.length > 0 ? [missionMilestones] : []),
+        ],
       };
     } catch (error) {
       this.logger.error(error);

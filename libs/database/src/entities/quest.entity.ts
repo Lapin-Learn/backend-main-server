@@ -1,5 +1,15 @@
 import { IQuest } from "@app/types/interfaces";
-import { BaseEntity, Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import {
+  BaseEntity,
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  OneToMany,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from "typeorm";
 import { Action } from "./action.entity";
 import { IntervalTypeEnum } from "@app/types/enums";
 import { Mission } from "./mission.entity";
@@ -26,6 +36,21 @@ export class Quest extends BaseEntity implements IQuest {
 
   @Column({ name: "types", type: "enum", enum: IntervalTypeEnum, nullable: false })
   types: IntervalTypeEnum;
+
+  @Column({ name: "category", type: "varchar", length: 255, nullable: false })
+  category: string;
+
+  @CreateDateColumn({ name: "created_at", type: "timestamp", nullable: false, default: () => "CURRENT_TIMESTAMP" })
+  createdAt: Date;
+
+  @UpdateDateColumn({
+    name: "updated_at",
+    type: "timestamp",
+    nullable: false,
+    default: () => "CURRENT_TIMESTAMP",
+    onUpdate: "CURRENT_TIMESTAMP",
+  })
+  updatedAt: Date;
 
   // Relations
   @ManyToOne(() => Action, (action) => action.id)

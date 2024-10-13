@@ -7,6 +7,8 @@ export interface IProfileItem {
   profileId: string;
   quantity: number;
   expAt: Date;
+  createdAt: Date;
+  updatedAt: Date;
 
   // Relations
   readonly profile: ILearnerProfile;

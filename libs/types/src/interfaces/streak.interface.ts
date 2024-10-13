@@ -3,4 +3,6 @@ export interface IStreak {
   current: number;
   target: number;
   record: number;
+  createdAt: Date;
+  updatedAt: Date;
 }

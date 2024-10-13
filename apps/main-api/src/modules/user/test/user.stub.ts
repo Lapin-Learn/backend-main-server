@@ -16,7 +16,7 @@ import {
 import { mockEmail, mockUid } from "@app/shared-modules/firebase/__mocks__/firebase-auth.service";
 
 const level: ILevel = { id: 1, xp: 100, learners: [] };
-const streak: IStreak = { id: 0, current: 0, target: 0, record: 0 };
+const streak: IStreak = { id: 0, current: 0, target: 0, record: 0, createdAt: new Date(), updatedAt: new Date() };
 const learnerProfile: ILearnerProfile = {
   id: uuidv4(),
   rank: RankEnum.BRONZE,

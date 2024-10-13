@@ -65,8 +65,12 @@ export class QuestionType extends BaseEntity implements IQuestionType {
       .leftJoinAndSelect("question_type.image", "image")
       .loadRelationCountAndMap("question_type.lessons", "question_type.lessons")
       .leftJoinAndSelect("question_type.instructions", "instruction")
-      .leftJoinAndSelect("question_type.lessonProcesses", "lesson_process")
-      .andWhere("lesson_process.learnerProfileId = :learnerId", { learnerProfileId })
+      .leftJoinAndSelect(
+        "question_type.lessonProcesses",
+        "lesson_process",
+        "lesson_process.learnerProfileId = :learnerId",
+        { learnerId: learnerProfileId }
+      )
       .where("question_type.skill = :skill", { skill })
       .getMany();
   }

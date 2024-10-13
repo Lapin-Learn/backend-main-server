@@ -1,5 +1,5 @@
 import { ActionNameEnum, BandScoreEnum, MileStonesEnum, RankEnum } from "@app/types/enums";
-import { ILearnerProfile, ILearnerProfileInfo, IMileStoneInfo } from "@app/types/interfaces";
+import { ILearnerProfile, ILearnerProfileInfo, ILevel, IMileStoneInfo } from "@app/types/interfaces";
 import {
   BaseEntity,
   Column,
@@ -26,6 +26,7 @@ import { Action } from "./action.entity";
 import { CompleteLessonDto } from "@app/types/dtos";
 import { Lesson } from "@app/database/entities/lesson.entity";
 import { QuestionType } from "@app/database/entities/question-type.entity";
+import { TMileStoneLearnProgress, TMileStoneProfile } from "@app/types/types";
 import moment from "moment-timezone";
 
 @Entity("learner_profiles")
@@ -74,7 +75,7 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
   @OneToMany(() => ProfileBadge, (profileBadge) => profileBadge.profile)
   readonly profileBadges: ProfileBadge[];
 
-  @OneToMany(() => ProfileMission, (profileMission) => profileMission.profile)
+  @OneToMany(() => ProfileMission, (profileMission) => profileMission.profile, { eager: true })
   readonly profileMissions: ProfileMission[];
 
   @OneToMany(() => ProfileItem, (profileItem) => profileItem.profile)
@@ -95,15 +96,26 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
     return;
   }
 
-  public async getProfileMileStones(): Promise<IMileStoneInfo[]> {
-    const milestones: IMileStoneInfo[] = [];
+  public async getProfileMileStones(): Promise<TMileStoneProfile[]> {
+    const milestones: TMileStoneProfile[] = [];
     const isLevelUp = await this.isLevelUp();
     const isRankUp = this.isRankUp();
     const isAchieveDailyStreak = await this.isAchieveDailyStreakOrCreate();
     await this.save();
-    isLevelUp && milestones.push({ type: MileStonesEnum.IS_LEVEL_UP, newValue: this.level });
-    isRankUp && milestones.push({ type: MileStonesEnum.IS_RANK_UP, newValue: this.rank });
-    isAchieveDailyStreak && milestones.push({ type: MileStonesEnum.IS_DAILY_STREAK, newValue: this.streak.current });
+    if (isLevelUp) {
+      const milestone: IMileStoneInfo<ILevel> = { type: MileStonesEnum.IS_LEVEL_UP, newValue: this.level };
+      milestones.push(milestone);
+    }
+
+    if (isRankUp) {
+      const milestone: IMileStoneInfo<RankEnum> = { type: MileStonesEnum.IS_RANK_UP, newValue: this.rank };
+      milestones.push(milestone);
+    }
+
+    if (isAchieveDailyStreak) {
+      const milestone: IMileStoneInfo<number> = { type: MileStonesEnum.IS_DAILY_STREAK, newValue: this.streak.current };
+      milestones.push(milestone);
+    }
     return milestones;
   }
 
@@ -111,8 +123,8 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
     data: CompleteLessonDto,
     xp: number,
     questionTypeId: number
-  ): Promise<IMileStoneInfo[]> {
-    const milestones: IMileStoneInfo[] = [];
+  ): Promise<TMileStoneLearnProgress[]> {
+    const milestones: IMileStoneInfo<BandScoreEnum>[] = [];
     const isBandScoreQuestionTypeUp = await this.isBandScoreQuestionTypeUp(
       xp,
       data.duration,

@@ -53,6 +53,17 @@ export class LessonRecord extends BaseEntity implements ILessonRecord {
   @JoinColumn({ name: "learner_profile_id", referencedColumnName: "id" })
   readonly learnerProfile: LearnerProfile;
 
+  static async getDailyLessonRecordWithPercentageScore(profileId: string, percentage: number) {
+    return await this.createQueryBuilder("lesson_records")
+      .where("DATE(lesson_records.created_at) = CURRENT_DATE")
+      .andWhere("lesson_records.learner_profile_id = :profileId", { profileId })
+      .andWhere(
+        "100 * (lesson_records.correct_answers / (lesson_records.correct_answers + lesson_records.wrong_answers)::float) >= :percentage",
+        { percentage }
+      )
+      .getCount();
+  }
+
   public getBonusResources(): { bonusXP: number; bonusCarrot: number } {
     const totalAnswers = this.correctAnswers + this.wrongAnswers;
     const bonusXP = totalAnswers === 0 ? 0 : Math.round(50 * (this.correctAnswers / totalAnswers));
