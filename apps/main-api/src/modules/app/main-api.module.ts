@@ -11,6 +11,7 @@ import { StreakModule } from "../streak/streak.module";
 import { DailyLessonModule } from "../daily-lesson/daily-lesson.module";
 import { LessonModule } from "../lesson/lesson.module";
 import { AdminModule } from "../admin/admin.module";
+import { MissionModule } from "../mission/mission.module";
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { AdminModule } from "../admin/admin.module";
     DailyLessonModule,
     LessonModule,
     AdminModule,
+    MissionModule,
   ],
   controllers: [MainApiController],
   providers: [MainApiService],
