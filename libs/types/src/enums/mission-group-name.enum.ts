@@ -1,4 +1,5 @@
 export enum MissionGroupNameEnum {
+  DEFAULT = "DEFAULT",
   LESSON_MISSION = "LESSON_MISSION",
   STREAK_MISSION = "STREAK_MISSION",
 }
