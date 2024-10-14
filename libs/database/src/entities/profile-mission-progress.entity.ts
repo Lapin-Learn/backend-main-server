@@ -1,5 +1,5 @@
-import { IntervalTypeEnum, ProfileMissionStatusEnum } from "@app/types/enums";
-import { IProfileMission } from "@app/types/interfaces";
+import { IntervalTypeEnum, ProfileMissionProgressStatusEnum } from "@app/types/enums";
+import { IProfileMissionProgress } from "@app/types/interfaces";
 import {
   BaseEntity,
   Column,
@@ -13,8 +13,15 @@ import {
 import { LearnerProfile } from "./learner-profile.entity";
 import { Mission } from "./mission.entity";
 
-@Entity({ name: "profile_missions" })
-export class ProfileMission extends BaseEntity implements IProfileMission {
+@Entity({ name: "profile_missions_progress" })
+export class ProfileMissionProgress extends BaseEntity implements IProfileMissionProgress {
+  constructor(newMissionProgress?: Partial<IProfileMissionProgress>) {
+    super();
+    if (newMissionProgress) {
+      Object.assign(this, newMissionProgress);
+    }
+  }
+
   @PrimaryGeneratedColumn("uuid")
   id: string;
 
@@ -27,11 +34,11 @@ export class ProfileMission extends BaseEntity implements IProfileMission {
   @Column({
     name: "status",
     type: "enum",
-    enum: ProfileMissionStatusEnum,
+    enum: ProfileMissionProgressStatusEnum,
     nullable: false,
-    default: ProfileMissionStatusEnum.ASSIGNED,
+    default: ProfileMissionProgressStatusEnum.ASSIGNED,
   })
-  status: ProfileMissionStatusEnum;
+  status: ProfileMissionProgressStatusEnum;
 
   @Column({ name: "current", type: "int", nullable: false, default: 0 })
   current: number;
@@ -58,29 +65,21 @@ export class ProfileMission extends BaseEntity implements IProfileMission {
   @JoinColumn({ name: "mission_id", referencedColumnName: "id" })
   mission: Mission;
 
-  public async handMissionComplete(): Promise<void> {
-    this.current += 1;
-    if (this.current >= this.mission.quantity) {
-      this.status = ProfileMissionStatusEnum.COMPLETED;
-    }
-    await this.save();
-  }
-
   // Active Record Pattern
   static async getMissions(learnerProfileId: string) {
-    return this.createQueryBuilder("profile_missions")
-      .leftJoinAndSelect("profile_missions.mission", "mission")
+    return this.createQueryBuilder("profile_missions_progress")
+      .leftJoinAndSelect("profile_missions_progress.mission", "mission")
       .leftJoinAndSelect("mission.quest", "quest")
-      .where("profile_missions.profileId = :profileId", { profileId: learnerProfileId })
+      .where("profile_missions_progress.profileId = :profileId", { profileId: learnerProfileId })
       .andWhere(
         `(
-          DATE(profile_missions.created_at) = CURRENT_DATE AND 
+          DATE(profile_missions_progress.created_at) = CURRENT_DATE AND 
           mission.types = :daily
         )
         OR 
         (
-          EXTRACT(MONTH FROM profile_missions.created_at) = EXTRACT(MONTH FROM CURRENT_DATE) AND
-          EXTRACT(YEAR FROM profile_missions.created_at) = EXTRACT(YEAR FROM CURRENT_DATE) AND
+          EXTRACT(MONTH FROM profile_missions_progress.created_at) = EXTRACT(MONTH FROM CURRENT_DATE) AND
+          EXTRACT(YEAR FROM profile_missions_progress.created_at) = EXTRACT(YEAR FROM CURRENT_DATE) AND
           mission.types = :monthly
         )`,
         {

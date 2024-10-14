@@ -14,7 +14,7 @@ export * from "./streak.interface";
 export * from "./level.interface";
 export * from "./activity.interface";
 export * from "./profile-badge.interface";
-export * from "./profile-mission.interface";
+export * from "./profile-mission-progress.interface";
 export * from "./profile-item.interface";
 export * from "./bucket.interface";
 export * from "./lesson-record.interface";

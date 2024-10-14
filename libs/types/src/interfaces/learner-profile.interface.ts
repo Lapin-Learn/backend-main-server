@@ -5,7 +5,7 @@ import { ILessonRecord } from "./lesson-record.interface";
 import { ILevel } from "./level.interface";
 import { IProfileBadge } from "./profile-badge.interface";
 import { IProfileItem } from "./profile-item.interface";
-import { IProfileMission } from "./profile-mission.interface";
+import { IProfileMissionProgress } from "./profile-mission-progress.interface";
 import { IStreak } from "./streak.interface";
 
 export interface ILearnerProfile {
@@ -23,7 +23,7 @@ export interface ILearnerProfile {
   readonly streak: IStreak;
   readonly activities: IActivity[];
   readonly profileBadges: IProfileBadge[];
-  readonly profileMissions: IProfileMission[];
+  readonly profileMissionsProgress: IProfileMissionProgress[];
   readonly profileItems: IProfileItem[];
   readonly lessonRecords: ILessonRecord[];
   readonly lessonProcesses: ILessonProcess[];

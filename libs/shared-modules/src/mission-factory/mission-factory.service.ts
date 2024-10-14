@@ -7,7 +7,7 @@ import { ILearnerProfile, IMission } from "@app/types/interfaces";
 
 @Injectable()
 export class MissionFactoryService {
-  createMission(mission: IMission, learner: ILearnerProfile) {
+  createMissionService(mission: IMission, learner: ILearnerProfile) {
     const categoryName = mission.quest.category as MissionCategoryNameEnum;
     const group = findMissionGroup(categoryName);
     switch (group) {

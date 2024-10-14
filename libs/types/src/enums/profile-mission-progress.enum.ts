@@ -1,4 +1,4 @@
-export enum ProfileMissionStatusEnum {
+export enum ProfileMissionProgressStatusEnum {
   ASSIGNED = "assigned",
   COMPLETED = "completed",
 }
