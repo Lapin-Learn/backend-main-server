@@ -59,4 +59,13 @@ export class Quest extends BaseEntity implements IQuest {
 
   @OneToMany(() => Mission, (mission) => mission.quest)
   missions: Mission[];
+
+  // Active Record Pattern
+  static async randAndFind(intervalType: IntervalTypeEnum, limit: number): Promise<IQuest[]> {
+    return this.createQueryBuilder("quest")
+      .where("quest.types = :intervalType", { intervalType })
+      .orderBy("RANDOM()")
+      .limit(limit)
+      .getMany();
+  }
 }

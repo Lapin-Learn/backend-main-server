@@ -282,7 +282,6 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
       .leftJoinAndSelect("learnerProfile.level", "levels")
       .leftJoinAndSelect("learnerProfile.streak", "streaks")
       .leftJoinAndSelect("learnerProfile.profileBadges", "profileBadges")
-      .leftJoinAndSelect("learnerProfile.profileMissions", "profileMissions")
       .leftJoinAndSelect("learnerProfile.profileItems", "profileItems")
       .leftJoinAndSelect("profileItems.item", "items")
       .getOneOrFail();
