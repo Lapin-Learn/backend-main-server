@@ -1,4 +1,4 @@
-import { ProfileMission } from "@app/database";
+import { Mission, ProfileMissionProgress } from "@app/database";
 import { ICurrentUser } from "@app/types/interfaces";
 import { BadRequestException, Injectable, Logger } from "@nestjs/common";
 import { MissionHelper } from "./mission.helper";
@@ -11,8 +11,9 @@ export class MissionService {
 
   async getMissions(user: ICurrentUser) {
     try {
-      const data = await ProfileMission.getMissions(user.profileId);
-      return this.missionHelper.buildMissionsResponseData(data);
+      const missions = await Mission.find();
+      const missionProgress = await ProfileMissionProgress.getMissions(user.profileId);
+      return this.missionHelper.buildMissionsResponseData(missionProgress, missions);
     } catch (error) {
       this.logger.error(error);
       throw new BadRequestException(error);

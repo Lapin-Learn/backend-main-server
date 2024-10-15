@@ -9,7 +9,7 @@ export * from "./streak.entity";
 export * from "./mission.entity";
 export * from "./activity.entity";
 export * from "./profile-badge.entity";
-export * from "./profile-mission.entity";
+export * from "./profile-mission-progress.entity";
 export * from "./profile-item.entity";
 export * from "./bucket.entity";
 export * from "./lesson.entity";

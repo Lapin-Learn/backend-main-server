@@ -1,5 +1,5 @@
 import { IntervalTypeEnum } from "../enums";
-import { IProfileMission } from "./profile-mission.interface";
+import { IProfileMissionProgress } from "./profile-mission-progress.interface";
 import { IQuest } from "./quest.interface";
 
 export interface IMission {
@@ -12,5 +12,5 @@ export interface IMission {
 
   // Relations
   readonly quest: IQuest;
-  readonly profileMissions: IProfileMission[];
+  readonly profileMissionsProgress: IProfileMissionProgress[];
 }

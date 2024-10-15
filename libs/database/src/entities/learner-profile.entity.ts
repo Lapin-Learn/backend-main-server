@@ -1,5 +1,18 @@
-import { ActionNameEnum, BandScoreEnum, MileStonesEnum, RankEnum } from "@app/types/enums";
-import { ILearnerProfile, ILearnerProfileInfo, ILevel, IMileStoneInfo } from "@app/types/interfaces";
+import {
+  ActionNameEnum,
+  BandScoreEnum,
+  MileStonesEnum,
+  ProfileMissionProgressStatusEnum,
+  RankEnum,
+} from "@app/types/enums";
+import {
+  ILearnerProfile,
+  ILearnerProfileInfo,
+  ILevel,
+  IMileStoneInfo,
+  IMission,
+  IProfileMissionProgress,
+} from "@app/types/interfaces";
 import {
   BaseEntity,
   Column,
@@ -16,7 +29,7 @@ import { Level } from "./level.entity";
 import { Streak } from "./streak.entity";
 import { Activity } from "./activity.entity";
 import { ProfileBadge } from "./profile-badge.entity";
-import { ProfileMission } from "./profile-mission.entity";
+import { ProfileMissionProgress } from "./profile-mission-progress.entity";
 import { ProfileItem } from "./profile-item.entity";
 import { LessonRecord } from "./lesson-record.entity";
 import { LessonProcess } from "./lesson-process.entity";
@@ -75,8 +88,8 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
   @OneToMany(() => ProfileBadge, (profileBadge) => profileBadge.profile)
   readonly profileBadges: ProfileBadge[];
 
-  @OneToMany(() => ProfileMission, (profileMission) => profileMission.profile, { eager: true })
-  readonly profileMissions: ProfileMission[];
+  @OneToMany(() => ProfileMissionProgress, (profileMissionProgress) => profileMissionProgress.profile, { eager: true })
+  readonly profileMissionsProgress: ProfileMissionProgress[];
 
   @OneToMany(() => ProfileItem, (profileItem) => profileItem.profile)
   readonly profileItems: ProfileItem[];
@@ -138,6 +151,30 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
         newValue: this.lessonProcesses.find((lesson) => lesson.questionTypeId === questionTypeId).bandScore,
       });
     return milestones;
+  }
+
+  public async handleMissionComplete(mission: IMission): Promise<IProfileMissionProgress> {
+    let missionProgress = this.profileMissionsProgress.find((m) => m.missionId === mission.id);
+    if (missionProgress) {
+      missionProgress.current += 1;
+      if (missionProgress.current >= mission.quantity) {
+        missionProgress.status = ProfileMissionProgressStatusEnum.COMPLETED;
+      }
+    } else {
+      missionProgress = new ProfileMissionProgress({
+        profileId: this.id,
+        current: 1,
+        status:
+          mission.quantity === 1
+            ? ProfileMissionProgressStatusEnum.COMPLETED
+            : ProfileMissionProgressStatusEnum.ASSIGNED,
+        mission: mission,
+      });
+      this.profileMissionsProgress.push(missionProgress);
+    }
+
+    await missionProgress.save();
+    return missionProgress;
   }
 
   private async isLevelUp(): Promise<boolean> {

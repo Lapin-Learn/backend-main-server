@@ -12,7 +12,7 @@ import {
   UpdateDateColumn,
 } from "typeorm";
 import { Quest } from "./quest.entity";
-import { ProfileMission } from "./profile-mission.entity";
+import { ProfileMissionProgress } from "./profile-mission-progress.entity";
 
 @Entity({ name: "missions" })
 export class Mission extends BaseEntity implements IMission {
@@ -45,6 +45,6 @@ export class Mission extends BaseEntity implements IMission {
   @JoinColumn({ name: "quest_id", referencedColumnName: "id" })
   quest: Quest;
 
-  @OneToMany(() => ProfileMission, (profileMission) => profileMission.mission)
-  profileMissions: ProfileMission[];
+  @OneToMany(() => ProfileMissionProgress, (profileMissionProgress) => profileMissionProgress.mission)
+  profileMissionsProgress: ProfileMissionProgress[];
 }

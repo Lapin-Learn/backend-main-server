@@ -1,10 +1,10 @@
-import { LearnerProfile, Lesson, LessonRecord } from "@app/database";
+import { LearnerProfile, Lesson, LessonRecord, Mission } from "@app/database";
 import { CompleteLessonDto } from "@app/types/dtos";
-import { ICurrentUser, IMileStoneInfo, IProfileMission } from "@app/types/interfaces";
+import { ICurrentUser, IMileStoneInfo, IProfileMissionProgress } from "@app/types/interfaces";
 import { BadRequestException, Injectable, Logger } from "@nestjs/common";
 import { EntityNotFoundError, QueryFailedError } from "typeorm";
 import { MissionFactoryService } from "@app/shared-modules/mission-factory";
-import { MileStonesEnum, ProfileMissionStatusEnum } from "@app/types/enums";
+import { MileStonesEnum, ProfileMissionProgressStatusEnum } from "@app/types/enums";
 
 @Injectable()
 export class LessonService {
@@ -42,19 +42,24 @@ export class LessonService {
         currentLesson.questionType.id
       );
 
-      const missionMilestones: IMileStoneInfo<IProfileMission[]> = {
+      const missionMilestones: IMileStoneInfo<IProfileMissionProgress[]> = {
         type: MileStonesEnum.IS_MISSION_COMPLETED,
         newValue: [],
       };
 
-      const learnerMissions = learner.profileMissions.filter((m) => m.status === ProfileMissionStatusEnum.ASSIGNED);
-      for (const learnerMission of learnerMissions) {
-        const { mission } = learnerMission;
-        const missionInstance = this.missionFactoryService.createMission(mission, learner);
-        const isCompleted = await missionInstance.isMissionCompleted();
-        if (isCompleted) {
-          await learnerMission.handMissionComplete();
-          missionMilestones.newValue.push(learnerMission);
+      const missions = await Mission.find();
+
+      for (const mission of missions) {
+        const isCompleteMission = learner.profileMissionsProgress.some(
+          (m) => m.missionId === mission.id && m.status === ProfileMissionProgressStatusEnum.COMPLETED
+        );
+        if (!isCompleteMission) {
+          const missionInstance = this.missionFactoryService.createMissionService(mission, learner);
+          const isCompleted = await missionInstance.isMissionCompleted();
+          if (isCompleted) {
+            const missionProgress = await learner.handleMissionComplete(mission);
+            missionMilestones.newValue.push(missionProgress);
+          }
         }
       }
 

@@ -10,7 +10,7 @@ import {
   ILevel,
   IProfileBadge,
   IProfileItem,
-  IProfileMission,
+  IProfileMissionProgress,
   IStreak,
 } from "@app/types/interfaces";
 import { mockEmail, mockUid } from "@app/shared-modules/firebase/__mocks__/firebase-auth.service";
@@ -28,7 +28,7 @@ const learnerProfile: ILearnerProfile = {
   streak,
   activities: [] as IActivity[],
   profileItems: [] as IProfileItem[],
-  profileMissions: [] as IProfileMission[],
+  profileMissionsProgress: [] as IProfileMissionProgress[],
   profileBadges: [] as IProfileBadge[],
   lessonRecords: [] as ILessonRecord[],
   lessonProcesses: [] as ILessonProcess[],
