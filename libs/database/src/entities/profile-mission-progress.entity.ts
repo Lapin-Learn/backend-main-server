@@ -73,13 +73,13 @@ export class ProfileMissionProgress extends BaseEntity implements IProfileMissio
       .andWhere(
         `(
           DATE(profile_missions_progress.created_at) = CURRENT_DATE AND 
-          mission.types = :daily
+          mission.type = :daily
         )
         OR 
         (
           EXTRACT(MONTH FROM profile_missions_progress.created_at) = EXTRACT(MONTH FROM CURRENT_DATE) AND
           EXTRACT(YEAR FROM profile_missions_progress.created_at) = EXTRACT(YEAR FROM CURRENT_DATE) AND
-          mission.types = :monthly
+          mission.type = :monthly
         )`,
         {
           daily: IntervalTypeEnum.DAILY,

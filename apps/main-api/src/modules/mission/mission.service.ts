@@ -32,7 +32,7 @@ export class MissionService {
       this.logger.log("Update missions");
 
       // Check if today is the first day of month
-      const isFirstDayOfMonth = moment().tz("Asia/Saigon").date() === 15;
+      const isFirstDayOfMonth = moment().tz("Asia/Saigon").date() === 1;
 
       // Random mission
       const randomDailyQuests = await Quest.randAndFind(IntervalTypeEnum.DAILY, 3);
@@ -43,7 +43,7 @@ export class MissionService {
       // Quantity is random between 2 and 5
       randomQuests.map((q) => {
         Mission.save({
-          types: q.types,
+          type: q.type,
           questId: q.id,
           quantity: Math.floor(Math.random() * (5 - 2 + 1)) + 2,
         });

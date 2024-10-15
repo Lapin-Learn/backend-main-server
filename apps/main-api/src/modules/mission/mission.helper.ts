@@ -9,7 +9,7 @@ export class MissionHelper {
       : missions.map((mission) => {
           const progress = profileProgress.find((item) => item.missionId === mission.id);
           return {
-            interval: mission.types,
+            interval: mission.type,
             name: mission.quest.name,
             description: mission.quest.description,
             current: progress?.current || 0,

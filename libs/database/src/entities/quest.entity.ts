@@ -34,8 +34,8 @@ export class Quest extends BaseEntity implements IQuest {
   @Column({ name: "rewards", type: "int", nullable: false, default: 0 })
   rewards: number;
 
-  @Column({ name: "types", type: "enum", enum: IntervalTypeEnum, nullable: false })
-  types: IntervalTypeEnum;
+  @Column({ name: "type", type: "enum", enum: IntervalTypeEnum, nullable: false })
+  type: IntervalTypeEnum;
 
   @Column({ name: "category", type: "varchar", length: 255, nullable: false })
   category: string;
@@ -62,8 +62,8 @@ export class Quest extends BaseEntity implements IQuest {
 
   // Active Record Pattern
   static async randAndFind(intervalType: IntervalTypeEnum, limit: number): Promise<IQuest[]> {
-    return this.createQueryBuilder("quest")
-      .where("quest.types = :intervalType", { intervalType })
+    return this.createQueryBuilder("quests")
+      .where("quests.type = :intervalType", { intervalType })
       .orderBy("RANDOM()")
       .limit(limit)
       .getMany();
