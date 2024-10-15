@@ -47,7 +47,7 @@ export class LessonService {
         newValue: [],
       };
 
-      const missions = await Mission.find();
+      const missions = await Mission.getMissions();
 
       for (const mission of missions) {
         const isCompleteMission = learner.profileMissionsProgress.some(

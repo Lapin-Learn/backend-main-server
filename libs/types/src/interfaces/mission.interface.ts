@@ -4,7 +4,7 @@ import { IQuest } from "./quest.interface";
 
 export interface IMission {
   id: string;
-  types: IntervalTypeEnum;
+  type: IntervalTypeEnum;
   questId: string;
   quantity: number;
   createdAt: Date;

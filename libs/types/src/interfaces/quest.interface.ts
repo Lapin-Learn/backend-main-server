@@ -8,7 +8,7 @@ export interface IQuest {
   actionId: string;
   requirements: number;
   rewards: number;
-  types: IntervalTypeEnum;
+  type: IntervalTypeEnum;
   category: string;
   createdAt: Date;
   updatedAt: Date;

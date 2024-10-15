@@ -66,21 +66,20 @@ export class ProfileMissionProgress extends BaseEntity implements IProfileMissio
   mission: Mission;
 
   // Active Record Pattern
-  static async getMissions(learnerProfileId: string) {
+  static async getMissionProgresses(learnerProfileId: string) {
     return this.createQueryBuilder("profile_missions_progress")
       .leftJoinAndSelect("profile_missions_progress.mission", "mission")
-      .leftJoinAndSelect("mission.quest", "quest")
       .where("profile_missions_progress.profileId = :profileId", { profileId: learnerProfileId })
       .andWhere(
         `(
           DATE(profile_missions_progress.created_at) = CURRENT_DATE AND 
-          mission.types = :daily
+          mission.type = :daily
         )
         OR 
         (
           EXTRACT(MONTH FROM profile_missions_progress.created_at) = EXTRACT(MONTH FROM CURRENT_DATE) AND
           EXTRACT(YEAR FROM profile_missions_progress.created_at) = EXTRACT(YEAR FROM CURRENT_DATE) AND
-          mission.types = :monthly
+          mission.type = :monthly
         )`,
         {
           daily: IntervalTypeEnum.DAILY,

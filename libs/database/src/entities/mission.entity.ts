@@ -19,8 +19,8 @@ export class Mission extends BaseEntity implements IMission {
   @PrimaryGeneratedColumn("uuid")
   id: string;
 
-  @Column({ name: "types", type: "enum", enum: IntervalTypeEnum, nullable: false })
-  types: IntervalTypeEnum;
+  @Column({ name: "type", type: "enum", enum: IntervalTypeEnum, nullable: false })
+  type: IntervalTypeEnum;
 
   @Column({ name: "quest_id", type: "uuid", nullable: false })
   questId: string;
@@ -47,4 +47,24 @@ export class Mission extends BaseEntity implements IMission {
 
   @OneToMany(() => ProfileMissionProgress, (profileMissionProgress) => profileMissionProgress.mission)
   profileMissionsProgress: ProfileMissionProgress[];
+
+  // Active Record Patterns
+  static async getMissions() {
+    return this.createQueryBuilder("missions")
+      .where(
+        `(
+          DATE(missions.created_at) = CURRENT_DATE AND 
+          missions.type = :daily
+        )
+        OR 
+        (
+          EXTRACT(MONTH FROM missions.created_at) = EXTRACT(MONTH FROM CURRENT_DATE) AND
+          EXTRACT(YEAR FROM missions.created_at) = EXTRACT(YEAR FROM CURRENT_DATE) AND
+          missions.type = :monthly
+        )`,
+        { daily: IntervalTypeEnum.DAILY, monthly: IntervalTypeEnum.MONTHLY }
+      )
+      .leftJoinAndSelect("missions.quest", "quest")
+      .getMany();
+  }
 }
