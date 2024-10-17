@@ -8,6 +8,7 @@ import { RedisService } from "@app/shared-modules/redis";
 import { ResetPasswordActionEnum } from "@app/types/enums";
 import { IAccount, ICurrentUser } from "@app/types/interfaces";
 import { EntityNotFoundError } from "typeorm";
+import { generateOTPConfig } from "../../config";
 
 @Injectable()
 export class AuthService {
@@ -36,17 +37,16 @@ export class AuthService {
     }
   }
 
-  async loginWithProvider(email: string, uid: string) {
+  async loginWithProvider(email: string) {
     try {
       let dbUser: IAccount = await Account.findOne({ where: { email } });
-      let claims: ICurrentUser;
       if (!dbUser) {
-        dbUser = await Account.save({ email, providerId: uid, username: email });
-        claims = { userId: dbUser.id, profileId: dbUser.learnerProfileId, role: dbUser.role };
-      } else {
-        claims = { userId: dbUser.id, profileId: dbUser.learnerProfileId, role: dbUser.role };
+        const generatedPassword = otpGenerator(8, generateOTPConfig);
+        const newFirebaseUser = await this.firebaseService.createUserByEmailAndPassword(email, generatedPassword);
+        dbUser = await Account.save({ email, providerId: newFirebaseUser.uid, username: email });
       }
-      const accessToken = await this.firebaseService.generateCustomToken(uid, claims);
+      const claims: ICurrentUser = { userId: dbUser.id, profileId: dbUser.learnerProfileId, role: dbUser.role };
+      const accessToken = await this.firebaseService.generateCustomToken(dbUser.providerId, claims);
       return this.authHelper.buildTokenResponse(accessToken);
     } catch (error) {
       this.logger.error(error);
@@ -79,12 +79,7 @@ export class AuthService {
       if (!dbUser) {
         throw new NotAcceptableException("Email not found");
       }
-      const otp = otpGenerator(6, {
-        digits: true,
-        lowerCaseAlphabets: false,
-        upperCaseAlphabets: false,
-        specialChars: false,
-      });
+      const otp = otpGenerator(6, generateOTPConfig);
       const resetPasswordToken = await this.firebaseService.generateCustomToken(dbUser.providerId, {
         uid: dbUser.providerId,
         action: ResetPasswordActionEnum.RESET_PASSWORD,
@@ -113,7 +108,7 @@ export class AuthService {
         throw new NotAcceptableException("Invalid OTP");
       }
 
-      return data.resetPasswordToken; // attach this token to header for reset password
+      return this.authHelper.buildTokenResponse(data.resetPasswordToken);
     } catch (error) {
       this.logger.error(error);
       throw new BadRequestException(error);

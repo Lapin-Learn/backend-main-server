@@ -1,11 +1,11 @@
 import { Injectable } from "@nestjs/common";
 import { PassportStrategy } from "@nestjs/passport";
 import { Strategy } from "passport-custom";
-import { FirebaseAuthService } from "@app/shared-modules/firebase";
+import { OAuth2Client } from "google-auth-library";
 
 @Injectable()
-export class ProviderStrategy extends PassportStrategy(Strategy, "provider-jwt") {
-  constructor(private firebaseService: FirebaseAuthService) {
+export class GoogleStrategy extends PassportStrategy(Strategy, "google-jwt") {
+  constructor() {
     super();
   }
 
@@ -22,7 +22,11 @@ export class ProviderStrategy extends PassportStrategy(Strategy, "provider-jwt")
 
     const token = authHeader.substring(7, authHeader.length);
     try {
-      return await this.firebaseService.verifyProviderToken(token);
+      const googleClient = new OAuth2Client();
+      const ticket = await googleClient.verifyIdToken({
+        idToken: token,
+      });
+      return ticket.getPayload();
     } catch (error) {
       return false;
     }
