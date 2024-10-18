@@ -125,4 +125,20 @@ export class AuthService {
       throw new BadRequestException(error);
     }
   }
+
+  async refreshAccessToken(refreshToken: string) {
+    try {
+      const firebaseUser = await this.firebaseService.refreshToken(refreshToken);
+      const dbUser = await Account.findOneOrFail({ where: { providerId: firebaseUser.user_id } });
+      const accessToken = await this.firebaseService.generateCustomToken(dbUser.providerId, {
+        userId: dbUser.id,
+        profileId: dbUser.learnerProfileId,
+        role: dbUser.role,
+      });
+      return this.authHelper.buildTokenResponse(accessToken, firebaseUser.refresh_token);
+    } catch (error) {
+      this.logger.error(error);
+      throw new BadRequestException(error);
+    }
+  }
 }

@@ -138,4 +138,29 @@ export class FirebaseAuthService {
       throw error;
     }
   }
+
+  async refreshToken(refreshToken: string) {
+    try {
+      const response = await this.httpService.post(`${this.firebaseUrl}/token?key=${this.apiKey}`, {
+        grant_type: "refresh_token",
+        refresh_token: refreshToken,
+      });
+      await this.revokeRefreshToken(response.data.id_token);
+      return response.data;
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
+  async revokeRefreshToken(idToken: string) {
+    try {
+      const auth = getAuth(this.app);
+      const decodedToken = await auth.verifyIdToken(idToken);
+      await auth.revokeRefreshTokens(decodedToken.sub);
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
 }
