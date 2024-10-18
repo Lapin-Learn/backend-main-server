@@ -35,3 +35,5 @@ export * from "./milestone-info.interfaces";
 
 export * from "./decoded-token.interface";
 export * from "./band-score-require.interface";
+
+export * from "./google-user.interface";

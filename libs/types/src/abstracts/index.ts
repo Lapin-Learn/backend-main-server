@@ -1,1 +1,1 @@
-export * from "./mission.service.abstract";
+export * from "./mission-service.abstract";

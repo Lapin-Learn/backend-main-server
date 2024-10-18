@@ -2,10 +2,10 @@ import { Body, Controller, Get, Post, Query, UseGuards, Request } from "@nestjs/
 import { AuthService } from "./auth.service";
 import { LogInUserDto, RegisterUserDto, VerifyOtpDto, ResetPasswordDto } from "@app/types/dtos";
 import { ApiBearerAuth, ApiBody, ApiOperation, ApiQuery, ApiResponse, ApiTags } from "@nestjs/swagger";
-import { FirebaseJwtAuthGuard, ProviderJwtAuthGuard } from "../../guards";
+import { FirebaseJwtAuthGuard, GoogleJwtAuthGuard } from "../../guards";
 import { ResetPasswordGuard } from "../../guards/reset-password.guard";
-import { IDecodedIdToken, IResetPasswordAction } from "@app/types/interfaces";
-import { ProviderTokenPayload } from "../../decorators/provider-token-payload.decorator";
+import { IGoogleUser, IResetPasswordAction } from "@app/types/interfaces";
+import { GoogleUser } from "../../decorators";
 
 @ApiTags("Authentication")
 @Controller("auth")
@@ -32,10 +32,10 @@ export class AuthController {
     return this.authService.login(email, password);
   }
 
-  @Post("provider")
-  @UseGuards(ProviderJwtAuthGuard)
-  async signInWithProvider(@ProviderTokenPayload() user: IDecodedIdToken) {
-    return this.authService.loginWithProvider(user.email, user.uid);
+  @Post("provider/google")
+  @UseGuards(GoogleJwtAuthGuard)
+  async signInWithProvider(@GoogleUser() user: IGoogleUser) {
+    return this.authService.loginWithProvider(user.email);
   }
 
   @Post("otp")
