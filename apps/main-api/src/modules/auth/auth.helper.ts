@@ -4,7 +4,7 @@ import { Injectable } from "@nestjs/common";
 export class AuthHelper {
   constructor() {}
 
-  async buildTokenResponse(accessToken: string) {
-    return { accessToken };
+  async buildTokenResponse(accessToken: string, refreshToken?: string) {
+    return { accessToken, refreshToken };
   }
 }
