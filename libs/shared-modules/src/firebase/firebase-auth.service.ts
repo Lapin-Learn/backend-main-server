@@ -26,12 +26,12 @@ export class FirebaseAuthService {
 
   async createUserByEmailAndPassword(email: string, password: string) {
     try {
-      const auth = getAuth(this.app);
-      return await auth.createUser({ email, password, emailVerified: true });
+      const response = await this.httpService.post(`${this.firebaseUrl}/accounts:signUp?key=${this.apiKey}`, {
+        email,
+        password,
+      });
+      return response.data;
     } catch (error) {
-      if (error.code === "auth/email-already-exists") {
-        throw new Error("Email already exists");
-      }
       this.logger.error(error);
       throw error;
     }
@@ -61,9 +61,23 @@ export class FirebaseAuthService {
         {
           email,
           password,
-          returnSecureToken: false,
+          returnSecureToken: true,
         }
       );
+      return response.data;
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
+  async verifyOAuthCredential(credential: string, providerId: string) {
+    try {
+      const response = await this.httpService.post(`${this.firebaseUrl}/accounts:signInWithIdp?key=${this.apiKey}`, {
+        requestUri: "http://localhost",
+        postBody: `id_token=${credential}&providerId=${providerId}`,
+        returnSecureToken: true,
+      });
       return response.data;
     } catch (error) {
       this.logger.error(error);
@@ -82,10 +96,15 @@ export class FirebaseAuthService {
     }
   }
 
-  async verifyProviderToken(token: string) {
+  async linkWithProvider(idToken: string, email: string, password: string) {
     try {
-      const auth = getAuth(this.app);
-      return auth.verifyIdToken(token);
+      const response = await this.httpService.post(`${this.firebaseUrl}/accounts:update?key=${this.apiKey}`, {
+        idToken,
+        email,
+        password,
+        returnSecureToken: false,
+      });
+      return response.data;
     } catch (error) {
       this.logger.error(error);
       throw error;
