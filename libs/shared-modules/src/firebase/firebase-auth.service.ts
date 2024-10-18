@@ -12,6 +12,7 @@ export class FirebaseAuthService {
   private readonly app: App;
   private readonly apiKey: string;
   private readonly firebaseUrl: string;
+  private readonly requestUri: string;
   private readonly httpService: AxiosInstance;
 
   constructor(
@@ -20,18 +21,19 @@ export class FirebaseAuthService {
   ) {
     this.apiKey = this.configService.get("FIREBASE_API_KEY");
     this.firebaseUrl = this.configService.get("FIREBASE_URL");
+    this.requestUri = this.configService.get("REQUEST_URI");
     this.httpService = genericHttpConsumer();
     this.app = initializeApp(options);
   }
 
   async createUserByEmailAndPassword(email: string, password: string) {
     try {
-      const response = await this.httpService.post(`${this.firebaseUrl}/accounts:signUp?key=${this.apiKey}`, {
-        email,
-        password,
-      });
-      return response.data;
+      const auth = getAuth(this.app);
+      return await auth.createUser({ email, password, emailVerified: true });
     } catch (error) {
+      if (error.code === "auth/email-already-exists") {
+        throw new Error("Email already exists");
+      }
       this.logger.error(error);
       throw error;
     }
@@ -74,7 +76,7 @@ export class FirebaseAuthService {
   async verifyOAuthCredential(credential: string, providerId: string) {
     try {
       const response = await this.httpService.post(`${this.firebaseUrl}/accounts:signInWithIdp?key=${this.apiKey}`, {
-        requestUri: "http://localhost",
+        requestUri: this.requestUri,
         postBody: `id_token=${credential}&providerId=${providerId}`,
         returnSecureToken: true,
       });
@@ -133,6 +135,29 @@ export class FirebaseAuthService {
       return app.updateUser(uid, {
         password: newPassword,
       });
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
+  async refreshToken(refreshToken: string) {
+    try {
+      const response = await this.httpService.post(`${this.firebaseUrl}/token?key=${this.apiKey}`, {
+        grant_type: "refresh_token",
+        refresh_token: refreshToken,
+      });
+      return response.data;
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
+  async revokeRefreshToken(uid: string) {
+    try {
+      const auth = getAuth(this.app);
+      await auth.revokeRefreshTokens(uid);
     } catch (error) {
       this.logger.error(error);
       throw error;

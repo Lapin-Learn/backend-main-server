@@ -24,13 +24,8 @@ export class AuthService {
   async registerUser(email: string, password: string) {
     try {
       const firebaseUser = await this.firebaseService.createUserByEmailAndPassword(email, password);
-      const newUser: IAccount = await Account.save({ email, providerId: firebaseUser.localId, username: email });
-      const accessToken = await this.firebaseService.generateCustomToken(firebaseUser.localId, {
-        userId: newUser.id,
-        profileId: newUser.learnerProfileId,
-        role: newUser.role,
-      });
-      return this.authHelper.buildTokenResponse(accessToken, firebaseUser.refreshToken);
+      await Account.save({ email, providerId: firebaseUser.uid, username: email });
+      return "Sign up successfully";
     } catch (error) {
       this.logger.error(error);
       throw new BadRequestException(error);
@@ -120,6 +115,22 @@ export class AuthService {
   async updatePassword(uid: string, newPassword: string) {
     try {
       return await this.firebaseService.changePassword(uid, newPassword);
+    } catch (error) {
+      this.logger.error(error);
+      throw new BadRequestException(error);
+    }
+  }
+
+  async refreshAccessToken(refreshToken: string) {
+    try {
+      const firebaseUser = await this.firebaseService.refreshToken(refreshToken);
+      const dbUser = await Account.findOneOrFail({ where: { providerId: firebaseUser.user_id } });
+      const accessToken = await this.firebaseService.generateCustomToken(dbUser.providerId, {
+        userId: dbUser.id,
+        profileId: dbUser.learnerProfileId,
+        role: dbUser.role,
+      });
+      return this.authHelper.buildTokenResponse(accessToken, firebaseUser.refresh_token);
     } catch (error) {
       this.logger.error(error);
       throw new BadRequestException(error);

@@ -7,3 +7,4 @@ export * from "./update-account-by-admin.dto";
 export * from "./verify-otp.dto";
 export * from "./change-password.dto";
 export * from "./log-in-with-provider.dto";
+export * from "./refresh-token-request.dto";
