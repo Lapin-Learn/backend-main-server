@@ -12,6 +12,7 @@ export class FirebaseAuthService {
   private readonly app: App;
   private readonly apiKey: string;
   private readonly firebaseUrl: string;
+  private readonly requestUri: string;
   private readonly httpService: AxiosInstance;
 
   constructor(
@@ -20,6 +21,7 @@ export class FirebaseAuthService {
   ) {
     this.apiKey = this.configService.get("FIREBASE_API_KEY");
     this.firebaseUrl = this.configService.get("FIREBASE_URL");
+    this.requestUri = this.configService.get("REQUEST_URI");
     this.httpService = genericHttpConsumer();
     this.app = initializeApp(options);
   }
@@ -61,9 +63,23 @@ export class FirebaseAuthService {
         {
           email,
           password,
-          returnSecureToken: false,
+          returnSecureToken: true,
         }
       );
+      return response.data;
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
+  async verifyOAuthCredential(credential: string, providerId: string) {
+    try {
+      const response = await this.httpService.post(`${this.firebaseUrl}/accounts:signInWithIdp?key=${this.apiKey}`, {
+        requestUri: this.requestUri,
+        postBody: `id_token=${credential}&providerId=${providerId}`,
+        returnSecureToken: true,
+      });
       return response.data;
     } catch (error) {
       this.logger.error(error);
@@ -82,10 +98,15 @@ export class FirebaseAuthService {
     }
   }
 
-  async verifyProviderToken(token: string) {
+  async linkWithProvider(idToken: string, email: string, password: string) {
     try {
-      const auth = getAuth(this.app);
-      return auth.verifyIdToken(token);
+      const response = await this.httpService.post(`${this.firebaseUrl}/accounts:update?key=${this.apiKey}`, {
+        idToken,
+        email,
+        password,
+        returnSecureToken: false,
+      });
+      return response.data;
     } catch (error) {
       this.logger.error(error);
       throw error;
@@ -114,6 +135,29 @@ export class FirebaseAuthService {
       return app.updateUser(uid, {
         password: newPassword,
       });
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
+  async refreshToken(refreshToken: string) {
+    try {
+      const response = await this.httpService.post(`${this.firebaseUrl}/token?key=${this.apiKey}`, {
+        grant_type: "refresh_token",
+        refresh_token: refreshToken,
+      });
+      return response.data;
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
+  async revokeRefreshToken(uid: string) {
+    try {
+      const auth = getAuth(this.app);
+      await auth.revokeRefreshTokens(uid);
     } catch (error) {
       this.logger.error(error);
       throw error;

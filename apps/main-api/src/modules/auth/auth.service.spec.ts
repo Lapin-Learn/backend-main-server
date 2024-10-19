@@ -66,11 +66,13 @@ describe("AuthService", function () {
         email: signUpRequestMock.email,
       } as Account);
       jest.spyOn(firebaseAuthService, "generateCustomToken").mockResolvedValueOnce(mockToken);
-      jest.spyOn(authHelper, "buildTokenResponse").mockResolvedValueOnce({ accessToken: mockToken });
+      jest
+        .spyOn(authHelper, "buildTokenResponse")
+        .mockResolvedValueOnce({ accessToken: mockToken, refreshToken: mockToken });
       // Act
       const result = await service.registerUser(signUpRequestMock.email, signUpRequestMock.password);
       // Assert
-      expect(result).toEqual({ accessToken: mockToken });
+      expect(result).toEqual("Sign up successfully");
     });
   });
 
@@ -83,9 +85,11 @@ describe("AuthService", function () {
         ...userStub(),
         email: signInRequestMock.email,
       } as Account);
-      jest.spyOn(authHelper, "buildTokenResponse").mockResolvedValueOnce({ accessToken: mockToken });
+      jest
+        .spyOn(authHelper, "buildTokenResponse")
+        .mockResolvedValueOnce({ accessToken: mockToken, refreshToken: mockToken });
       const result = await service.login(signInRequestMock.email, signInRequestMock.password);
-      expect(result).toEqual({ accessToken: mockToken });
+      expect(result).toEqual({ accessToken: mockToken, refreshToken: mockToken });
     });
     it("should throw a BadRequestException when the user is not found", async () => {
       jest.spyOn(firebaseAuthService, "verifyUser").mockResolvedValueOnce(null);

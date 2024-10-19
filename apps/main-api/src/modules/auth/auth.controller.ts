@@ -1,11 +1,17 @@
 import { Body, Controller, Get, Post, Query, UseGuards, Request } from "@nestjs/common";
 import { AuthService } from "./auth.service";
-import { LogInUserDto, RegisterUserDto, VerifyOtpDto, ResetPasswordDto } from "@app/types/dtos";
+import {
+  LogInUserDto,
+  RegisterUserDto,
+  VerifyOtpDto,
+  ResetPasswordDto,
+  LogInWithProviderDto,
+  RefreshTokenRequestDto,
+} from "@app/types/dtos";
 import { ApiBearerAuth, ApiBody, ApiOperation, ApiQuery, ApiResponse, ApiTags } from "@nestjs/swagger";
-import { FirebaseJwtAuthGuard, GoogleJwtAuthGuard } from "../../guards";
+import { FirebaseJwtAuthGuard } from "../../guards";
 import { ResetPasswordGuard } from "../../guards/reset-password.guard";
-import { IGoogleUser, IResetPasswordAction } from "@app/types/interfaces";
-import { GoogleUser } from "../../decorators";
+import { IResetPasswordAction } from "@app/types/interfaces";
 
 @ApiTags("Authentication")
 @Controller("auth")
@@ -32,10 +38,12 @@ export class AuthController {
     return this.authService.login(email, password);
   }
 
-  @Post("provider/google")
-  @UseGuards(GoogleJwtAuthGuard)
-  async signInWithProvider(@GoogleUser() user: IGoogleUser) {
-    return this.authService.loginWithProvider(user.email);
+  @Post("provider")
+  @ApiOperation({ summary: "Sign in with provider" })
+  @ApiBody({ type: LogInWithProviderDto })
+  @ApiResponse({ status: 200, description: "User signed in" })
+  async signInWithProvider(@Body() data: LogInWithProviderDto) {
+    return this.authService.loginWithProvider(data.credential, data.provider);
   }
 
   @Post("otp")
@@ -67,5 +75,14 @@ export class AuthController {
   @ApiResponse({ status: 406, description: "Email not found" })
   async sendOtp(@Query("email") email: string) {
     return this.authService.sendOtp(email);
+  }
+
+  @Post("refresh")
+  @ApiOperation({ summary: "Refresh token" })
+  @ApiBody({ type: RefreshTokenRequestDto })
+  @ApiResponse({ status: 200, description: "Token refreshed" })
+  @ApiResponse({ status: 400, description: "Invalid or expired refresh token" })
+  async refreshToken(@Body() data: RefreshTokenRequestDto) {
+    return this.authService.refreshAccessToken(data.refreshToken);
   }
 }

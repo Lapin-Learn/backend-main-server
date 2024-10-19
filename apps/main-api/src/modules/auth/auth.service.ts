@@ -24,30 +24,27 @@ export class AuthService {
   async registerUser(email: string, password: string) {
     try {
       const firebaseUser = await this.firebaseService.createUserByEmailAndPassword(email, password);
-      const newUser: IAccount = await Account.save({ email, providerId: firebaseUser.uid, username: email });
-      const accessToken = await this.firebaseService.generateCustomToken(firebaseUser.uid, {
-        userId: newUser.id,
-        profileId: newUser.learnerProfileId,
-        role: newUser.role,
-      });
-      return this.authHelper.buildTokenResponse(accessToken);
+      await Account.save({ email, providerId: firebaseUser.uid, username: email });
+      return "Sign up successfully";
     } catch (error) {
       this.logger.error(error);
       throw new BadRequestException(error);
     }
   }
 
-  async loginWithProvider(email: string) {
+  async loginWithProvider(credential: string, provider: string) {
     try {
+      const firebaseUser = await this.firebaseService.verifyOAuthCredential(credential, provider);
+      const { email } = firebaseUser;
       let dbUser: IAccount = await Account.findOne({ where: { email } });
       if (!dbUser) {
         const generatedPassword = otpGenerator(8, generateOTPConfig);
-        const newFirebaseUser = await this.firebaseService.createUserByEmailAndPassword(email, generatedPassword);
-        dbUser = await Account.save({ email, providerId: newFirebaseUser.uid, username: email });
+        await this.firebaseService.linkWithProvider(firebaseUser.idToken, firebaseUser.email, generatedPassword);
+        dbUser = await Account.save({ email, providerId: firebaseUser.localId, username: email });
       }
       const claims: ICurrentUser = { userId: dbUser.id, profileId: dbUser.learnerProfileId, role: dbUser.role };
       const accessToken = await this.firebaseService.generateCustomToken(dbUser.providerId, claims);
-      return this.authHelper.buildTokenResponse(accessToken);
+      return this.authHelper.buildTokenResponse(accessToken, firebaseUser.refreshToken);
     } catch (error) {
       this.logger.error(error);
       throw new BadRequestException(error);
@@ -56,14 +53,14 @@ export class AuthService {
 
   async login(email: string, password: string) {
     try {
-      const user = await this.firebaseService.verifyUser(email, password);
-      const dbUser = await Account.findOneOrFail({ where: { providerId: user.localId, email } });
+      const firebaseUser = await this.firebaseService.verifyUser(email, password);
+      const dbUser = await Account.findOneOrFail({ where: { providerId: firebaseUser.localId, email } });
       const accessToken = await this.firebaseService.generateCustomToken(dbUser.providerId, {
         userId: dbUser.id,
         profileId: dbUser.learnerProfileId,
         role: dbUser.role,
       });
-      return this.authHelper.buildTokenResponse(accessToken);
+      return this.authHelper.buildTokenResponse(accessToken, firebaseUser.refreshToken);
     } catch (error) {
       this.logger.error(error);
       if (error instanceof EntityNotFoundError) {
@@ -118,6 +115,22 @@ export class AuthService {
   async updatePassword(uid: string, newPassword: string) {
     try {
       return await this.firebaseService.changePassword(uid, newPassword);
+    } catch (error) {
+      this.logger.error(error);
+      throw new BadRequestException(error);
+    }
+  }
+
+  async refreshAccessToken(refreshToken: string) {
+    try {
+      const firebaseUser = await this.firebaseService.refreshToken(refreshToken);
+      const dbUser = await Account.findOneOrFail({ where: { providerId: firebaseUser.user_id } });
+      const accessToken = await this.firebaseService.generateCustomToken(dbUser.providerId, {
+        userId: dbUser.id,
+        profileId: dbUser.learnerProfileId,
+        role: dbUser.role,
+      });
+      return this.authHelper.buildTokenResponse(accessToken, firebaseUser.refresh_token);
     } catch (error) {
       this.logger.error(error);
       throw new BadRequestException(error);
