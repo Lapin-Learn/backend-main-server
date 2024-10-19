@@ -20,11 +20,15 @@ export class LessonMission extends MissionServiceAbstract {
   async isMissionCompleted(): Promise<boolean> {
     switch (this._missionCategoryName) {
       case MissionCategoryNameEnum.COMPLETE_LESSON_WITH_PERCENTAGE_SCORE:
-        return this.completeLessonWithPercentageScore(this._requirements);
+        return this.completeDailyLessonWithPercentageScore(this._requirements);
+      case MissionCategoryNameEnum.TOTAL_DURATION_OF_LEARN_DAILY_LESSON:
+        return this.learnDailyLessonWithEnoughDuration(this._requirements);
+      case MissionCategoryNameEnum.COMPLETE_LESSON_WITH_DIFFERENT_SKILLS:
+        return this.completeDailyLessonWithDifferentSkills(this._requirements);
     }
   }
 
-  async completeLessonWithPercentageScore(percentage: number): Promise<boolean> {
+  async completeDailyLessonWithPercentageScore(percentage: number): Promise<boolean> {
     try {
       const res = await LessonRecord.getDailyLessonRecordWithPercentageScore(this._learner.id, percentage);
       return res > 0;
@@ -32,5 +36,20 @@ export class LessonMission extends MissionServiceAbstract {
       this.logger.error(error);
       return false;
     }
+  }
+
+  async learnDailyLessonWithEnoughDuration(timeInSecond: number): Promise<boolean> {
+    try {
+      const { totalDuration } = await LessonRecord.getTotalDurationOfLearnDailyLesson(this._learner.id);
+      return totalDuration >= timeInSecond;
+    } catch (error) {
+      this.logger.error(error);
+      return false;
+    }
+  }
+
+  async completeDailyLessonWithDifferentSkills(distinctSkills: number): Promise<boolean> {
+    const res = await LessonRecord.getCompletedLessonDistinctSkills(this._learner.id);
+    return res.distinctSkills >= distinctSkills;
   }
 }

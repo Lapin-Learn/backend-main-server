@@ -64,6 +64,24 @@ export class LessonRecord extends BaseEntity implements ILessonRecord {
       .getCount();
   }
 
+  static async getTotalDurationOfLearnDailyLesson(profileId: string) {
+    return await this.createQueryBuilder("lesson_records")
+      .select("SUM(lesson_records.duration)", "totalDuration")
+      .where("DATE(lesson_records.created_at) = CURRENT_DATE")
+      .andWhere("lesson_records.learner_profile_id = :profileId", { profileId })
+      .getRawOne();
+  }
+
+  static async getCompletedLessonDistinctSkills(profileId: string) {
+    return await this.createQueryBuilder("lesson_records")
+      .leftJoinAndSelect("lesson_records.lesson", "lesson")
+      .leftJoinAndSelect("lesson.questionType", "questionType")
+      .select("COUNT(DISTINCT questionType.skill)", "distinctSkills")
+      .where("lesson_records.learner_profile_id = :profileId", { profileId })
+      .andWhere("DATE(lesson_records.created_at) = CURRENT_DATE")
+      .getRawOne();
+  }
+
   public getBonusResources(): { bonusXP: number; bonusCarrot: number } {
     const totalAnswers = this.correctAnswers + this.wrongAnswers;
     const bonusXP = totalAnswers === 0 ? 0 : Math.round(50 * (this.correctAnswers / totalAnswers));
