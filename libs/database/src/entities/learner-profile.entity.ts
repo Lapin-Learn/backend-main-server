@@ -157,7 +157,10 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
     let missionProgress = this.profileMissionsProgress.find((m) => m.missionId === mission.id);
     if (missionProgress) {
       missionProgress.current += 1;
-      if (missionProgress.current >= mission.quantity) {
+      if (
+        missionProgress.current >= mission.quantity &&
+        missionProgress.status !== ProfileMissionProgressStatusEnum.RECEIVED
+      ) {
         missionProgress.status = ProfileMissionProgressStatusEnum.COMPLETED;
       }
     } else {

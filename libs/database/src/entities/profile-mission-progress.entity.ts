@@ -71,7 +71,7 @@ export class ProfileMissionProgress extends BaseEntity implements IProfileMissio
       .leftJoinAndSelect("profile_missions_progress.mission", "mission")
       .where("profile_missions_progress.profileId = :profileId", { profileId: learnerProfileId })
       .andWhere(
-        `(
+        `((
           DATE(profile_missions_progress.created_at) = CURRENT_DATE AND 
           mission.type = :daily
         )
@@ -80,7 +80,32 @@ export class ProfileMissionProgress extends BaseEntity implements IProfileMissio
           EXTRACT(MONTH FROM profile_missions_progress.created_at) = EXTRACT(MONTH FROM CURRENT_DATE) AND
           EXTRACT(YEAR FROM profile_missions_progress.created_at) = EXTRACT(YEAR FROM CURRENT_DATE) AND
           mission.type = :monthly
-        )`,
+        ))`,
+        {
+          daily: IntervalTypeEnum.DAILY,
+          monthly: IntervalTypeEnum.MONTHLY,
+        }
+      )
+      .getMany();
+  }
+
+  static async getCompletedMissionProgresses(profileId: string) {
+    return this.createQueryBuilder("profile_missions_progress")
+      .leftJoinAndSelect("profile_missions_progress.mission", "mission")
+      .leftJoinAndSelect("mission.quest", "quest")
+      .where("profile_missions_progress.profileId = :profileId", { profileId })
+      .andWhere("profile_missions_progress.status = :status", { status: ProfileMissionProgressStatusEnum.COMPLETED })
+      .andWhere(
+        `((
+          DATE(mission.created_at) = CURRENT_DATE AND 
+          mission.type = :daily
+        )
+        OR 
+        (
+          EXTRACT(MONTH FROM mission.created_at) = EXTRACT(MONTH FROM CURRENT_DATE) AND
+          EXTRACT(YEAR FROM mission.created_at) = EXTRACT(YEAR FROM CURRENT_DATE) AND
+          mission.type = :monthly
+        ))`,
         {
           daily: IntervalTypeEnum.DAILY,
           monthly: IntervalTypeEnum.MONTHLY,

@@ -1,10 +1,10 @@
-import { Mission, ProfileMissionProgress, Quest } from "@app/database";
+import { LearnerProfile, Mission, ProfileMissionProgress, Quest } from "@app/database";
 import { ICurrentUser } from "@app/types/interfaces";
 import { BadRequestException, Injectable, Logger } from "@nestjs/common";
 import { MissionHelper } from "./mission.helper";
 import { Cron } from "@nestjs/schedule";
 import moment from "moment-timezone";
-import { IntervalTypeEnum } from "@app/types/enums";
+import { IntervalTypeEnum, ProfileMissionProgressStatusEnum } from "@app/types/enums";
 
 @Injectable()
 export class MissionService {
@@ -17,6 +17,49 @@ export class MissionService {
       const missions = await Mission.getMissions();
       const missionProgress = await ProfileMissionProgress.getMissionProgresses(user.profileId);
       return this.missionHelper.buildMissionsResponseData(missionProgress, missions);
+    } catch (error) {
+      this.logger.error(error);
+      throw new BadRequestException(error);
+    }
+  }
+
+  async receiveRewards(user: ICurrentUser) {
+    try {
+      const profileMissionProgress = await ProfileMissionProgress.getCompletedMissionProgresses(user.profileId);
+      const bonusArray = profileMissionProgress.map((p) => p.mission.getBonusResources());
+      const bonus = bonusArray.reduce(
+        (acc, b) => {
+          return {
+            bonusXP: acc.bonusXP + b.bonusXP,
+            bonusCarrot: acc.bonusCarrot + b.bonusCarrot,
+          };
+        },
+        {
+          bonusXP: 0,
+          bonusCarrot: 0,
+        }
+      );
+
+      if (bonus.bonusXP !== 0 || bonus.bonusCarrot !== 0) {
+        const profile = await LearnerProfile.findOneOrFail({ where: { id: user.profileId } });
+        await LearnerProfile.save({
+          ...profile,
+          xp: profile.xp + bonus.bonusXP,
+          carrots: profile.carrots + bonus.bonusCarrot,
+        });
+
+        // Update mission progress status to 'received'
+        await Promise.all(
+          (profileMissionProgress || []).map(async (p) => {
+            return ProfileMissionProgress.save({
+              ...p,
+              status: ProfileMissionProgressStatusEnum.RECEIVED,
+            });
+          })
+        );
+      }
+
+      return bonus;
     } catch (error) {
       this.logger.error(error);
       throw new BadRequestException(error);
