@@ -48,6 +48,28 @@ export class Mission extends BaseEntity implements IMission {
   @OneToMany(() => ProfileMissionProgress, (profileMissionProgress) => profileMissionProgress.mission)
   profileMissionsProgress: ProfileMissionProgress[];
 
+  getBonusResources() {
+    const bonusCarrot = this.quest.rewards;
+    let bonusXP = 0;
+
+    switch (this.type) {
+      case IntervalTypeEnum.DAILY:
+        bonusXP = 10;
+        break;
+      case IntervalTypeEnum.MONTHLY:
+        bonusXP = 100;
+        break;
+      default:
+        bonusXP = 0;
+        break;
+    }
+
+    return {
+      bonusXP,
+      bonusCarrot,
+    };
+  }
+
   // Active Record Patterns
   static async getMissions() {
     return this.createQueryBuilder("missions")

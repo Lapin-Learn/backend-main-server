@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards } from "@nestjs/common";
+import { Controller, Get, Post, UseGuards } from "@nestjs/common";
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { FirebaseJwtAuthGuard } from "../../guards";
 import { MissionService } from "./mission.service";
@@ -12,15 +12,23 @@ import { ICurrentUser } from "@app/types/interfaces";
 @ApiResponse({ status: 200, description: "Missions retrieved successfully" })
 @ApiResponse({ status: 400, description: "Bad request" })
 @ApiResponse({ status: 401, description: "Unauthorized" })
+@ApiResponse({ status: 403, description: "Forbidden" })
+@ApiResponse({ status: 500, description: "Internal server error" })
 @Controller("missions")
 export class MissionController {
   constructor(private readonly missionService: MissionService) {}
 
   @ApiOperation({ summary: "Get missions" })
-  @ApiResponse({ status: 500, description: "Internal server error" })
   @Get()
   @Roles(AccountRoleEnum.LEARNER)
   async getMissions(@CurrentUser() user: ICurrentUser) {
     return this.missionService.getMissions(user);
+  }
+
+  @ApiOperation({ summary: "Receive reward from mission" })
+  @Post("receive")
+  @Roles(AccountRoleEnum.LEARNER)
+  async receiveRewards(@CurrentUser() user: ICurrentUser) {
+    return this.missionService.receiveRewards(user);
   }
 }
