@@ -1,7 +1,10 @@
 import {
   ActionNameEnum,
   BandScoreEnum,
+  IntervalTypeEnum,
   MileStonesEnum,
+  MissionCategoryNameEnum,
+  MissionGroupNameEnum,
   ProfileMissionProgressStatusEnum,
   RankEnum,
 } from "@app/types/enums";
@@ -33,7 +36,7 @@ import { ProfileMissionProgress } from "./profile-mission-progress.entity";
 import { ProfileItem } from "./profile-item.entity";
 import { LessonRecord } from "./lesson-record.entity";
 import { LessonProcess } from "./lesson-process.entity";
-import { LevelRankMap, NextBandScoreMap } from "@app/utils/maps";
+import { findMissionGroup, LevelRankMap, NextBandScoreMap } from "@app/utils/maps";
 import { UpdateResourcesDto } from "@app/types/dtos/learners";
 import { Action } from "./action.entity";
 import { CompleteLessonDto } from "@app/types/dtos";
@@ -153,14 +156,26 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
     return milestones;
   }
 
-  public async handleMissionComplete(mission: IMission): Promise<IProfileMissionProgress> {
+  public async handleMissionComplete(mission: IMission): Promise<IProfileMissionProgress | null> {
     let missionProgress = this.profileMissionsProgress.find((m) => m.missionId === mission.id);
     if (missionProgress) {
-      missionProgress.current += 1;
-      if (
-        missionProgress.current >= mission.quantity &&
-        missionProgress.status !== ProfileMissionProgressStatusEnum.RECEIVED
-      ) {
+      if (missionProgress.mission.type === IntervalTypeEnum.DAILY) {
+        missionProgress.current += 1;
+      } else if (missionProgress.mission.type === IntervalTypeEnum.MONTHLY) {
+        const missionGroup = findMissionGroup(mission.quest.category as MissionCategoryNameEnum);
+        if (missionGroup != MissionGroupNameEnum.STREAK_MISSION) {
+          if (!moment(missionProgress.updatedAt).isSame(moment(), "date")) {
+            missionProgress.current += 1;
+          } else {
+            return null;
+          }
+        } else {
+          if (missionProgress.mission.quest.category === MissionCategoryNameEnum.EXCEED_LEARNING_STREAK_WITHOUT_BREAK) {
+            missionProgress.current = await LessonRecord.countMaxConsecutiveLearningLessonDate(this.id);
+          }
+        }
+      }
+      if (missionProgress.current >= mission.quantity) {
         missionProgress.status = ProfileMissionProgressStatusEnum.COMPLETED;
       }
     } else {
