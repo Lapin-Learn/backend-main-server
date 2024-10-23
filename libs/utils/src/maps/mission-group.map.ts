@@ -9,7 +9,7 @@ export const MissionGroupMap = new Map([
       MissionCategoryNameEnum.COMPLETE_LESSON_WITH_DIFFERENT_SKILLS,
     ],
   ],
-  [MissionGroupNameEnum.STREAK_MISSION, [MissionCategoryNameEnum.EXCEED_STREAK]],
+  [MissionGroupNameEnum.STREAK_MISSION, [MissionCategoryNameEnum.EXCEED_LEARNING_STREAK_WITHOUT_BREAK]],
 ]);
 
 export function findMissionGroup(missionCategoryName: MissionCategoryNameEnum) {

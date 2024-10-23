@@ -58,7 +58,7 @@ export class LessonService {
           const isCompleted = await missionInstance.isMissionCompleted();
           if (isCompleted) {
             const missionProgress = await learner.handleMissionComplete(mission);
-            missionMilestones.newValue.push(missionProgress);
+            missionProgress && missionMilestones.newValue.push(missionProgress);
           }
         }
       }
