@@ -69,6 +69,7 @@ export class ProfileMissionProgress extends BaseEntity implements IProfileMissio
   static async getMissionProgresses(learnerProfileId: string) {
     return this.createQueryBuilder("profile_missions_progress")
       .leftJoinAndSelect("profile_missions_progress.mission", "mission")
+      .leftJoinAndSelect("mission.quest", "quest")
       .where("profile_missions_progress.profileId = :profileId", { profileId: learnerProfileId })
       .andWhere(
         `((
