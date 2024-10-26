@@ -11,6 +11,7 @@ import {
 import { Lesson } from "./lesson.entity";
 import { LearnerProfile } from "./learner-profile.entity";
 import { ILessonRecord } from "@app/types/interfaces";
+import moment from "moment-timezone";
 
 @Entity("lesson_records")
 export class LessonRecord extends BaseEntity implements ILessonRecord {
@@ -53,15 +54,53 @@ export class LessonRecord extends BaseEntity implements ILessonRecord {
   @JoinColumn({ name: "learner_profile_id", referencedColumnName: "id" })
   readonly learnerProfile: LearnerProfile;
 
-  static async getDailyLessonRecordWithPercentageScore(profileId: string, percentage: number) {
+  static async getTotalDurationOfLearnDailyLesson(profileId: string) {
     return await this.createQueryBuilder("lesson_records")
+      .select("SUM(lesson_records.duration)", "totalDuration")
       .where("DATE(lesson_records.created_at) = CURRENT_DATE")
       .andWhere("lesson_records.learner_profile_id = :profileId", { profileId })
+      .getRawOne();
+  }
+
+  static async getCompletedLessonDistinctSkills(profileId: string) {
+    return await this.createQueryBuilder("lesson_records")
+      .leftJoinAndSelect("lesson_records.lesson", "lesson")
+      .leftJoinAndSelect("lesson.questionType", "questionType")
+      .select("COUNT(DISTINCT questionType.skill)", "distinctSkills")
+      .where("lesson_records.learner_profile_id = :profileId", { profileId })
+      .andWhere("DATE(lesson_records.created_at) = CURRENT_DATE")
+      .getRawOne();
+  }
+
+  static async countMaxConsecutiveLearningLessonDate(profileId: string): Promise<number> {
+    const result = await this.createQueryBuilder("lesson_records")
+      .select("DISTINCT DATE(lesson_records.created_at)", "learningDate")
+      .where("lesson_records.learner_profile_id = :profileId", { profileId })
       .andWhere(
-        "100 * (lesson_records.correct_answers / (lesson_records.correct_answers + lesson_records.wrong_answers)::float) >= :percentage",
-        { percentage }
+        "EXTRACT(MONTH FROM lesson_records.created_at) = EXTRACT(MONTH FROM CURRENT_DATE) and EXTRACT(YEAR FROM lesson_records.created_at) = EXTRACT(YEAR FROM CURRENT_DATE)"
       )
-      .getCount();
+      .orderBy('"learningDate"', "DESC")
+      .getRawMany();
+
+    const dates = Array.from(result.map((r) => moment(r.learningDate).startOf("day")));
+    const today = moment().startOf("day");
+    const yesterday = moment().subtract(1, "day").startOf("day");
+
+    if (dates.length === 0 || (dates[0].valueOf() !== today.valueOf() && dates[0].valueOf() !== yesterday.valueOf())) {
+      return 0;
+    }
+
+    const currentStreak = [dates[0]];
+
+    for (let i = 1; i < dates.length; i++) {
+      if (Math.abs(dates[i].diff(dates[i - 1], "days")) === 1) {
+        currentStreak.push(dates[i]);
+      } else {
+        break;
+      }
+    }
+
+    return currentStreak?.length || 0;
   }
 
   public getBonusResources(): { bonusXP: number; bonusCarrot: number } {

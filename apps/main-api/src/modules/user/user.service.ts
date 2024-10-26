@@ -124,8 +124,7 @@ export class UserService {
       if (!existedUser) {
         throw new BadRequestException("User not found");
       }
-      const updatedUser = await Account.save({ ...existedUser, ...updateData });
-      return updatedUser;
+      return await Account.save({ ...existedUser, ...updateData });
     } catch (error) {
       this.logger.error(error);
       throw new BadRequestException(error);

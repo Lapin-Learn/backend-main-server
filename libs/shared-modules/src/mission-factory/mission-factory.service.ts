@@ -11,9 +11,9 @@ export class MissionFactoryService {
     const group = findMissionGroup(categoryName);
     switch (group) {
       case MissionGroupNameEnum.LESSON_MISSION:
-        return new LessonMission(categoryName, mission.quest.requirements, learner);
+        return new LessonMission(categoryName, mission, learner);
       case MissionGroupNameEnum.STREAK_MISSION:
-        return new StreakMission();
+        return new StreakMission(categoryName, mission, learner);
       default:
         return new DefaultMission();
     }

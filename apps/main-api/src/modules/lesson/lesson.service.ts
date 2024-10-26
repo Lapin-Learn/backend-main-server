@@ -51,14 +51,17 @@ export class LessonService {
 
       for (const mission of missions) {
         const isCompleteMission = learner.profileMissionsProgress.some(
-          (m) => m.missionId === mission.id && m.status === ProfileMissionProgressStatusEnum.COMPLETED
+          (m) =>
+            m.missionId === mission.id &&
+            (m.status === ProfileMissionProgressStatusEnum.COMPLETED ||
+              m.status === ProfileMissionProgressStatusEnum.RECEIVED)
         );
         if (!isCompleteMission) {
           const missionInstance = this.missionFactoryService.createMissionService(mission, learner);
           const isCompleted = await missionInstance.isMissionCompleted();
           if (isCompleted) {
             const missionProgress = await learner.handleMissionComplete(mission);
-            missionMilestones.newValue.push(missionProgress);
+            missionProgress && missionMilestones.newValue.push(missionProgress);
           }
         }
       }
