@@ -12,7 +12,10 @@ import { RedisService } from "./redis.service";
       provide: REDIS_PROVIDER,
       inject: [ConfigService],
       useFactory: (configService: ConfigService): RedisClientOptions => ({
-        url: configService.get("REDIS_URL"),
+        socket: {
+          host: configService.get("REDIS_HOST"),
+          port: configService.get("REDIS_PORT"),
+        },
       }),
     },
     RedisService,
