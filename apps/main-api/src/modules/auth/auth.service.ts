@@ -81,8 +81,8 @@ export class AuthService {
         uid: dbUser.providerId,
         action: ResetPasswordActionEnum.RESET_PASSWORD,
       });
-      const res = await this.mailService.sendMail(email, "Reset password", "reset-password", { otp });
-      if (res.accepted.length > 0 && resetPasswordToken) {
+      const res = await this.mailService.sendMail(email, "Reset password", `Your OTP is ${otp}`);
+      if (res && resetPasswordToken) {
         await this.redisService.delete(dbUser.email);
         await this.redisService.set(dbUser.email, { otp, resetPasswordToken });
         return true;
