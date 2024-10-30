@@ -12,7 +12,7 @@ import {
 } from "typeorm";
 import { Account } from "./account.entity";
 
-@Entity("notifications")
+@Entity("notification_tokens")
 export class NotificationToken extends BaseEntity implements INotificationToken {
   @PrimaryGeneratedColumn("uuid")
   id: string;
