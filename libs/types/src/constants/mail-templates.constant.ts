@@ -1,0 +1,3 @@
+export const MAIL_TEMPLATES = {
+  RESET_PASSWORD: "RESET_PASSWORD",
+};

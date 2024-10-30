@@ -9,6 +9,8 @@ import { ResetPasswordActionEnum } from "@app/types/enums";
 import { IAccount, ICurrentUser } from "@app/types/interfaces";
 import { EntityNotFoundError } from "typeorm";
 import { generateOTPConfig } from "../../config";
+import { MAIL_TEMPLATES } from "@app/types/constants";
+import { HttpStatusCode } from "axios";
 
 @Injectable()
 export class AuthService {
@@ -81,13 +83,14 @@ export class AuthService {
         uid: dbUser.providerId,
         action: ResetPasswordActionEnum.RESET_PASSWORD,
       });
-      const res = await this.mailService.sendMail(email, "Reset password", `Your OTP is ${otp}`);
-      if (res && resetPasswordToken) {
+      const res = await this.mailService.sendMail(email, MAIL_TEMPLATES.RESET_PASSWORD, { otp });
+      if (res && res.$metadata.httpStatusCode === HttpStatusCode.Ok && resetPasswordToken) {
         await this.redisService.delete(dbUser.email);
         await this.redisService.set(dbUser.email, { otp, resetPasswordToken });
         return true;
+      } else {
+        throw new BadRequestException("Failed to send OTP");
       }
-      return false;
     } catch (error) {
       this.logger.error(error);
       throw new BadRequestException(error);
