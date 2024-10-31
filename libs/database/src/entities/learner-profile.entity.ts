@@ -9,6 +9,7 @@ import {
   RankEnum,
 } from "@app/types/enums";
 import {
+  IActivity,
   ILearnerProfile,
   ILearnerProfileInfo,
   ILevel,
@@ -312,15 +313,24 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
     return { ...profile, currentItems };
   }
 
-  static async getDailyStreakActivities(profileId: string, startDate: Date, endDate: Date) {
+  static async getDailyStreakActivities(profileId: string, startDate: Date, endDate: Date): Promise<IActivity[]> {
     const data = await this.createQueryBuilder("learnerProfile")
       .leftJoinAndSelect("learnerProfile.activities", "activity")
       .leftJoinAndSelect("activity.action", "action")
       .where("learnerProfile.id = :profileId", { profileId })
       .andWhere("action.name = :actionName", { actionName: ActionNameEnum.DAILY_STREAK })
       .andWhere("activity.finishedAt BETWEEN :startDate AND :endDate", { startDate, endDate })
+      .orderBy("activity.finishedAt", "ASC")
       .getOne();
 
     return data?.activities || [];
+  }
+
+  static async getUnUpdatedStreakProfiles() {
+    return await this.createQueryBuilder("learnerProfiles")
+      .leftJoinAndSelect("learnerProfiles.streak", "streaks")
+      .where("DATE(streaks.updatedAt) < DATE(CURRENT_DATE)") // Today is not updated the streak
+      .andWhere("streaks.current > 0")
+      .getMany();
   }
 }
