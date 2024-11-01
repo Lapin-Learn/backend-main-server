@@ -1,4 +1,4 @@
-export interface IProfileStrealActivity {
+export interface IProfileStreakActivity {
   email: string;
   username: string;
   currentStreak: number;

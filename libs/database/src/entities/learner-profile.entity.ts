@@ -27,6 +27,7 @@ import {
   OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
+  SelectQueryBuilder,
   UpdateDateColumn,
 } from "typeorm";
 import { Level } from "./level.entity";
@@ -327,10 +328,40 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
   }
 
   static async getUnUpdatedStreakProfiles() {
+    const subquery = (qb: SelectQueryBuilder<LearnerProfile>) => {
+      return qb
+        .select("1")
+        .from("activities", "activities")
+        .leftJoin("activities.action", "actions")
+        .where("activities.profileId = learnerProfiles.id")
+        .andWhere("actions.name = :actionName")
+        .andWhere("DATE(activities.finishedAt) = DATE(CURRENT_DATE)");
+    };
+
     return await this.createQueryBuilder("learnerProfiles")
       .leftJoinAndSelect("learnerProfiles.streak", "streaks")
-      .where("DATE(streaks.updatedAt) < DATE(CURRENT_DATE)") // Today is not updated the streak
+      .where("NOT EXISTS (" + subquery(this.createQueryBuilder()).getQuery() + ")")
       .andWhere("streaks.current > 0")
+      .setParameter("actionName", ActionNameEnum.DAILY_STREAK)
+      .getMany();
+  }
+
+  static async getMissingStreakProfiles() {
+    const getStreakActivityInLastTwoDays = (qb: SelectQueryBuilder<LearnerProfile>) => {
+      return qb
+        .select("1")
+        .from("activities", "activities")
+        .leftJoin("activities.action", "actions")
+        .where("activities.profileId = learnerProfiles.id")
+        .andWhere("actions.name = :actionName")
+        .andWhere("DATE(activities.finishedAt) = DATE(CURRENT_DATE) - 2");
+    };
+
+    return await this.createQueryBuilder("learnerProfiles")
+      .leftJoinAndSelect("learnerProfiles.streak", "streaks")
+      .where("streaks.current = 0")
+      .andWhere("EXISTS (" + getStreakActivityInLastTwoDays(this.createQueryBuilder()).getQuery() + ")") //Check the missing streak is yesterday
+      .setParameter("actionName", ActionNameEnum.DAILY_STREAK)
       .getMany();
   }
 }
