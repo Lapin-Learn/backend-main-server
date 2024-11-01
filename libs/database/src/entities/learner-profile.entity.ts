@@ -335,7 +335,7 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
         .leftJoin("activities.action", "actions")
         .where("activities.profileId = learnerProfiles.id")
         .andWhere("actions.name = :actionName")
-        .andWhere("DATE(activities.finishedAt) = DATE(CURRENT_DATE)");
+        .andWhere("DATE(activities.finishedAt) = CURRENT_DATE");
     };
 
     return await this.createQueryBuilder("learnerProfiles")
@@ -354,13 +354,35 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
         .leftJoin("activities.action", "actions")
         .where("activities.profileId = learnerProfiles.id")
         .andWhere("actions.name = :actionName")
-        .andWhere("DATE(activities.finishedAt) = DATE(CURRENT_DATE) - 2");
+        .andWhere("DATE(activities.finishedAt) = CURRENT_DATE - 2");
     };
 
     return await this.createQueryBuilder("learnerProfiles")
       .leftJoinAndSelect("learnerProfiles.streak", "streaks")
       .where("streaks.current = 0")
       .andWhere("EXISTS (" + getStreakActivityInLastTwoDays(this.createQueryBuilder()).getQuery() + ")") //Check the missing streak is yesterday
+      .setParameter("actionName", ActionNameEnum.DAILY_STREAK)
+      .getMany();
+  }
+
+  static async getProfileAchiveStreakMilestone() {
+    return await this.createQueryBuilder("learnerProfiles")
+      .leftJoinAndSelect("learnerProfiles.streak", "streaks")
+      .leftJoinAndSelect("learnerProfiles.activities", "activities")
+      .where("streaks.current IN (:...milestones)", { milestones: [7, 30, 100] })
+      .andWhere((qb) => {
+        const subQuery = qb
+          .subQuery()
+          .select("activity.id")
+          .from(Activity, "activity")
+          .leftJoin("activity.action", "actions")
+          .where("activity.profileId = learnerProfiles.id")
+          .andWhere("actions.name = :actionName")
+          .andWhere("DATE(activity.finishedAt) = CURRENT_DATE")
+          .getQuery();
+
+        return `NOT EXISTS (${subQuery})`;
+      })
       .setParameter("actionName", ActionNameEnum.DAILY_STREAK)
       .getMany();
   }

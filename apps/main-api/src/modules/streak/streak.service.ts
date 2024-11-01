@@ -80,7 +80,7 @@ export class StreakService {
       for (const streakActivity of streakActivities) {
         const subject = `Chào ${streakActivity.username}, đừng đánh mất ${streakActivity.currentStreak} ngày streak nhé!`;
         await this.mailService.sendMail(streakActivity.email, subject, "remind-streak", streakActivity);
-        this.logger.log(`Remind ${streakActivity.username} that he/she are going to lose streak`);
+        this.logger.log(`Remind ${streakActivity.username} that he/she is going to lose streak`);
       }
       this.logger.log("Remind about missing streak done");
     } catch (error) {
@@ -102,12 +102,32 @@ export class StreakService {
       for (const streakActivity of streakActivities) {
         const subject = `Chào ${streakActivity.username}, cùng bắt đầu lại chuỗi streak nhé!`;
         await this.mailService.sendMail(streakActivity.email, subject, "missing-streak", streakActivity);
-        this.logger.log(`Remind ${streakActivity.username} that he/she have lost streak`);
+        this.logger.log(`Remind ${streakActivity.username} that he/she has lost streak`);
       }
       this.logger.log("Remind missing streak done");
     } catch (error) {
       this.logger.error("fail to remind lost streak - Error: ", error);
     }
+  }
+
+  // Remind streak milestone at 8:00 GMT+7
+  @Cron("0 8 * * *", {
+    name: "Remind streak milestone",
+    timeZone: "Asia/Saigon",
+  })
+  async remindStreakMileStone() {
+    try {
+      this.logger.log("Remind streak milestone");
+      const profilesAchievedStreakMilestone = await LearnerProfile.getProfileAchiveStreakMilestone();
+
+      const streakActivities = await this.getStreakActivitiesOfWeek(profilesAchievedStreakMilestone);
+      for (const streakActivity of streakActivities) {
+        const subject = `Chào ${streakActivity.username}! Nối dài chuỗi ${streakActivity.currentStreak} ngày học IELTS nào!`;
+        await this.mailService.sendMail(streakActivity.email, subject, "streak-milestone", streakActivity);
+        this.logger.log(`Remind ${streakActivity.username} that he/she has achieved streak milestone`);
+      }
+      this.logger.log("Remind streak milestone done");
+    } catch (error) {}
   }
 
   async getStreakActivitiesOfWeek(learners: ILearnerProfile[]): Promise<IProfileStreakActivity[]> {

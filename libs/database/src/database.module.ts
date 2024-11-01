@@ -22,7 +22,7 @@ const subscribers = (Object.keys(dbSubscribers) as Array<keyof typeof dbSubscrib
         database: configService.get("POSTGRES_DB"),
         entities,
         subscribers,
-        logging: true,
+        logging: false,
       }),
       inject: [ConfigService],
     }),

@@ -15,5 +15,9 @@ export class HandlebarsHelperService {
         return options.inverse(this);
       }
     });
+
+    Handlebars.registerHelper("add", function (value1, value2) {
+      return parseInt(value1) + parseInt(value2);
+    });
   }
 }
