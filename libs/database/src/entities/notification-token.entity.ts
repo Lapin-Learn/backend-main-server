@@ -39,4 +39,13 @@ export class NotificationToken extends BaseEntity implements INotificationToken 
   @OneToOne(() => Account)
   @JoinColumn({ name: "account_id", referencedColumnName: "id" })
   readonly account: Account;
+
+  static async getTokensByLearnerProfileIds(learnerProfileIds: string[]): Promise<NotificationToken[]> {
+    return this.createQueryBuilder("notification_tokens")
+      .leftJoinAndSelect("notification_tokens.account", "account")
+      .leftJoinAndSelect("account.learnerProfile", "learnerProfile")
+      .leftJoinAndSelect("learnerProfile.streak", "streaks")
+      .where("account.learner_profile_id IN (:...learnerProfileIds)", { learnerProfileIds })
+      .getMany();
+  }
 }

@@ -1,11 +1,13 @@
-import { NotificationToken } from "@app/database";
+import { LearnerProfile, NotificationToken } from "@app/database";
 import { FirebaseMessagingService } from "@app/shared-modules/firebase";
 import { Injectable, Logger } from "@nestjs/common";
-import { In } from "typeorm";
+import { Cron } from "@nestjs/schedule";
+import { NotificationHelper } from "./notification.helper";
 
 @Injectable()
 export class NotificationService {
   private readonly logger = new Logger(NotificationService.name);
+  private readonly notificationHelper = new NotificationHelper();
 
   constructor(private readonly firebaseMessagingService: FirebaseMessagingService) {}
 
@@ -24,19 +26,18 @@ export class NotificationService {
     }
   }
 
-  async sendScheduleNotificationToAccounts(
-    accountIds: string[],
-    title: string,
-    body: string,
-    topic?: string,
-    data?: { [key: string]: string }
+  private async sendNotificationToTokens(
+    notifications: {
+      fcmToken: string;
+      title: string;
+      body: string;
+      data?: { [key: string]: string };
+    }[],
+    topic?: string
   ) {
     try {
-      const tokens = await NotificationToken.find({ where: { accountId: In(accountIds) } });
-      const deviceTokens = tokens.map((t) => ({ token: t.token, id: t.id, accountId: t.accountId }));
-
-      const notificationPromises = deviceTokens.map((token) =>
-        this.firebaseMessagingService.pushNotification(token.token, topic, { title, body }, data)
+      const notificationPromises = notifications.map(({ fcmToken, title, body, data }) =>
+        this.firebaseMessagingService.pushNotification(fcmToken, topic, { title, body }, data)
       );
 
       const results = await Promise.allSettled(notificationPromises);
@@ -45,6 +46,27 @@ export class NotificationService {
         success: results.filter((p) => p.status === "fulfilled").length,
         failed: results.filter((p) => p.status === "rejected").length,
       };
+    } catch (e) {
+      this.logger.error(e);
+    }
+  }
+
+  // TODO: Remove 15 minutes cron job after testing
+  // @Cron("00 21 * * *", {
+  //   name: "Remind learning everyday",
+  //   timeZone: VN_TIME_ZONE,
+  // }) // 9PM every day
+  @Cron("*/1 * * * *") // Every 15 minutes, just for testing
+  async sendRemindStreakNotification() {
+    try {
+      const profiles = await LearnerProfile.getNotCompleteStreakProfiles();
+      const profileIds = profiles.map((profile) => profile.id);
+      const notifications = await NotificationToken.getTokensByLearnerProfileIds(profileIds);
+      const tokens = notifications.map((n) =>
+        this.notificationHelper.buildStreakReminderNotificationData(n.token, n.account.learnerProfile.streak.current)
+      );
+      const result = await this.sendNotificationToTokens(tokens);
+      return result;
     } catch (e) {
       this.logger.error(e);
     }
