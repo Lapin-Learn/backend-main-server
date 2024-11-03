@@ -14,3 +14,5 @@ export * from "./cefr-level.enum";
 export * from "./milestones.enum";
 export * from "./mission-group-name.enum";
 export * from "./mission-category-name.enum";
+export * from "./item-category.enum";
+export * from "./profile-item-status.enum";

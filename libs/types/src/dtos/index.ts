@@ -4,3 +4,4 @@ export * from "./streaks";
 export * from "./daily-lessons";
 export * from "./lessons";
 export * from "./instructions";
+export * from "./items";

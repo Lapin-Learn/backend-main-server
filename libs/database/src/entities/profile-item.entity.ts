@@ -11,6 +11,7 @@ import {
 } from "typeorm";
 import { LearnerProfile } from "./learner-profile.entity";
 import { Item } from "./item.entity";
+import { ProfileItemStatusEnum } from "@app/types/enums";
 
 @Entity({ name: "profile_items" })
 export class ProfileItem extends BaseEntity implements IProfileItem {
@@ -29,6 +30,18 @@ export class ProfileItem extends BaseEntity implements IProfileItem {
   @Column({ name: "exp_at", type: "timestamp", nullable: false })
   expAt: Date;
 
+  @Column({ name: "in_use_quantity", type: "int", nullable: false, default: 0 })
+  inUseQuantity: number;
+
+  @Column({
+    name: "status",
+    type: "enum",
+    enum: ProfileItemStatusEnum,
+    nullable: false,
+    default: ProfileItemStatusEnum.UNUSED,
+  })
+  status: ProfileItemStatusEnum;
+
   @CreateDateColumn({ name: "created_at", type: "timestamp", nullable: false, default: () => "CURRENT_TIMESTAMP" })
   createdAt: Date;
 
@@ -40,6 +53,7 @@ export class ProfileItem extends BaseEntity implements IProfileItem {
     onUpdate: "CURRENT_TIMESTAMP",
   })
   updatedAt: Date;
+
   // Relations
   @ManyToOne(() => LearnerProfile, (profile) => profile.id)
   @JoinColumn({ name: "profile_id", referencedColumnName: "id" })
