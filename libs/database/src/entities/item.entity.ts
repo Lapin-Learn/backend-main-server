@@ -12,7 +12,6 @@ import {
 } from "typeorm";
 import { ProfileItem } from "./profile-item.entity";
 import { Bucket } from "./bucket.entity";
-import { ItemCategoryEnum } from "@app/types/enums";
 
 @Entity({ name: "items" })
 export class Item extends BaseEntity implements IItem {
@@ -34,9 +33,6 @@ export class Item extends BaseEntity implements IItem {
   @Column({ name: "image_id", type: "uuid" })
   imageId: string;
 
-  @Column({ name: "category", type: "enum", enum: ItemCategoryEnum, nullable: false })
-  category: ItemCategoryEnum;
-
   @CreateDateColumn({ name: "created_at", type: "timestamp", nullable: false, default: () => "CURRENT_TIMESTAMP" })
   createdAt: Date;
 
@@ -53,7 +49,7 @@ export class Item extends BaseEntity implements IItem {
   @OneToMany(() => ProfileItem, (profileItem) => profileItem.item)
   profileItems: ProfileItem[];
 
-  @OneToOne(() => Bucket)
+  @OneToOne(() => Bucket, { eager: true })
   @JoinColumn({ name: "image_id", referencedColumnName: "id" })
   image: Bucket;
 }

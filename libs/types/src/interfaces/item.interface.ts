@@ -1,4 +1,3 @@
-import { ItemCategoryEnum } from "../enums";
 import { IBucket } from "./bucket.interface";
 import { IProfileItem } from "./profile-item.interface";
 
@@ -9,7 +8,6 @@ export interface IItem {
   price: object;
   duration: number;
   imageId: string;
-  category: ItemCategoryEnum;
   createdAt: Date;
   updatedAt: Date;
 
