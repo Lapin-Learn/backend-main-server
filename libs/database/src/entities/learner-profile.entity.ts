@@ -9,6 +9,7 @@ import {
   RankEnum,
 } from "@app/types/enums";
 import {
+  IActivity,
   ILearnerProfile,
   ILearnerProfileInfo,
   ILevel,
@@ -26,6 +27,7 @@ import {
   OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
+  SelectQueryBuilder,
   UpdateDateColumn,
 } from "typeorm";
 import { Level } from "./level.entity";
@@ -312,15 +314,76 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
     return { ...profile, currentItems };
   }
 
-  static async getDailyStreakActivities(profileId: string, startDate: Date, endDate: Date) {
+  static async getDailyStreakActivities(profileId: string, startDate: Date, endDate: Date): Promise<IActivity[]> {
     const data = await this.createQueryBuilder("learnerProfile")
       .leftJoinAndSelect("learnerProfile.activities", "activity")
       .leftJoinAndSelect("activity.action", "action")
       .where("learnerProfile.id = :profileId", { profileId })
       .andWhere("action.name = :actionName", { actionName: ActionNameEnum.DAILY_STREAK })
       .andWhere("activity.finishedAt BETWEEN :startDate AND :endDate", { startDate, endDate })
+      .orderBy("activity.finishedAt", "ASC")
       .getOne();
 
     return data?.activities || [];
+  }
+
+  static async getUnUpdatedStreakProfiles() {
+    const subquery = (qb: SelectQueryBuilder<LearnerProfile>) => {
+      return qb
+        .select("1")
+        .from("activities", "activities")
+        .leftJoin("activities.action", "actions")
+        .where("activities.profileId = learnerProfiles.id")
+        .andWhere("actions.name = :actionName")
+        .andWhere("DATE(activities.finishedAt) = CURRENT_DATE");
+    };
+
+    return await this.createQueryBuilder("learnerProfiles")
+      .leftJoinAndSelect("learnerProfiles.streak", "streaks")
+      .where("NOT EXISTS (" + subquery(this.createQueryBuilder()).getQuery() + ")")
+      .andWhere("streaks.current > 0")
+      .setParameter("actionName", ActionNameEnum.DAILY_STREAK)
+      .getMany();
+  }
+
+  static async getMissingStreakProfiles() {
+    const getStreakActivityInLastTwoDays = (qb: SelectQueryBuilder<LearnerProfile>) => {
+      return qb
+        .select("1")
+        .from("activities", "activities")
+        .leftJoin("activities.action", "actions")
+        .where("activities.profileId = learnerProfiles.id")
+        .andWhere("actions.name = :actionName")
+        .andWhere("DATE(activities.finishedAt) = CURRENT_DATE - 2");
+    };
+
+    return await this.createQueryBuilder("learnerProfiles")
+      .leftJoinAndSelect("learnerProfiles.streak", "streaks")
+      .where("streaks.current = 0")
+      .andWhere("EXISTS (" + getStreakActivityInLastTwoDays(this.createQueryBuilder()).getQuery() + ")") //Check the missing streak is yesterday
+      .setParameter("actionName", ActionNameEnum.DAILY_STREAK)
+      .getMany();
+  }
+
+  static async getProfileAchiveStreakMilestone() {
+    return await this.createQueryBuilder("learnerProfiles")
+      .leftJoinAndSelect("learnerProfiles.streak", "streaks")
+      .leftJoinAndSelect("learnerProfiles.activities", "activities")
+      .where("streaks.current IN (:...milestones)", { milestones: [7, 30, 100] })
+      .andWhere((qb) => {
+        const subQuery = qb
+          .subQuery()
+          .select("activity.id")
+          .from(Activity, "activity")
+          .leftJoin("activity.action", "actions")
+          .where("activity.profileId = learnerProfiles.id")
+          .andWhere("actions.name = :actionName")
+          .andWhere("DATE(activity.finishedAt) = CURRENT_DATE")
+          .getQuery();
+
+        return `NOT EXISTS (${subQuery})`;
+      })
+      .setParameter("actionName", ActionNameEnum.DAILY_STREAK)
+      .getMany();
   }
 }

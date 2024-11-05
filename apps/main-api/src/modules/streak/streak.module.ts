@@ -4,9 +4,10 @@ import { StreakService } from "./streak.service";
 import { DatabaseModule } from "@app/database";
 import { ScheduleModule } from "@nestjs/schedule";
 import { StreakHelper } from "./streak.helper";
+import { MailModule } from "@app/shared-modules/mail";
 
 @Module({
-  imports: [ScheduleModule.forRoot(), DatabaseModule],
+  imports: [ScheduleModule.forRoot(), DatabaseModule, MailModule],
   controllers: [StreakController],
   providers: [StreakService, StreakHelper],
 })

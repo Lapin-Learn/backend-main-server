@@ -3,6 +3,7 @@ import { HandlebarsAdapter } from "@nestjs-modules/mailer/dist/adapters/handleba
 import { Module } from "@nestjs/common";
 import { MailService } from "./mail.service";
 import { ConfigModule, ConfigService } from "@nestjs/config";
+import { HandlebarsHelperService } from "./handlebars-helper.service";
 
 @Module({
   imports: [
@@ -35,7 +36,7 @@ import { ConfigModule, ConfigService } from "@nestjs/config";
       inject: [ConfigService],
     }),
   ],
-  providers: [MailService],
+  providers: [MailService, HandlebarsHelperService],
   exports: [MailService],
 })
 export class MailModule {}
