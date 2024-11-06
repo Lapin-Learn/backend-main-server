@@ -328,7 +328,7 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
   }
 
   static async getNotCompleteStreakProfiles() {
-    const beginOfToday = moment().tz("Asia/Saigon").startOf("day").toDate();
+    const beginOfToday = moment().tz("Asia/Saigon").startOf("day").utc(true).toDate();
 
     const subQuery = this.createQueryBuilder("learnerProfiles")
       .leftJoin("learnerProfiles.activities", "activities")

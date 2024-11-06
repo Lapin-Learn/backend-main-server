@@ -3,6 +3,7 @@ import { FirebaseMessagingService } from "@app/shared-modules/firebase";
 import { Injectable, Logger } from "@nestjs/common";
 import { Cron } from "@nestjs/schedule";
 import { NotificationHelper } from "./notification.helper";
+import { VN_TIME_ZONE } from "@app/types/constants";
 
 @Injectable()
 export class NotificationService {
@@ -51,12 +52,11 @@ export class NotificationService {
     }
   }
 
-  // TODO: Remove 15 minutes cron job after testing
-  // @Cron("00 21 * * *", {
-  //   name: "Remind learning everyday",
-  //   timeZone: VN_TIME_ZONE,
-  // }) // 9PM every day
-  @Cron("*/2 * * * *") // Every 15 minutes, just for testing
+  @Cron("00 21 * * *", {
+    name: "Remind learning everyday",
+    timeZone: VN_TIME_ZONE,
+  }) // 9PM every day
+  // @Cron("*/2 * * * *") // Every 2 minutes, just for testing
   async sendRemindStreakNotification() {
     try {
       const profiles = await LearnerProfile.getNotCompleteStreakProfiles();
@@ -66,7 +66,6 @@ export class NotificationService {
         this.notificationHelper.buildStreakReminderNotificationData(n.token, n.account.learnerProfile.streak.current)
       );
       const result = await this.sendNotificationToTokens(tokens);
-      console.log(result);
       return result;
     } catch (e) {
       this.logger.error(e);
