@@ -56,7 +56,7 @@ export class NotificationService {
   //   name: "Remind learning everyday",
   //   timeZone: VN_TIME_ZONE,
   // }) // 9PM every day
-  @Cron("*/1 * * * *") // Every 15 minutes, just for testing
+  @Cron("*/2 * * * *") // Every 15 minutes, just for testing
   async sendRemindStreakNotification() {
     try {
       const profiles = await LearnerProfile.getNotCompleteStreakProfiles();
@@ -66,6 +66,7 @@ export class NotificationService {
         this.notificationHelper.buildStreakReminderNotificationData(n.token, n.account.learnerProfile.streak.current)
       );
       const result = await this.sendNotificationToTokens(tokens);
+      console.log(result);
       return result;
     } catch (e) {
       this.logger.error(e);

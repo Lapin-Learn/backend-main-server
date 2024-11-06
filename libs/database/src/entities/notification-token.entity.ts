@@ -20,7 +20,7 @@ export class NotificationToken extends BaseEntity implements INotificationToken 
   @Column({ name: "account_id", type: "uuid", nullable: false })
   accountId: string;
 
-  @Column({ name: "token", type: "varchar", nullable: false })
+  @Column({ name: "token", type: "varchar", nullable: true })
   token: string;
 
   @CreateDateColumn({ name: "created_at", type: "timestamp", nullable: false, default: () => "CURRENT_TIMESTAMP" })
@@ -46,6 +46,7 @@ export class NotificationToken extends BaseEntity implements INotificationToken 
       .leftJoinAndSelect("account.learnerProfile", "learnerProfile")
       .leftJoinAndSelect("learnerProfile.streak", "streaks")
       .where("account.learner_profile_id IN (:...learnerProfileIds)", { learnerProfileIds })
+      .andWhere("notification_tokens.token IS NOT NULL")
       .getMany();
   }
 }

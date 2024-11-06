@@ -1,8 +1,8 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsNotEmpty } from "class-validator";
+import { IsOptional } from "class-validator";
 
 export class FcmTokenDto {
-  @IsNotEmpty({ message: "Token is required" })
+  @IsOptional()
   @ApiProperty()
-  token: string;
+  token: string | null;
 }
