@@ -4,11 +4,14 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
   OneToMany,
+  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from "typeorm";
 import { ProfileItem } from "./profile-item.entity";
+import { Bucket } from "./bucket.entity";
 
 @Entity({ name: "items" })
 export class Item extends BaseEntity implements IItem {
@@ -21,11 +24,14 @@ export class Item extends BaseEntity implements IItem {
   @Column({ name: "description", type: "text", nullable: false })
   description: string;
 
-  @Column({ name: "price", type: "int", nullable: false })
-  price: number;
+  @Column({ name: "price", type: "jsonb", nullable: false })
+  price: object;
 
   @Column({ name: "duration", type: "int", nullable: false })
   duration: number;
+
+  @Column({ name: "image_id", type: "uuid" })
+  imageId: string;
 
   @CreateDateColumn({ name: "created_at", type: "timestamp", nullable: false, default: () => "CURRENT_TIMESTAMP" })
   createdAt: Date;
@@ -42,4 +48,8 @@ export class Item extends BaseEntity implements IItem {
   // Relations
   @OneToMany(() => ProfileItem, (profileItem) => profileItem.item)
   profileItems: ProfileItem[];
+
+  @OneToOne(() => Bucket, { eager: true })
+  @JoinColumn({ name: "image_id", referencedColumnName: "id" })
+  image: Bucket;
 }

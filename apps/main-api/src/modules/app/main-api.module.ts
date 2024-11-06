@@ -12,6 +12,7 @@ import { DailyLessonModule } from "../daily-lesson/daily-lesson.module";
 import { LessonModule } from "../lesson/lesson.module";
 import { AdminModule } from "../admin/admin.module";
 import { MissionModule } from "../mission/mission.module";
+import { ShopModule } from "../shop/shop.module";
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { MissionModule } from "../mission/mission.module";
     LessonModule,
     AdminModule,
     MissionModule,
+    ShopModule,
   ],
   controllers: [MainApiController],
   providers: [MainApiService],

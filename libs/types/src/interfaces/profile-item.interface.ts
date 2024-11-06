@@ -1,3 +1,4 @@
+import { ProfileItemStatusEnum } from "../enums";
 import { IItem } from "./item.interface";
 import { ILearnerProfile } from "./learner-profile.interface";
 
@@ -7,6 +8,8 @@ export interface IProfileItem {
   profileId: string;
   quantity: number;
   expAt: Date;
+  inUseQuantity: number;
+  status: ProfileItemStatusEnum;
   createdAt: Date;
   updatedAt: Date;
 
