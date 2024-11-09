@@ -327,6 +327,24 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
     return data?.activities || [];
   }
 
+  static async getNotCompleteStreakProfiles() {
+    const beginOfToday = moment().tz("Asia/Saigon").startOf("day").utc(true).toDate();
+
+    const subQuery = this.createQueryBuilder("learnerProfiles")
+      .leftJoin("learnerProfiles.activities", "activities")
+      .leftJoin("activities.action", "actions")
+      .where("activities.finishedAt > :beginOfToday", { beginOfToday })
+      .andWhere("actions.name = :actionName", { actionName: ActionNameEnum.DAILY_STREAK })
+      .select("learnerProfiles.id");
+
+    const profilesWithoutActionsToday = await this.createQueryBuilder("learnerProfiles")
+      .leftJoinAndSelect("learnerProfiles.streak", "streaks")
+      .where(`learnerProfiles.id NOT IN (${subQuery.getQuery()})`)
+      .setParameters(subQuery.getParameters())
+      .getMany();
+    return profilesWithoutActionsToday;
+  }
+
   static async getUnUpdatedStreakProfiles() {
     const subquery = (qb: SelectQueryBuilder<LearnerProfile>) => {
       return qb

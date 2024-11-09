@@ -3,6 +3,7 @@ import { ConfigService } from "@nestjs/config";
 import { AppOptions, cert } from "firebase-admin/app";
 
 import { FirebaseAuthService } from "./firebase-auth.service";
+import { FirebaseMessagingService } from "./firebase-messaging.service";
 
 @Module({
   providers: [
@@ -18,7 +19,8 @@ import { FirebaseAuthService } from "./firebase-auth.service";
       }),
     },
     FirebaseAuthService,
+    FirebaseMessagingService,
   ],
-  exports: [FirebaseAuthService],
+  exports: [FirebaseAuthService, FirebaseMessagingService],
 })
 export class FirebaseModule {}
