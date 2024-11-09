@@ -5,4 +5,4 @@ export * from "./instructions";
 export * from "./lessons";
 export * from "./notifications";
 export * from "./streaks";
-export * from "./items";
+export * from "./shops";

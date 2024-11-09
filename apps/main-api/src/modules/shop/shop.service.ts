@@ -1,5 +1,6 @@
-import { Item } from "@app/database";
-import { IItem } from "@app/types/interfaces";
+import { Item, LearnerProfile, ProfileItem } from "@app/database";
+import { BuyItemDto } from "@app/types/dtos";
+import { ICurrentUser, IItem } from "@app/types/interfaces";
 import { BadRequestException, Injectable, Logger } from "@nestjs/common";
 
 @Injectable()
@@ -32,6 +33,40 @@ export class ShopService {
           isPopular: item.name === "IDENTIFICATION" ? true : false,
         };
       });
+    } catch (error) {
+      this.logger.error(error);
+      throw new BadRequestException(error);
+    }
+  }
+
+  async buyItem(user: ICurrentUser, dto: BuyItemDto) {
+    try {
+      const item = await Item.findOneByOrFail({ id: dto.id });
+      if (item.price[dto.quantity] === undefined) {
+        throw new BadRequestException("Invalid quantity for this item");
+      }
+
+      const totalPrice = item.price[dto.quantity] * dto.quantity;
+      const learner = await LearnerProfile.findOneByOrFail({ id: user.profileId });
+      if (learner.carrots < totalPrice) {
+        throw new BadRequestException("Not enough balance to buy this item");
+      }
+
+      const inventoryItem = await ProfileItem.findOne({
+        where: { profileId: user.profileId, itemId: item.id },
+      });
+      const updatedInventoryItem = await ProfileItem.save({
+        ...inventoryItem,
+        itemId: item.id,
+        profileId: user.profileId,
+        quantity: inventoryItem?.quantity + dto.quantity || dto.quantity,
+      });
+      await LearnerProfile.save({
+        ...learner,
+        carrots: learner.carrots - totalPrice,
+      });
+
+      return updatedInventoryItem;
     } catch (error) {
       this.logger.error(error);
       throw new BadRequestException(error);

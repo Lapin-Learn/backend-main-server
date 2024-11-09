@@ -59,7 +59,7 @@ export class ProfileItem extends BaseEntity implements IProfileItem {
   @JoinColumn({ name: "profile_id", referencedColumnName: "id" })
   profile: LearnerProfile;
 
-  @ManyToOne(() => Item, (item) => item.id)
+  @ManyToOne(() => Item, (item) => item.id, { eager: true })
   @JoinColumn({ name: "item_id", referencedColumnName: "id" })
   item: Item;
 }
