@@ -14,6 +14,7 @@ import { AdminModule } from "../admin/admin.module";
 import { MissionModule } from "../mission/mission.module";
 import { NotificationModule } from "../notification/notification.module";
 import { ShopModule } from "../shop/shop.module";
+import { InventoryModule } from "../inventories/inventory.module";
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { ShopModule } from "../shop/shop.module";
     MissionModule,
     NotificationModule,
     ShopModule,
+    InventoryModule,
   ],
   controllers: [MainApiController],
   providers: [MainApiService],
