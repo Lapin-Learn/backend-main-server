@@ -15,3 +15,5 @@ export * from "./milestones.enum";
 export * from "./mission-group-name.enum";
 export * from "./mission-category-name.enum";
 export * from "./profile-item-status.enum";
+export * from "./random-gift-type.enum";
+export * from "./item-name.enum";

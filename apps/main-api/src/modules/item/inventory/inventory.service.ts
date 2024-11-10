@@ -1,38 +1,19 @@
-import { Item, LearnerProfile, ProfileItem } from "@app/database";
-import { ICurrentUser, IItem } from "@app/types/interfaces";
+import { LearnerProfile, ProfileItem } from "@app/database";
+import { ICurrentUser } from "@app/types/interfaces";
 import { BadRequestException, Injectable, Logger } from "@nestjs/common";
-import { ItemEffectFactoryService } from "./item-effect/item-effect-factory.service";
+import { MoreThan } from "typeorm";
+import { ItemEffectFactoryService } from "../item-effect/item-effect-factory.service";
 
 @Injectable()
-export class ShopService {
-  private readonly logger = new Logger(ShopService.name);
+export class InventoryService {
+  private readonly logger = new Logger(InventoryService.name);
 
   constructor(private readonly itemEffectFactoryService: ItemEffectFactoryService) {}
-  async getItemsInShop() {
+
+  getInventory(user: ICurrentUser) {
     try {
-      const items: IItem[] = await Item.find();
-
-      return items.map((item) => {
-        const popular = (() => {
-          switch (item.name) {
-            case "STREAK_FREEZE":
-              return "1";
-            case "RANDOM_GIFT":
-              return "1";
-            case "ULTIMATE_TIME":
-              return "1";
-            case "IDENTIFICATION":
-              return "2";
-            default:
-              return "1";
-          }
-        })();
-
-        return {
-          ...item,
-          popular,
-          isPopular: item.name === "IDENTIFICATION" ? true : false,
-        };
+      return ProfileItem.find({
+        where: { profileId: user.profileId, quantity: MoreThan(0) },
       });
     } catch (error) {
       this.logger.error(error);

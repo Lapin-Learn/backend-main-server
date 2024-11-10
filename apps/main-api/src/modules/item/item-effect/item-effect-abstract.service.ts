@@ -5,7 +5,7 @@ export abstract class ItemEffectAbstractService {
 export class DefaultItemEffect extends ItemEffectAbstractService {
   applyEffect() {
     return {
-      message: "This item isn't supported yet.",
+      message: "NOT_SUPPORTED_YET",
     };
   }
 }

@@ -1,6 +1,6 @@
 import { ItemEffectAbstractService } from "./item-effect-abstract.service";
 import { Logger } from "@nestjs/common";
-import { RandomGiftType } from "../shop.type";
+import { RandomGiftType } from "@app/types/enums";
 import { Item, LearnerProfile, ProfileItem } from "@app/database";
 import { IItem } from "@app/types/interfaces";
 
