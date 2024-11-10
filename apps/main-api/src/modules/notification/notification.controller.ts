@@ -1,4 +1,4 @@
-import { Body, Controller, Post, UseGuards } from "@nestjs/common";
+import { Body, Controller, HttpStatus, Post, UseGuards } from "@nestjs/common";
 import { FirebaseJwtAuthGuard } from "../../guards";
 import { ApiBearerAuth, ApiTags, ApiResponse } from "@nestjs/swagger";
 import { ICurrentUser } from "@app/types/interfaces";
@@ -18,6 +18,10 @@ import { FcmTokenDto } from "@app/types/dtos";
 export class NotificationController {
   constructor(private readonly notificationService: NotificationService) {}
   @Post("fcm-token")
+  @ApiResponse({
+    status: HttpStatus.OK,
+    type: String,
+  })
   async upsertAccountToken(@CurrentUser() user: ICurrentUser, @Body() data: FcmTokenDto) {
     return this.notificationService.upsertAccountToken(user.userId, data.token);
   }
