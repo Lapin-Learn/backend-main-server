@@ -1,11 +1,12 @@
 import { Controller, Get, UseGuards } from "@nestjs/common";
-import { ApiBearerAuth, ApiOperation, ApiResponse } from "@nestjs/swagger";
+import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { FirebaseJwtAuthGuard } from "../../guards";
 import { CurrentUser, Roles } from "../../decorators";
 import { AccountRoleEnum } from "@app/types/enums";
 import { InventoryService } from "./inventory.service";
 import { ICurrentUser } from "@app/types/interfaces";
 
+@ApiTags("Inventory")
 @Controller("inventories")
 @ApiBearerAuth()
 @UseGuards(FirebaseJwtAuthGuard)
