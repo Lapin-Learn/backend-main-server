@@ -6,10 +6,13 @@ import { IItem } from "@app/types/interfaces";
 
 export class RandomGiftItemEffect extends ItemEffectAbstractService {
   private readonly logger = new Logger(RandomGiftItemEffect.name);
+  private readonly _profileItem: ProfileItem;
   private readonly _learner: LearnerProfile;
-  constructor(learner: LearnerProfile) {
+
+  constructor(_profileItem: ProfileItem) {
     super();
-    this._learner = learner;
+    this._profileItem = _profileItem;
+    this._learner = _profileItem.profile;
   }
 
   private getRandomCarrots(
@@ -67,13 +70,18 @@ export class RandomGiftItemEffect extends ItemEffectAbstractService {
           item.quantity += 1;
           await item.save();
         } else {
-          await ProfileItem.create({
+          await ProfileItem.save({
             profileId: this._learner.id,
             itemId: result.value.id,
             quantity: 1,
-          }).save();
+          });
         }
       }
+
+      // Subtract 1 item from inventory
+      this._profileItem.quantity -= 1;
+      await this._profileItem.save();
+
       return result;
     } catch (error) {
       this.logger.error(error);

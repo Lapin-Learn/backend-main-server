@@ -42,7 +42,6 @@ export class InventoryController {
   @Put("use-item")
   @Roles(AccountRoleEnum.LEARNER)
   async useItemInInventory(@CurrentUser() user: ICurrentUser, @Body() payload: UseItemDto) {
-    console.log(payload);
     return this.inventoryService.useItemInInventory(user, payload.itemId);
   }
 }

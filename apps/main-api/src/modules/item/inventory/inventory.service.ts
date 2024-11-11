@@ -1,4 +1,4 @@
-import { LearnerProfile, ProfileItem } from "@app/database";
+import { ProfileItem } from "@app/database";
 import { ICurrentUser } from "@app/types/interfaces";
 import { BadRequestException, Injectable, Logger } from "@nestjs/common";
 import { MoreThan } from "typeorm";
@@ -23,20 +23,14 @@ export class InventoryService {
 
   async useItemInInventory(user: ICurrentUser, itemId: string) {
     try {
-      const items = await ProfileItem.findOne({
+      const item = await ProfileItem.findOne({
         where: { profileId: user.profileId, itemId },
         relations: ["item", "profile"],
       });
-      const learner = await LearnerProfile.findOneOrFail({
-        where: { id: user.profileId },
-      });
-      if (!items || items.quantity <= 0) {
+      if (!item || item.quantity <= 0) {
         throw new BadRequestException("ITEM_NOT_FOUND");
       }
-      // Subtract 1 item from inventory
-      items.quantity -= 1;
-      await items.save();
-      const itemEffect = this.itemEffectFactoryService.createItemEffectService(items.item, learner);
+      const itemEffect = this.itemEffectFactoryService.createItemEffectService(item);
       return itemEffect.applyEffect();
     } catch (error) {
       this.logger.error(error);
