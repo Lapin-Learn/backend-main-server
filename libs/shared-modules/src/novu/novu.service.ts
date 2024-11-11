@@ -6,16 +6,15 @@ import { Novu } from "@novu/node";
 export class NovuService {
   constructor(@Inject(NOVU_PROVIDER_TOKEN) private readonly novuClient: Novu) {}
 
-  async sendEmail(data: object, toEmail: string) {
-    const res = await this.novuClient.trigger("send-mail-workflow", {
+  async sendEmail(data: object, userId: string, toEmail: string, workFlowId: string) {
+    const res = await this.novuClient.trigger(workFlowId, {
       to: {
-        subscriberId: "6727412c456590b1d8992b87",
+        subscriberId: userId,
         email: toEmail,
       },
       overrides: {
         email: {
           senderName: "LapinLearn",
-          integrationIdentifier: "novu-email-gDDBDg5yq",
         },
       },
       payload: {

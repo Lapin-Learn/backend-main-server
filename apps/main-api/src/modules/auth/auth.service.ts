@@ -9,7 +9,7 @@ import { IAccount, ICurrentUser } from "@app/types/interfaces";
 import { EntityNotFoundError } from "typeorm";
 import { generateOTPConfig } from "../../config";
 import { NovuService } from "@app/shared-modules/novu";
-import { RESET_PASSWORD_TEMPLATE_NAME, SUBJECT_RESET_PASSWORD } from "@app/types/constants";
+import { SEND_OTP_WORKFLOW } from "@app/types/constants";
 
 @Injectable()
 export class AuthService {
@@ -86,10 +86,7 @@ export class AuthService {
       await this.redisService.delete(`OTP-${dbUser.email}`);
       const saved = await this.redisService.set(`OTP-${dbUser.email}`, { otp, resetPasswordToken });
       if (saved) {
-        const res = await this.novuService.sendEmail(
-          { data: { otp }, templateName: RESET_PASSWORD_TEMPLATE_NAME, subject: SUBJECT_RESET_PASSWORD },
-          email
-        );
+        const res = await this.novuService.sendEmail({ data: { otp } }, dbUser.id, email, SEND_OTP_WORKFLOW);
 
         return res.data.acknowledged;
       }

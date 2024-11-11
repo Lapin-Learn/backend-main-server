@@ -8,7 +8,8 @@ import { StreakHelper } from "./streak.helper";
 import moment from "moment-timezone";
 import { DayLabelMap } from "@app/utils/maps";
 import { MailService } from "@app/shared-modules/mail";
-import { LIST_DAYS } from "@app/types/constants";
+import { LIST_DAYS, REMIND_STREAK_WORKFLOW } from "@app/types/constants";
+import { NovuService } from "@app/shared-modules/novu";
 
 @Injectable()
 export class StreakService {
@@ -16,7 +17,8 @@ export class StreakService {
 
   constructor(
     private readonly streakHelper: StreakHelper,
-    private readonly mailService: MailService
+    private readonly mailService: MailService,
+    private readonly novuService: NovuService
   ) {}
 
   async setTargetStreak(user: ICurrentUser, dto: SetTargetStreak) {
@@ -78,9 +80,16 @@ export class StreakService {
       const streakActivities = await this.getStreakActivitiesOfWeek(unUpdatedStreakProfiles);
 
       for (const streakActivity of streakActivities) {
-        const subject = `Chào ${streakActivity.username}, đừng đánh mất ${streakActivity.currentStreak} ngày streak nhé!`;
-        await this.mailService.sendMail(streakActivity.email, subject, "remind-streak", streakActivity);
-        this.logger.log(`Remind ${streakActivity.username} that he/she is going to lose streak`);
+        const res = await this.novuService.sendEmail(
+          { data: streakActivity },
+          streakActivity.userId,
+          streakActivity.email,
+          REMIND_STREAK_WORKFLOW
+        );
+
+        if (res.data.acknowledged) {
+          this.logger.log(`Remind ${streakActivity.username} that he/she is going to lose streak`);
+        }
       }
       this.logger.log("Remind about missing streak done");
     } catch (error) {
@@ -142,6 +151,7 @@ export class StreakService {
       );
       const account = await Account.findOne({ where: { learnerProfileId: profile.id } });
       streakActivities.push({
+        userId: account.id,
         email: account.email,
         username: account.username,
         currentStreak: profile.streak.current,
