@@ -39,6 +39,7 @@
     "@nestjs/schedule": "^4.1.0",
     "@nestjs/swagger": "^7.4.2",
     "@nestjs/typeorm": "^10.0.2",
+    "@novu/node": "^2.0.1",
     "@redis/client": "^1.6.0",
     "@types/lodash": "^4.17.7",
     "@types/otp-generator": "^4.0.2",
