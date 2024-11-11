@@ -2,6 +2,7 @@ import { Item, LearnerProfile, ProfileItem } from "@app/database";
 import { BuyItemDto } from "@app/types/dtos";
 import { ICurrentUser, IItem } from "@app/types/interfaces";
 import { BadRequestException, Injectable, Logger } from "@nestjs/common";
+import { ItemName } from "@app/types/enums";
 
 @Injectable()
 export class ShopService {
@@ -14,13 +15,13 @@ export class ShopService {
       return items.map((item) => {
         const popular = (() => {
           switch (item.name) {
-            case "STREAK_FREEZE":
+            case ItemName.STREAK_FREEZE:
               return "1";
-            case "RANDOM_GIFT":
+            case ItemName.RANDOM_GIFT:
               return "1";
-            case "ULTIMATE_TIME":
+            case ItemName.ULTIMATE_TIME:
               return "1";
-            case "IDENTIFICATION":
+            case ItemName.IDENTIFICATION:
               return "2";
             default:
               return "1";
@@ -30,7 +31,7 @@ export class ShopService {
         return {
           ...item,
           popular,
-          isPopular: item.name === "IDENTIFICATION" ? true : false,
+          isPopular: item.name === ItemName.IDENTIFICATION ? true : false,
         };
       });
     } catch (error) {

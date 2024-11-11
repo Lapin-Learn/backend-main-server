@@ -1,11 +1,10 @@
 import { Module } from "@nestjs/common";
-import { ShopController } from "./shop.controller";
-import { InventoryController } from "./inventory.controller";
-import { ShopService } from "./shop.service";
-import { InventoryService } from "./inventory.service";
+import { ShopController, ShopService } from "./shop";
+import { InventoryController, InventoryService } from "./inventory";
+import { ItemEffectFactoryService } from "./item-effect/item-effect-factory.service";
 
 @Module({
   controllers: [ShopController, InventoryController],
-  providers: [ShopService, InventoryService],
+  providers: [ShopService, InventoryService, ItemEffectFactoryService],
 })
 export class ItemModule {}
