@@ -7,8 +7,12 @@ import { In } from "typeorm";
 import { StreakHelper } from "./streak.helper";
 import moment from "moment-timezone";
 import { DayLabelMap } from "@app/utils/maps";
-import { MailService } from "@app/shared-modules/mail";
-import { LIST_DAYS, REMIND_STREAK_WORKFLOW } from "@app/types/constants";
+import {
+  ANNOUNCE_STREAK_MILESTONE_WORKFLOW,
+  LIST_DAYS,
+  REMIND_MISSING_STREAK_WORKFLOW,
+  REMIND_STREAK_WORKFLOW,
+} from "@app/types/constants";
 import { NovuService } from "@app/shared-modules/novu";
 
 @Injectable()
@@ -17,7 +21,6 @@ export class StreakService {
 
   constructor(
     private readonly streakHelper: StreakHelper,
-    private readonly mailService: MailService,
     private readonly novuService: NovuService
   ) {}
 
@@ -109,9 +112,15 @@ export class StreakService {
       const streakActivities = await this.getStreakActivitiesOfWeek(missingStreakProfiles);
 
       for (const streakActivity of streakActivities) {
-        const subject = `Chào ${streakActivity.username}, cùng bắt đầu lại chuỗi streak nhé!`;
-        await this.mailService.sendMail(streakActivity.email, subject, "missing-streak", streakActivity);
-        this.logger.log(`Remind ${streakActivity.username} that he/she has lost streak`);
+        const res = await this.novuService.sendEmail(
+          { data: streakActivity },
+          streakActivity.userId,
+          streakActivity.email,
+          REMIND_MISSING_STREAK_WORKFLOW
+        );
+        if (res.data.acknowledged) {
+          this.logger.log(`Remind ${streakActivity.username} that he/she has lost streak`);
+        }
       }
       this.logger.log("Remind missing streak done");
     } catch (error) {
@@ -131,9 +140,15 @@ export class StreakService {
 
       const streakActivities = await this.getStreakActivitiesOfWeek(profilesAchievedStreakMilestone);
       for (const streakActivity of streakActivities) {
-        const subject = `Chào ${streakActivity.username}! Nối dài chuỗi ${streakActivity.currentStreak} ngày học IELTS nào!`;
-        await this.mailService.sendMail(streakActivity.email, subject, "streak-milestone", streakActivity);
-        this.logger.log(`Remind ${streakActivity.username} that he/she has achieved streak milestone`);
+        const res = await this.novuService.sendEmail(
+          { data: streakActivity },
+          streakActivity.userId,
+          streakActivity.email,
+          ANNOUNCE_STREAK_MILESTONE_WORKFLOW
+        );
+        if (res.data.acknowledged) {
+          this.logger.log(`Remind ${streakActivity.username} that he/she has achieved streak milestone`);
+        }
       }
       this.logger.log("Remind streak milestone done");
     } catch (error) {}
