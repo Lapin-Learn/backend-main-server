@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LapinLearn Streak Reminder</title>
+</head>
+
+<body style="font-family: Arial, sans-serif; background-color: #f8f8f8; margin: 0; padding: 0;">
+  <div
+    style="max-width: 600px; margin: 20px auto; background-color: #fff; border-radius: 8px; padding: 20px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); text-align: center;">
+    <div style="color: #ff5722; font-size: 24px; font-weight: bold;">LAPINLEARN</div>
+    <div style="font-size: 18px; font-weight: bold; color: #333; margin-top: 20px;">Tiếp tục phấn đấu bạn nhé!</div>
+    <div style="font-size: 14px; color: #666; margin: 10px 0;">Nối dài chuỗi {{currentStreak}} ngày streak với một bài
+      học chỉ 3 phút!</div>
+
+    <div
+      style="background-color: #f0f0f0; border-radius: 8px; display: inline-block; width: calc(100% - 40px); flex-direction: column; align-items: center; overflow: hidden;">
+      <div
+        style="background-color: #ff5722; color: #fff; padding: 10px; margin: 0 0 20px; font-size: 16px; font-weight: bold; padding: 20px">
+        Streak hiện tại: {{currentStreak}}
+      </div>
+
+      <table align="center" cellpadding="10" cellspacing="0" style="margin: 0 auto;">
+        <tr>
+          {{#each activities}}
+          <td style="text-align: center;">
+            <div
+              style="font-size: 12px; color: #666; margin-bottom: 4px; {{#if this.isToday}}font-weight: bold;{{/if}}">
+              {{this.dayLabel}}
+            </div>
+            <img
+              src="{{#isStatus this.status 'DONE'}}https://firebasestorage.googleapis.com/v0/b/lapin-learn.appspot.com/o/happy-icon.png?alt=media&token=894dafce-4c31-4156-9f95-622457d7cb80
+              {{else isStatus this.status 'NOT_DONE'}}https://firebasestorage.googleapis.com/v0/b/lapin-learn.appspot.com/o/sad-icon.png?alt=media&token=73da1e84-d7f5-4f9d-acd8-9e5cf7714e57
+              {{else isStatus this.status 'NOT_UP_COMING'}}https://firebasestorage.googleapis.com/v0/b/lapin-learn.appspot.com/o/empty-icon.png?alt=media&token=226e98fd-9025-45ca-87a4-c6450df58e31
+              {{/isStatus}}"
+              width="36" height="36" alt="Activity Status">
+          </td>
+          {{/each}}
+        </tr>
+      </table>
+    </div>
+  </div>
+</body>
+
+</html>
