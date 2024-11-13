@@ -47,7 +47,7 @@ export class ShopService {
         throw new BadRequestException("Invalid quantity for this item");
       }
 
-      const totalPrice = item.price[dto.quantity] * dto.quantity;
+      const totalPrice = item.price[dto.quantity];
       const learner = await LearnerProfile.findOneByOrFail({ id: user.profileId });
       if (learner.carrots < totalPrice) {
         throw new BadRequestException("Not enough balance to buy this item");

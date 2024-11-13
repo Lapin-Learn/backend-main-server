@@ -3,12 +3,13 @@ import { Account } from "@app/database/entities";
 import { FirebaseAuthService } from "@app/shared-modules/firebase";
 import { AuthHelper } from "./auth.helper";
 import { generate as otpGenerator } from "otp-generator";
-import { MailService } from "@app/shared-modules/mail";
 import { RedisService } from "@app/shared-modules/redis";
 import { ResetPasswordActionEnum } from "@app/types/enums";
 import { IAccount, ICurrentUser } from "@app/types/interfaces";
 import { EntityNotFoundError } from "typeorm";
 import { generateOTPConfig } from "../../config";
+import { NovuService } from "@app/shared-modules/novu";
+import { SEND_OTP_WORKFLOW } from "@app/types/constants";
 
 @Injectable()
 export class AuthService {
@@ -16,9 +17,9 @@ export class AuthService {
 
   constructor(
     private readonly firebaseService: FirebaseAuthService,
-    private readonly mailService: MailService,
     private readonly redisService: RedisService,
-    private readonly authHelper: AuthHelper
+    private readonly authHelper: AuthHelper,
+    private readonly novuService: NovuService
   ) {}
 
   async registerUser(email: string, password: string) {
@@ -81,11 +82,13 @@ export class AuthService {
         uid: dbUser.providerId,
         action: ResetPasswordActionEnum.RESET_PASSWORD,
       });
-      const res = await this.mailService.sendMail(email, "Reset password", "reset-password", { otp });
-      if (res.accepted.length > 0 && resetPasswordToken) {
-        await this.redisService.delete(dbUser.email);
-        await this.redisService.set(dbUser.email, { otp, resetPasswordToken });
-        return true;
+
+      await this.redisService.delete(`OTP-${dbUser.email}`);
+      const saved = await this.redisService.set(`OTP-${dbUser.email}`, { otp, resetPasswordToken });
+      if (saved) {
+        const res = await this.novuService.sendEmail({ data: { otp } }, dbUser.id, email, SEND_OTP_WORKFLOW);
+
+        return res.data.acknowledged;
       }
       return false;
     } catch (error) {
@@ -96,7 +99,7 @@ export class AuthService {
 
   async verifyOtp(email: string, otp: string) {
     try {
-      const data = await this.redisService.get(email);
+      const data = await this.redisService.get(`OTP-${email}`);
       if (!data) {
         throw new NotAcceptableException("OTP expired");
       }
@@ -104,6 +107,8 @@ export class AuthService {
       if (data.otp !== otp) {
         throw new NotAcceptableException("Invalid OTP");
       }
+
+      await this.redisService.delete(`OTP-${email}`);
 
       return this.authHelper.buildTokenResponse(data.resetPasswordToken);
     } catch (error) {
