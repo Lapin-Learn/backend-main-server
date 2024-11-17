@@ -46,6 +46,7 @@ import { Lesson } from "@app/database/entities/lesson.entity";
 import { QuestionType } from "@app/database/entities/question-type.entity";
 import { TMileStoneLearnProgress, TMileStoneProfile } from "@app/types/types";
 import moment from "moment-timezone";
+import { VN_TIME_ZONE } from "@app/types/constants";
 
 @Entity("learner_profiles")
 export class LearnerProfile extends BaseEntity implements ILearnerProfile {
@@ -270,10 +271,10 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
   // Active Record Pattern
   static async getBrokenStreakProfiles() {
     // Midnight yesterday in GMT+7
-    const beginOfYesterday = moment().tz("Asia/Saigon").subtract(1, "days").startOf("day").toDate();
+    const beginOfYesterday = moment().tz(VN_TIME_ZONE).subtract(1, "days").startOf("day").utc(true).toDate();
 
     // 23:59:59 yesterday in GMT+7
-    const endOfYesterday = moment().tz("Asia/Saigon").subtract(1, "days").endOf("day").toDate();
+    const endOfYesterday = moment().tz(VN_TIME_ZONE).subtract(1, "days").endOf("day").utc(true).toDate();
 
     const rawValidLearnerProfileIds = await this.createQueryBuilder("learnerProfiles")
       .leftJoinAndSelect("learnerProfiles.activities", "activities")
@@ -322,6 +323,7 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
       .andWhere("action.name = :actionName", { actionName: ActionNameEnum.DAILY_STREAK })
       .andWhere("activity.finishedAt BETWEEN :startDate AND :endDate", { startDate, endDate })
       .orderBy("activity.finishedAt", "ASC")
+      .distinctOn(["activity.finishedAt"])
       .getOne();
 
     return data?.activities || [];

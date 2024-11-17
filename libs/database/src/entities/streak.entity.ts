@@ -26,4 +26,12 @@ export class Streak extends BaseEntity implements IStreak {
     onUpdate: "CURRENT_TIMESTAMP",
   })
   updatedAt: Date;
+
+  public async increaseStreak() {
+    this.current += 1;
+    if (this.current > this.record) {
+      this.record = this.current;
+    }
+    await this.save();
+  }
 }

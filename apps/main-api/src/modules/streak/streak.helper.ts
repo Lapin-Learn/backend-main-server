@@ -1,3 +1,4 @@
+import { VN_TIME_ZONE } from "@app/types/constants";
 import { IActivity } from "@app/types/interfaces";
 import { Injectable } from "@nestjs/common";
 import moment from "moment-timezone";
@@ -11,7 +12,7 @@ export class StreakHelper {
 
     return sortedActivities.map((activity) => {
       return {
-        date: moment(activity.finishedAt).tz("Asia/Bangkok").startOf("day").toDate(),
+        date: moment(activity.finishedAt).tz(VN_TIME_ZONE).startOf("day").utc(true).toDate(),
         actionName: activity.action.name,
       };
     });

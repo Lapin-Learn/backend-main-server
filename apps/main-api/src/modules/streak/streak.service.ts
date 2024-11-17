@@ -12,6 +12,7 @@ import {
   LIST_DAYS,
   REMIND_MISSING_STREAK_WORKFLOW,
   REMIND_STREAK_WORKFLOW,
+  VN_TIME_ZONE,
 } from "@app/types/constants";
 import { NovuService } from "@app/shared-modules/novu";
 
@@ -36,10 +37,10 @@ export class StreakService {
     }
   }
 
-  // Reset streak in midnight GMT+7
+  // Reset streak at midnight GMT+7
   @Cron("0 0 * * *", {
     name: "Reset streak",
-    timeZone: "Asia/Saigon",
+    timeZone: VN_TIME_ZONE,
   })
   async resetStreak() {
     try {
@@ -57,9 +58,9 @@ export class StreakService {
 
   async getStreakHistory(user: ICurrentUser, startDate: Date) {
     try {
-      const today = moment().tz("Asia/Saigon").endOf("day").toDate();
+      const today = moment().tz(VN_TIME_ZONE).endOf("day").utc(true).toDate();
 
-      if (moment(startDate).isAfter(today)) {
+      if (moment(startDate).utc(true).isAfter(today)) {
         throw new BadRequestException("Start date cannot be later than end of today");
       }
 
@@ -74,7 +75,7 @@ export class StreakService {
   // Remind about missing streak at 20:00 GMT+7
   @Cron("0 20 * * *", {
     name: "Remind about missing streak",
-    timeZone: "Asia/Saigon",
+    timeZone: VN_TIME_ZONE,
   })
   async remindAboutMissingStreak() {
     try {
@@ -103,7 +104,7 @@ export class StreakService {
   // Remind missing streak at 15:00 GMT+7
   @Cron("0 15 * * *", {
     name: "Remind missing streak",
-    timeZone: "Asia/Saigon",
+    timeZone: VN_TIME_ZONE,
   })
   async remindMissingStreak() {
     try {
@@ -131,7 +132,7 @@ export class StreakService {
   // Remind streak milestone at 8:00 GMT+7
   @Cron("0 8 * * *", {
     name: "Remind streak milestone",
-    timeZone: "Asia/Saigon",
+    timeZone: VN_TIME_ZONE,
   })
   async remindStreakMileStone() {
     try {
@@ -156,8 +157,8 @@ export class StreakService {
 
   async getStreakActivitiesOfWeek(learners: ILearnerProfile[]): Promise<IProfileStreakActivity[]> {
     const streakActivities: IProfileStreakActivity[] = [];
-    const beginDate = moment().tz("Asia/Saigon").startOf("week").utc(true).toDate();
-    const currentDate = moment().tz("Asia/Saigon").utc(true).toDate();
+    const beginDate = moment().tz(VN_TIME_ZONE).startOf("week").utc(true).toDate();
+    const currentDate = moment().tz(VN_TIME_ZONE).utc(true).toDate();
     for (const profile of learners) {
       const streakActivity: IActivity[] = await LearnerProfile.getDailyStreakActivities(
         profile.id,
@@ -173,7 +174,7 @@ export class StreakService {
         activities: LIST_DAYS.map((day) => {
           const today = moment();
           let status: string;
-          if (moment().day(day).isAfter(today)) {
+          if (moment().day(day).utc(true).isAfter(today)) {
             status = "NOT_UP_COMING";
           } else {
             const activity = streakActivity.find((activity) => moment(activity.finishedAt).format("dddd") === day);
