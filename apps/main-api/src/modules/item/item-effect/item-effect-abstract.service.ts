@@ -1,8 +1,8 @@
-export abstract class ItemEffectAbstractService {
-  abstract applyEffect(): void;
+export interface IItemEffectService {
+  applyEffect: () => any;
 }
 
-export class DefaultItemEffect extends ItemEffectAbstractService {
+export class DefaultItemEffect implements IItemEffectService {
   applyEffect() {
     return {
       message: "NOT_SUPPORTED_YET",

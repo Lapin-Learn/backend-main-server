@@ -1,38 +1,34 @@
-import { ItemEffectAbstractService } from "./item-effect-abstract.service";
-import { BadRequestException, HttpException, Logger } from "@nestjs/common";
+import { IItemEffectService } from "./item-effect-abstract.service";
+import { BadRequestException, HttpException, HttpStatus, Logger } from "@nestjs/common";
 import { ActionNameEnum } from "@app/types/enums";
 import { Action, Activity, LearnerProfile, ProfileItem } from "@app/database";
-import moment from "moment-timezone";
-import { VN_TIME_ZONE } from "@app/types/constants";
+import { EntityNotFoundError } from "typeorm";
 
-export class StreakItemService extends ItemEffectAbstractService {
+export class StreakItemService implements IItemEffectService {
   private readonly logger = new Logger(StreakItemService.name);
   private readonly _profileItem: ProfileItem;
   private readonly _learner: LearnerProfile;
 
   constructor(_profileItem: ProfileItem) {
-    super();
     this._profileItem = _profileItem;
     this._learner = _profileItem.profile;
   }
 
   async applyEffect() {
     try {
-      // Can only extend streak yesterday, do not allow to extend streak today
-      const beginYesterday = moment().tz(VN_TIME_ZONE).subtract(1, "days").startOf("day").utc(true).toDate();
-      const endYesterday = moment().tz(VN_TIME_ZONE).subtract(1, "days").endOf("day").utc(true).toDate();
+      const freezeStreakAction = await Action.findByName(ActionNameEnum.FREEZE_STREAK);
 
-      // Check if the learner has extended the streak yesterday
-      const isExtendedStreakYesterday = await Activity.getBonusStreakPoint(
-        this._learner.id,
-        beginYesterday,
-        endYesterday
-      );
-      if (!isExtendedStreakYesterday) {
-        throw new BadRequestException("ALREADY_EXTENDED_STREAK_YESTERDAY");
+      // Can only extend streak once a day and if yesterday learner didn't learn
+      // and today must not learn anything yet.
+      // If user learn today, they can't extend streak because streak will reset.
+      if (this._learner.streak.extended) {
+        throw new BadRequestException("ALREADY_EXTENDED_STREAK");
       }
 
-      const freezeStreakAction = await Action.findOneOrFail({ where: { name: ActionNameEnum.FREEZE_STREAK } });
+      if (this._learner.streak.current === 0) {
+        throw new BadRequestException("STREAK_NOT_STARTED");
+      }
+
       await Activity.save({
         profileId: this._learner.id,
         actionId: freezeStreakAction.id,
@@ -47,6 +43,9 @@ export class StreakItemService extends ItemEffectAbstractService {
       };
     } catch (error) {
       this.logger.error(error);
+      if (error instanceof EntityNotFoundError) {
+        throw new HttpException("ACTION_NOT_FOUND", HttpStatus.INTERNAL_SERVER_ERROR);
+      }
       if (error instanceof HttpException) {
         throw error;
       }

@@ -15,6 +15,7 @@ import {
   VN_TIME_ZONE,
 } from "@app/types/constants";
 import { NovuService } from "@app/shared-modules/novu";
+import { getBeginOfOffsetDay } from "@app/utils/time";
 
 @Injectable()
 export class StreakService {
@@ -38,7 +39,7 @@ export class StreakService {
   }
 
   // Reset streak at midnight GMT+7
-  @Cron("0 0 * * *", {
+  @Cron("55 20 * * *", {
     name: "Reset streak",
     timeZone: VN_TIME_ZONE,
   })
@@ -48,8 +49,16 @@ export class StreakService {
 
       const brokenStreakProfiles = await LearnerProfile.getBrokenStreakProfiles();
 
-      if (brokenStreakProfiles.length > 0) {
-        await Streak.update({ id: In(brokenStreakProfiles.map((profile) => profile.streakId)) }, { current: 0 });
+      // If yesterday streak is not the extended streak, reset the streak to 0.
+      const shouldResetProfiles = brokenStreakProfiles.filter((profile) => !profile.streak.extended);
+      if (shouldResetProfiles.length > 0) {
+        await Streak.update({ id: In(shouldResetProfiles.map((profile) => profile.streakId)) }, { current: 0 });
+      }
+
+      // If yesterday streak is the extended streak, mark yesterday is unextended, still store the current for streak freeze effect.
+      const shouldUnextendProfiles = brokenStreakProfiles.filter((profile) => profile.streak.extended);
+      if (shouldUnextendProfiles.length > 0) {
+        await Streak.update({ id: In(shouldUnextendProfiles.map((profile) => profile.streakId)) }, { extended: false });
       }
     } catch (error) {
       this.logger.error(error);
@@ -58,14 +67,15 @@ export class StreakService {
 
   async getStreakHistory(user: ICurrentUser, startDate: Date) {
     try {
-      const today = moment().tz(VN_TIME_ZONE).endOf("day").utc(true).toDate();
+      const today = getBeginOfOffsetDay(0);
 
       if (moment(startDate).utc(true).isAfter(today)) {
         throw new BadRequestException("Start date cannot be later than end of today");
       }
 
       const dailyStreakActivities = await LearnerProfile.getDailyStreakActivities(user.profileId, startDate, today);
-      return this.streakHelper.buildStreakHistoryResponseData(dailyStreakActivities);
+      const freezeStreakActivities = await LearnerProfile.getFreezeStreakActivities(user.profileId, startDate, today);
+      return this.streakHelper.buildStreakHistoryResponseData(dailyStreakActivities, freezeStreakActivities);
     } catch (error) {
       this.logger.error(error);
       throw new BadRequestException(error);

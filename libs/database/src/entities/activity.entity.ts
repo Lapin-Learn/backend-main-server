@@ -3,8 +3,7 @@ import { BaseEntity, Between, Column, Entity, JoinColumn, ManyToOne, PrimaryGene
 import { LearnerProfile } from "./learner-profile.entity";
 import { Action } from "./action.entity";
 import { ActionNameEnum } from "@app/types/enums";
-import moment from "moment-timezone";
-import { VN_TIME_ZONE } from "@app/types/constants";
+import { getBeginOfOffsetDay, getEndOfOffsetDay } from "@app/utils/time";
 
 @Entity("activities")
 export class Activity extends BaseEntity implements IActivity {
@@ -31,10 +30,11 @@ export class Activity extends BaseEntity implements IActivity {
 
   // Active Record Pattern
   static async getBonusStreakPoint(learnerProfileId: string, begin?: Date, end?: Date) {
-    const action = await Action.findOne({ where: { name: ActionNameEnum.DAILY_STREAK } });
+    const action = await Action.findByName(ActionNameEnum.DAILY_STREAK);
 
-    const beginOfDay = begin ?? moment().tz(VN_TIME_ZONE).startOf("day").utc(true).toDate();
-    const endOfDay = end ?? moment().tz(VN_TIME_ZONE).endOf("day").utc(true).toDate();
+    const beginOfDay = begin ?? getBeginOfOffsetDay();
+    const endOfDay = end ?? getEndOfOffsetDay();
+    console.log(beginOfDay, endOfDay);
 
     const activity = await Activity.findOne({
       where: {
@@ -43,6 +43,7 @@ export class Activity extends BaseEntity implements IActivity {
         finishedAt: Between(beginOfDay, endOfDay),
       },
     });
+    console.log("isHaveActivity", activity);
 
     return activity ? 0 : 1;
   }
