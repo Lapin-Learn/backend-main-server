@@ -40,10 +40,7 @@ export class Streak extends BaseEntity implements IStreak {
   updatedAt: Date;
 
   public async increaseStreak() {
-    if (this.extended) {
-      this.current += 1; // If yesterday streak is extended, increase current value
-    } else this.current = 1; // If yesterday streak is not extended, reset current value to 1
-
+    this.current += 1;
     if (this.current > this.record) {
       this.record = this.current;
     }

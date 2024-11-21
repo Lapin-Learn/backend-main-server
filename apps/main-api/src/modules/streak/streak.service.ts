@@ -39,7 +39,7 @@ export class StreakService {
   }
 
   // Reset streak at midnight GMT+7
-  @Cron("55 20 * * *", {
+  @Cron("0 0 * * *", {
     name: "Reset streak",
     timeZone: VN_TIME_ZONE,
   })

@@ -227,7 +227,13 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
         profileId: this.id,
         actionId: action.id,
       });
-      await this.streak.increaseStreak();
+      if (this.streak.extended) {
+        await this.streak.increaseStreak();
+      } else {
+        // If yesterday not learn any new lesson, reset streak to 1
+        this.streak.current = 1;
+        this.streak.extended = true;
+      }
 
       return true;
     }
