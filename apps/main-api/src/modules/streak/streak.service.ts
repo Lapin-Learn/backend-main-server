@@ -12,8 +12,10 @@ import {
   LIST_DAYS,
   REMIND_MISSING_STREAK_WORKFLOW,
   REMIND_STREAK_WORKFLOW,
+  VN_TIME_ZONE,
 } from "@app/types/constants";
 import { NovuService } from "@app/shared-modules/novu";
+import { getBeginOfOffsetDay } from "@app/utils/time";
 
 @Injectable()
 export class StreakService {
@@ -36,10 +38,10 @@ export class StreakService {
     }
   }
 
-  // Reset streak in midnight GMT+7
+  // Reset streak at midnight GMT+7
   @Cron("0 0 * * *", {
     name: "Reset streak",
-    timeZone: "Asia/Saigon",
+    timeZone: VN_TIME_ZONE,
   })
   async resetStreak() {
     try {
@@ -47,8 +49,16 @@ export class StreakService {
 
       const brokenStreakProfiles = await LearnerProfile.getBrokenStreakProfiles();
 
-      if (brokenStreakProfiles.length > 0) {
-        await Streak.update({ id: In(brokenStreakProfiles.map((profile) => profile.streakId)) }, { current: 0 });
+      // If yesterday streak is not the extended streak, reset the streak to 0.
+      const shouldResetProfiles = brokenStreakProfiles.filter((profile) => !profile.streak.extended);
+      if (shouldResetProfiles.length > 0) {
+        await Streak.update({ id: In(shouldResetProfiles.map((profile) => profile.streakId)) }, { current: 0 });
+      }
+
+      // If yesterday streak is the extended streak, mark yesterday is unextended, still store the current for streak freeze effect.
+      const shouldUnextendProfiles = brokenStreakProfiles.filter((profile) => profile.streak.extended);
+      if (shouldUnextendProfiles.length > 0) {
+        await Streak.update({ id: In(shouldUnextendProfiles.map((profile) => profile.streakId)) }, { extended: false });
       }
     } catch (error) {
       this.logger.error(error);
@@ -57,14 +67,15 @@ export class StreakService {
 
   async getStreakHistory(user: ICurrentUser, startDate: Date) {
     try {
-      const today = moment().tz("Asia/Saigon").endOf("day").toDate();
+      const today = getBeginOfOffsetDay(0);
 
-      if (moment(startDate).isAfter(today)) {
+      if (moment(startDate).utc(true).isAfter(today)) {
         throw new BadRequestException("Start date cannot be later than end of today");
       }
 
       const dailyStreakActivities = await LearnerProfile.getDailyStreakActivities(user.profileId, startDate, today);
-      return this.streakHelper.buildStreakHistoryResponseData(dailyStreakActivities);
+      const freezeStreakActivities = await LearnerProfile.getFreezeStreakActivities(user.profileId, startDate, today);
+      return this.streakHelper.buildStreakHistoryResponseData(dailyStreakActivities, freezeStreakActivities);
     } catch (error) {
       this.logger.error(error);
       throw new BadRequestException(error);
@@ -74,7 +85,7 @@ export class StreakService {
   // Remind about missing streak at 20:00 GMT+7
   @Cron("0 20 * * *", {
     name: "Remind about missing streak",
-    timeZone: "Asia/Saigon",
+    timeZone: VN_TIME_ZONE,
   })
   async remindAboutMissingStreak() {
     try {
@@ -103,7 +114,7 @@ export class StreakService {
   // Remind missing streak at 15:00 GMT+7
   @Cron("0 15 * * *", {
     name: "Remind missing streak",
-    timeZone: "Asia/Saigon",
+    timeZone: VN_TIME_ZONE,
   })
   async remindMissingStreak() {
     try {
@@ -131,7 +142,7 @@ export class StreakService {
   // Remind streak milestone at 8:00 GMT+7
   @Cron("0 8 * * *", {
     name: "Remind streak milestone",
-    timeZone: "Asia/Saigon",
+    timeZone: VN_TIME_ZONE,
   })
   async remindStreakMileStone() {
     try {
@@ -156,8 +167,8 @@ export class StreakService {
 
   async getStreakActivitiesOfWeek(learners: ILearnerProfile[]): Promise<IProfileStreakActivity[]> {
     const streakActivities: IProfileStreakActivity[] = [];
-    const beginDate = moment().tz("Asia/Saigon").startOf("week").utc(true).toDate();
-    const currentDate = moment().tz("Asia/Saigon").utc(true).toDate();
+    const beginDate = moment().tz(VN_TIME_ZONE).startOf("week").utc(true).toDate();
+    const currentDate = moment().tz(VN_TIME_ZONE).utc(true).toDate();
     for (const profile of learners) {
       const streakActivity: IActivity[] = await LearnerProfile.getDailyStreakActivities(
         profile.id,
@@ -173,7 +184,7 @@ export class StreakService {
         activities: LIST_DAYS.map((day) => {
           const today = moment();
           let status: string;
-          if (moment().day(day).isAfter(today)) {
+          if (moment().day(day).utc(true).isAfter(today)) {
             status = "NOT_UP_COMING";
           } else {
             const activity = streakActivity.find((activity) => moment(activity.finishedAt).format("dddd") === day);

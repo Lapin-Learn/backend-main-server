@@ -1,17 +1,22 @@
 import { IActivity } from "@app/types/interfaces";
+import { getBeginOfOffsetDay } from "@app/utils/time";
 import { Injectable } from "@nestjs/common";
-import moment from "moment-timezone";
 
 @Injectable()
 export class StreakHelper {
-  buildStreakHistoryResponseData(activities: IActivity[]) {
+  buildStreakHistoryResponseData(streaks: IActivity[], frozenStreaks: IActivity[]) {
+    const activities = [
+      ...streaks,
+      ...frozenStreaks.map((day) => ({
+        date: getBeginOfOffsetDay(-1, day.finishedAt),
+        ...day,
+      })),
+    ];
     if (!activities || activities.length === 0) return [];
 
-    const sortedActivities = activities.sort((a, b) => b.finishedAt.getTime() - a.finishedAt.getTime());
-
-    return sortedActivities.map((activity) => {
+    return activities.map((activity) => {
       return {
-        date: moment(activity.finishedAt).tz("Asia/Bangkok").startOf("day").toDate(),
+        date: getBeginOfOffsetDay(0, activity.finishedAt),
         actionName: activity.action.name,
       };
     });

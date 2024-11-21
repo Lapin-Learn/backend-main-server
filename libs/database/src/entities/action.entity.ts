@@ -11,7 +11,7 @@ export class Action extends BaseEntity implements IAction {
   @PrimaryGeneratedColumn("increment")
   id: number;
 
-  @Column({ name: "name", type: "enum", enum: ActionNameEnum, nullable: false, unique: true })
+  @Column({ name: "name", type: "varchar", nullable: false, unique: true })
   name: ActionNameEnum;
 
   // Relations

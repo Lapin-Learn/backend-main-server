@@ -9,6 +9,18 @@ export class Streak extends BaseEntity implements IStreak {
   @Column({ name: "current", type: "int", nullable: false, default: 0 })
   current: number;
 
+  /**
+   * Current streak is extended on yesterday or not
+   * @default false
+   * @type {boolean}
+   * - if true, it means user has completed the streak for the day
+   * and the streak is extended to the next day
+   * - if false, it means user has not completed the streak for the day
+   * and the streak may be reset to 0 when running cron job
+   */
+  @Column({ name: "extended", type: "boolean", nullable: false, default: false })
+  extended: boolean;
+
   @Column({ name: "target", type: "int", nullable: false, default: 0 })
   target: number;
 
@@ -26,4 +38,13 @@ export class Streak extends BaseEntity implements IStreak {
     onUpdate: "CURRENT_TIMESTAMP",
   })
   updatedAt: Date;
+
+  public async increaseStreak() {
+    this.current += 1;
+    if (this.current > this.record) {
+      this.record = this.current;
+    }
+    this.extended = true; // Mark today streak as extended
+    await this.save();
+  }
 }

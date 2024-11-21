@@ -3,10 +3,11 @@ import { ConfigModule } from "@nestjs/config";
 import { UserController } from "./user.controller";
 import { UserService } from "./user.service";
 import { FirebaseModule } from "@app/shared-modules/firebase";
+import { AdminController } from "./admin.controller";
 
 @Module({
   imports: [FirebaseModule, ConfigModule],
-  controllers: [UserController],
+  controllers: [UserController, AdminController],
   providers: [UserService],
 })
 export class UserModule {}

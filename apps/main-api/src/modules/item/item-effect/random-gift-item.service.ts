@@ -1,16 +1,15 @@
-import { ItemEffectAbstractService } from "./item-effect-abstract.service";
+import { IItemEffectService } from "./item-effect-abstract.service";
 import { Logger } from "@nestjs/common";
 import { RandomGiftType } from "@app/types/enums";
 import { Item, LearnerProfile, ProfileItem } from "@app/database";
 import { IItem } from "@app/types/interfaces";
 
-export class RandomGiftItemEffect extends ItemEffectAbstractService {
+export class RandomGiftItemEffect implements IItemEffectService {
   private readonly logger = new Logger(RandomGiftItemEffect.name);
   private readonly _profileItem: ProfileItem;
   private readonly _learner: LearnerProfile;
 
   constructor(_profileItem: ProfileItem) {
-    super();
     this._profileItem = _profileItem;
     this._learner = _profileItem.profile;
   }

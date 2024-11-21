@@ -46,6 +46,7 @@ import { Lesson } from "@app/database/entities/lesson.entity";
 import { QuestionType } from "@app/database/entities/question-type.entity";
 import { TMileStoneLearnProgress, TMileStoneProfile } from "@app/types/types";
 import moment from "moment-timezone";
+import { getBeginOfOffsetDay, getEndOfOffsetDay } from "@app/utils/time";
 
 @Entity("learner_profiles")
 export class LearnerProfile extends BaseEntity implements ILearnerProfile {
@@ -221,15 +222,18 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
   private async isAchieveDailyStreakOrCreate(): Promise<boolean> {
     const bonusStreakPoint = await Activity.getBonusStreakPoint(this.id);
     if (bonusStreakPoint > 0) {
-      const action = await Action.findOne({ where: { name: ActionNameEnum.DAILY_STREAK } });
+      const action = await Action.findByName(ActionNameEnum.DAILY_STREAK);
       await Activity.save({
         profileId: this.id,
         actionId: action.id,
       });
-
-      this.streak.current += bonusStreakPoint;
-      this.streak.record = Math.max(this.streak.record, this.streak.current);
-      await this.streak.save();
+      if (this.streak.extended) {
+        await this.streak.increaseStreak();
+      } else {
+        // If yesterday not learn any new lesson, reset streak to 1
+        this.streak.current = 1;
+        this.streak.extended = true;
+      }
 
       return true;
     }
@@ -270,10 +274,10 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
   // Active Record Pattern
   static async getBrokenStreakProfiles() {
     // Midnight yesterday in GMT+7
-    const beginOfYesterday = moment().tz("Asia/Saigon").subtract(1, "days").startOf("day").toDate();
+    const beginOfYesterday = getBeginOfOffsetDay(-1);
 
     // 23:59:59 yesterday in GMT+7
-    const endOfYesterday = moment().tz("Asia/Saigon").subtract(1, "days").endOf("day").toDate();
+    const endOfYesterday = getEndOfOffsetDay(-1);
 
     const rawValidLearnerProfileIds = await this.createQueryBuilder("learnerProfiles")
       .leftJoinAndSelect("learnerProfiles.activities", "activities")
@@ -322,13 +326,34 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
       .andWhere("action.name = :actionName", { actionName: ActionNameEnum.DAILY_STREAK })
       .andWhere("activity.finishedAt BETWEEN :startDate AND :endDate", { startDate, endDate })
       .orderBy("activity.finishedAt", "ASC")
+      .distinctOn(["activity.finishedAt"])
+      .getOne();
+
+    return data?.activities || [];
+  }
+
+  static async getFreezeStreakActivities(profileId: string, startDate: Date, endDate: Date): Promise<IActivity[]> {
+    const modifiedStartDate = getBeginOfOffsetDay(1, startDate);
+    const modifiedEndDate = getEndOfOffsetDay(1, endDate);
+
+    const data = await this.createQueryBuilder("learnerProfile")
+      .leftJoinAndSelect("learnerProfile.activities", "activity")
+      .leftJoinAndSelect("activity.action", "action")
+      .where("learnerProfile.id = :profileId", { profileId })
+      .andWhere("action.name = :actionName", { actionName: ActionNameEnum.FREEZE_STREAK })
+      .andWhere("activity.finishedAt BETWEEN :modifiedStartDate AND :modifiedEndDate", {
+        modifiedStartDate,
+        modifiedEndDate,
+      })
+      .orderBy("activity.finishedAt", "ASC")
+      .distinctOn(["activity.finishedAt"])
       .getOne();
 
     return data?.activities || [];
   }
 
   static async getNotCompleteStreakProfiles() {
-    const beginOfToday = moment().tz("Asia/Saigon").startOf("day").utc(true).toDate();
+    const beginOfToday = getBeginOfOffsetDay(0);
 
     const subQuery = this.createQueryBuilder("learnerProfiles")
       .leftJoin("learnerProfiles.activities", "activities")
