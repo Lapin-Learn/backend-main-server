@@ -34,7 +34,6 @@ export class Activity extends BaseEntity implements IActivity {
 
     const beginOfDay = begin ?? getBeginOfOffsetDay();
     const endOfDay = end ?? getEndOfOffsetDay();
-    console.log(beginOfDay, endOfDay);
 
     const activity = await Activity.findOne({
       where: {
@@ -43,7 +42,6 @@ export class Activity extends BaseEntity implements IActivity {
         finishedAt: Between(beginOfDay, endOfDay),
       },
     });
-    console.log("isHaveActivity", activity);
 
     return activity ? 0 : 1;
   }

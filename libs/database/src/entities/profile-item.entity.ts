@@ -1,5 +1,5 @@
-import { IProfileItem } from "@app/types/interfaces";
 import {
+  AfterLoad,
   BaseEntity,
   Column,
   CreateDateColumn,
@@ -9,6 +9,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from "typeorm";
+import { IProfileItem } from "@app/types/interfaces";
 import { LearnerProfile } from "./learner-profile.entity";
 import { Item } from "./item.entity";
 import { ProfileItemStatusEnum } from "@app/types/enums";
@@ -62,4 +63,14 @@ export class ProfileItem extends BaseEntity implements IProfileItem {
   @ManyToOne(() => Item, (item) => item.id, { eager: true })
   @JoinColumn({ name: "item_id", referencedColumnName: "id" })
   item: Item;
+
+  @AfterLoad()
+  async resetItemStatus() {
+    const now = new Date();
+    if (now >= this.expAt && this.status === ProfileItemStatusEnum.IN_USE) {
+      this.status = ProfileItemStatusEnum.UNUSED;
+      this.inUseQuantity = 0;
+      this.expAt = null;
+    }
+  }
 }

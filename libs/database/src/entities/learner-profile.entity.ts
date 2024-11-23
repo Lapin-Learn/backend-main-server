@@ -2,9 +2,11 @@ import {
   ActionNameEnum,
   BandScoreEnum,
   IntervalTypeEnum,
+  ItemName,
   MileStonesEnum,
   MissionCategoryNameEnum,
   MissionGroupNameEnum,
+  ProfileItemStatusEnum,
   ProfileMissionProgressStatusEnum,
   RankEnum,
 } from "@app/types/enums";
@@ -97,7 +99,7 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
   @OneToMany(() => ProfileMissionProgress, (profileMissionProgress) => profileMissionProgress.profile, { eager: true })
   readonly profileMissionsProgress: ProfileMissionProgress[];
 
-  @OneToMany(() => ProfileItem, (profileItem) => profileItem.profile)
+  @OneToMany(() => ProfileItem, (profileItem) => profileItem.profile, { eager: true })
   readonly profileItems: ProfileItem[];
 
   @OneToMany(() => LessonRecord, (lessonRecord) => lessonRecord.learnerProfile)
@@ -106,13 +108,18 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
   @OneToMany(() => LessonProcess, (lessonProcess) => lessonProcess.learnerProfile, { eager: true })
   readonly lessonProcesses: LessonProcess[];
 
-  public async updateResources(newBonusResources: UpdateResourcesDto): Promise<void> {
+  public async updateResources(newBonusResources: UpdateResourcesDto): Promise<UpdateResourcesDto> {
     const { bonusCarrot = 0, bonusXP = 0 } = newBonusResources;
     this.carrots += bonusCarrot;
-    this.xp += bonusXP;
+    const isDoubleXP = this.profileItems.find(
+      (item) => item.item.name === ItemName.ULTIMATE_TIME && item.status === ProfileItemStatusEnum.IN_USE
+    );
+    this.xp += bonusXP * (isDoubleXP ? 2 : 1);
     await this.save();
-
-    return;
+    return {
+      bonusXP: bonusXP * (isDoubleXP ? 2 : 1),
+      bonusCarrot,
+    };
   }
 
   public async getProfileMileStones(): Promise<TMileStoneProfile[]> {

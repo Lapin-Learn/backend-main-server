@@ -33,12 +33,12 @@ export class LessonService {
 
       const { bonusXP, bonusCarrot } = lessonRecord.getBonusResources();
 
-      await learner.updateResources({ bonusXP, bonusCarrot });
+      const result = await learner.updateResources({ bonusXP, bonusCarrot });
 
       const profileMilestones = await learner.getProfileMileStones();
       const learnProgressMilestones = await learner.getLearnProcessMileStones(
         dto,
-        bonusXP,
+        result.bonusXP,
         currentLesson.questionType.id
       );
 
@@ -68,8 +68,7 @@ export class LessonService {
 
       return {
         ...lessonRecord,
-        bonusXP,
-        bonusCarrot,
+        ...result,
         milestones: [
           ...profileMilestones,
           ...learnProgressMilestones,
