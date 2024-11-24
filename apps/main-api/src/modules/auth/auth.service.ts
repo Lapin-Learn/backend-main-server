@@ -4,12 +4,12 @@ import { FirebaseAuthService } from "@app/shared-modules/firebase";
 import { AuthHelper } from "./auth.helper";
 import { generate as otpGenerator } from "otp-generator";
 import { RedisService } from "@app/shared-modules/redis";
-import { ResetPasswordActionEnum } from "@app/types/enums";
+import { ActionEnum } from "@app/types/enums";
 import { IAccount, ICurrentUser } from "@app/types/interfaces";
 import { EntityNotFoundError } from "typeorm";
 import { generateOTPConfig } from "../../config";
 import { NovuService } from "@app/shared-modules/novu";
-import { SEND_OTP_WORKFLOW } from "@app/types/constants";
+import { SEND_OTP_WORKFLOW, VERIFY_EMAIL_WORKFLOW } from "@app/types/constants";
 
 @Injectable()
 export class AuthService {
@@ -71,22 +71,23 @@ export class AuthService {
     }
   }
 
-  async sendOtp(email: string) {
+  async sendOtp(email: string, action: ActionEnum) {
     try {
       const dbUser = await Account.findOne({ where: { email } });
       if (!dbUser) {
         throw new NotAcceptableException("Email not found");
       }
       const otp = otpGenerator(6, generateOTPConfig);
-      const resetPasswordToken = await this.firebaseService.generateCustomToken(dbUser.providerId, {
+      const verifyToken = await this.firebaseService.generateCustomToken(dbUser.providerId, {
         uid: dbUser.providerId,
-        action: ResetPasswordActionEnum.RESET_PASSWORD,
+        action,
       });
 
-      await this.redisService.delete(`OTP-${dbUser.email}`);
-      const saved = await this.redisService.set(`OTP-${dbUser.email}`, { otp, resetPasswordToken });
+      await this.redisService.delete(`OTP-${action}-${dbUser.email}`);
+      const saved = await this.redisService.set(`OTP-${action}-${dbUser.email}`, { otp, verifyToken });
       if (saved) {
-        const res = await this.novuService.sendEmail({ data: { otp } }, dbUser.id, email, SEND_OTP_WORKFLOW);
+        const workFlow = action === ActionEnum.RESET_PASSWORD ? SEND_OTP_WORKFLOW : VERIFY_EMAIL_WORKFLOW;
+        const res = await this.novuService.sendEmail({ data: { otp } }, dbUser.id, email, workFlow);
 
         return res.data.acknowledged;
       }
@@ -97,9 +98,9 @@ export class AuthService {
     }
   }
 
-  async verifyOtp(email: string, otp: string) {
+  async verifyOtp(email: string, otp: string, action: ActionEnum) {
     try {
-      const data = await this.redisService.get(`OTP-${email}`);
+      const data = await this.redisService.get(`OTP-${action}-${email}`);
       if (!data) {
         throw new NotAcceptableException("OTP expired");
       }
@@ -108,9 +109,9 @@ export class AuthService {
         throw new NotAcceptableException("Invalid OTP");
       }
 
-      await this.redisService.delete(`OTP-${email}`);
+      await this.redisService.delete(`OTP-${action}-${email}`);
 
-      return this.authHelper.buildTokenResponse(data.resetPasswordToken);
+      return this.authHelper.buildTokenResponse(data.verifyToken);
     } catch (error) {
       this.logger.error(error);
       throw new BadRequestException(error);

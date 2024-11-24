@@ -132,12 +132,12 @@ describe("AuthService", function () {
       jest.spyOn(novuService, "sendEmail").mockResolvedValueOnce({ data: { acknowledged: true } });
       jest.spyOn(redisService, "set").mockResolvedValueOnce(true);
 
-      const result = await service.sendOtp(signInRequestMock.email);
+      const result = await service.sendOtp(signInRequestMock.email, signInRequestMock.action);
       expect(result).toBe(true);
     });
     it("should return false when the email is not exist", async () => {
       findOne.mockResolvedValueOnce(null);
-      const res = await service.sendOtp(signInRequestMock.email);
+      const res = await service.sendOtp(signInRequestMock.email, signInRequestMock.action);
       expect(res).toBe(false);
     });
   });

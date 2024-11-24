@@ -29,7 +29,7 @@ export class FirebaseAuthService {
   async createUserByEmailAndPassword(email: string, password: string) {
     try {
       const auth = getAuth(this.app);
-      return await auth.createUser({ email, password, emailVerified: true });
+      return await auth.createUser({ email, password });
     } catch (error) {
       if (error.code === "auth/email-already-exists") {
         throw new Error("Email already exists");
