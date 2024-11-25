@@ -17,6 +17,6 @@ export interface IAccount {
   updatedAt: Date;
 
   //relationships
-  readonly learnerProfile: ILearnerProfile;
+  learnerProfile: ILearnerProfile;
   readonly avatar: IBucket;
 }

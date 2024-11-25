@@ -9,10 +9,10 @@ import {
   RefreshTokenRequestDto,
 } from "@app/types/dtos";
 import { ApiBearerAuth, ApiBody, ApiOperation, ApiQuery, ApiResponse, ApiTags } from "@nestjs/swagger";
-import { FirebaseJwtAuthGuard } from "../../guards";
-import { ResetPasswordGuard } from "../../guards/reset-password.guard";
+import { EmailVerifiedGuard, FirebaseJwtAuthGuard, ResetPasswordGuard } from "../../guards";
 import { IResetPasswordAction } from "@app/types/interfaces";
 import { ActionEnum } from "@app/types/enums";
+import { ApiDefaultResponses } from "../../decorators";
 
 @ApiTags("Authentication")
 @Controller("auth")
@@ -67,6 +67,15 @@ export class AuthController {
   async resetPassword(@Request() request: any, @Body() data: ResetPasswordDto) {
     const { uid } = request.user as IResetPasswordAction;
     return this.authService.updatePassword(uid, data.newPassword);
+  }
+
+  @Post("profile")
+  @ApiBearerAuth()
+  @ApiDefaultResponses()
+  @UseGuards(FirebaseJwtAuthGuard, EmailVerifiedGuard)
+  async createNewProfile(@Request() request: any) {
+    const { uid } = request.user as { uid: string };
+    return this.authService.createProfile(uid);
   }
 
   @Get("otp")

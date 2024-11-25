@@ -80,10 +80,11 @@ describe("AuthService", function () {
       jest
         .spyOn(firebaseAuthService, "createUserByEmailAndPassword")
         .mockResolvedValueOnce({ email: signUpRequestMock.email, uid: mockUid } as UserRecord);
-      jest.spyOn(Account, "save").mockResolvedValue({
+      jest.spyOn(Account, "createAccount").mockResolvedValue({
         ...userStub(),
         email: signUpRequestMock.email,
       } as Account);
+      jest.spyOn(service, "sendOtp").mockResolvedValue(true);
       jest.spyOn(firebaseAuthService, "generateCustomToken").mockResolvedValueOnce(mockToken);
       jest
         .spyOn(authHelper, "buildTokenResponse")

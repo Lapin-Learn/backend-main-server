@@ -52,6 +52,13 @@ import { getBeginOfOffsetDay, getEndOfOffsetDay } from "@app/utils/time";
 
 @Entity("learner_profiles")
 export class LearnerProfile extends BaseEntity implements ILearnerProfile {
+  constructor(newProfile?: Partial<ILearnerProfile>) {
+    super();
+    if (newProfile) {
+      Object.assign(this, newProfile);
+    }
+  }
+
   @PrimaryGeneratedColumn("uuid")
   id: string;
 
@@ -440,5 +447,10 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
       })
       .setParameter("actionName", ActionNameEnum.DAILY_STREAK)
       .getMany();
+  }
+  public static async createNewProfile(): Promise<ILearnerProfile> {
+    const streak = await new Streak().save();
+    const level = await Level.findOne({ where: { id: 1 } });
+    return this.save({ streak, level });
   }
 }
