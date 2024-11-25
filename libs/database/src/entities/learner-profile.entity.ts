@@ -110,10 +110,13 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
 
   public async updateResources(newBonusResources: UpdateResourcesDto): Promise<UpdateResourcesDto> {
     const { bonusCarrot = 0, bonusXP = 0 } = newBonusResources;
+    let isDoubleXP = false;
     this.carrots += bonusCarrot;
-    const isDoubleXP = this.profileItems.find(
-      (item) => item.item.name === ItemName.ULTIMATE_TIME && item.status === ProfileItemStatusEnum.IN_USE
-    );
+    const ultimateTime = this.profileItems.find((item) => item.item.name === ItemName.ULTIMATE_TIME);
+    if (ultimateTime) {
+      await ultimateTime.resetItemStatus();
+      isDoubleXP = ultimateTime.status === ProfileItemStatusEnum.IN_USE;
+    }
     this.xp += bonusXP * (isDoubleXP ? 2 : 1);
     await this.save();
     return {

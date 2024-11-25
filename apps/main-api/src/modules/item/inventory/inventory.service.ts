@@ -1,7 +1,6 @@
 import { ProfileItem } from "@app/database";
 import { ICurrentUser } from "@app/types/interfaces";
 import { BadRequestException, Injectable, Logger } from "@nestjs/common";
-import { MoreThan } from "typeorm";
 import { ItemEffectFactoryService } from "../item-effect/item-effect-factory.service";
 
 @Injectable()
@@ -13,7 +12,7 @@ export class InventoryService {
   async getInventory(user: ICurrentUser) {
     try {
       const profileItems = await ProfileItem.find({
-        where: { profileId: user.profileId, quantity: MoreThan(0) },
+        where: { profileId: user.profileId },
       });
       const items = await Promise.all(
         profileItems.map(async (profileItem) => {
