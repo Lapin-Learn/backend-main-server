@@ -308,7 +308,7 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
   }
 
   static async getLearnerProfileById(id: string): Promise<ILearnerProfileInfo> {
-    const profile: ILearnerProfile = await this.createQueryBuilder("learnerProfile")
+    const profile: LearnerProfile = await this.createQueryBuilder("learnerProfile")
       .where("learnerProfile.id = :id", { id })
       .leftJoinAndSelect("learnerProfile.level", "levels")
       .leftJoinAndSelect("learnerProfile.streak", "streaks")
@@ -317,10 +317,12 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
       .leftJoinAndSelect("profileItems.item", "items")
       .getOneOrFail();
 
-    const currentItems = profile.profileItems.map((profileItem) => {
-      const { quantity, expAt } = profileItem;
-      return { ...profileItem.item, quantity, expAt };
-    });
+    const currentItems: ILearnerProfileInfo["currentItems"] = await Promise.all(
+      profile.profileItems.map(async (profileItem) => {
+        const { quantity, expAt, item } = await profileItem.resetItemStatus();
+        return { ...item, quantity, expAt };
+      })
+    );
 
     return { ...profile, currentItems };
   }

@@ -46,9 +46,6 @@ export class StreakItemService implements IItemEffectService {
       if (error instanceof EntityNotFoundError) {
         throw new HttpException("ACTION_NOT_FOUND", HttpStatus.INTERNAL_SERVER_ERROR);
       }
-      if (error instanceof HttpException) {
-        throw error;
-      }
       throw new BadRequestException(error);
     }
   }

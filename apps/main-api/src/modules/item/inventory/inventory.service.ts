@@ -10,11 +10,18 @@ export class InventoryService {
 
   constructor(private readonly itemEffectFactoryService: ItemEffectFactoryService) {}
 
-  getInventory(user: ICurrentUser) {
+  async getInventory(user: ICurrentUser) {
     try {
-      return ProfileItem.find({
+      const profileItems = await ProfileItem.find({
         where: { profileId: user.profileId, quantity: MoreThan(0) },
       });
+      const items = await Promise.all(
+        profileItems.map(async (profileItem) => {
+          const { quantity, expAt, item } = await profileItem.resetItemStatus();
+          return { ...item, quantity, expAt };
+        })
+      );
+      return items;
     } catch (error) {
       this.logger.error(error);
       throw new BadRequestException(error);

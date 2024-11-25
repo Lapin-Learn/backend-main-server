@@ -1,5 +1,4 @@
 import {
-  AfterLoad,
   BaseEntity,
   Column,
   CreateDateColumn,
@@ -13,6 +12,8 @@ import { IProfileItem } from "@app/types/interfaces";
 import { LearnerProfile } from "./learner-profile.entity";
 import { Item } from "./item.entity";
 import { ProfileItemStatusEnum } from "@app/types/enums";
+import moment from "moment-timezone";
+import { VN_TIME_ZONE } from "@app/types/constants";
 
 @Entity({ name: "profile_items" })
 export class ProfileItem extends BaseEntity implements IProfileItem {
@@ -64,13 +65,18 @@ export class ProfileItem extends BaseEntity implements IProfileItem {
   @JoinColumn({ name: "item_id", referencedColumnName: "id" })
   item: Item;
 
-  @AfterLoad()
-  async resetItemStatus() {
-    const now = new Date();
-    if (now >= this.expAt && this.status === ProfileItemStatusEnum.IN_USE) {
+  public async resetItemStatus() {
+    const now = moment().tz(VN_TIME_ZONE).utc(true);
+    if (
+      this.expAt &&
+      now.isAfter(moment(this.expAt).tz(VN_TIME_ZONE).utc(true)) &&
+      this.status === ProfileItemStatusEnum.IN_USE
+    ) {
       this.status = ProfileItemStatusEnum.UNUSED;
       this.inUseQuantity = 0;
       this.expAt = null;
+      await this.save();
     }
+    return this;
   }
 }

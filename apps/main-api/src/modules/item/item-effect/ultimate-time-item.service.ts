@@ -1,7 +1,9 @@
 import { IItemEffectService } from "./item-effect-abstract.service";
-import { BadRequestException, HttpException, Logger } from "@nestjs/common";
+import { BadRequestException, Logger } from "@nestjs/common";
 import { LearnerProfile, ProfileItem } from "@app/database";
 import { ProfileItemStatusEnum } from "@app/types/enums";
+import moment from "moment-timezone";
+import { VN_TIME_ZONE } from "@app/types/constants";
 
 export class UltimateTimeItem implements IItemEffectService {
   private readonly logger = new Logger(UltimateTimeItem.name);
@@ -16,18 +18,18 @@ export class UltimateTimeItem implements IItemEffectService {
 
   async applyEffect() {
     try {
+      const now = moment().tz(VN_TIME_ZONE);
       // Add one item to the current effect in use
-      if (this._profileItem.expAt && this._profileItem.expAt.getTime() > Date.now()) {
+      if (this._profileItem.expAt && moment(this._profileItem.expAt).isAfter(now)) {
         this._profileItem.inUseQuantity += 1;
         this._profileItem.status = ProfileItemStatusEnum.IN_USE;
-        this._profileItem.expAt = new Date(
-          (this._profileItem.expAt ? this._profileItem.expAt.getTime() : Date.now()) + this.TIME
-        );
+        const newExpAt = moment(this._profileItem.expAt).add(this.TIME, "ms");
+        this._profileItem.expAt = this._profileItem.expAt ? this._profileItem.expAt : newExpAt.toDate();
       } else {
         // Create new effect
         this._profileItem.inUseQuantity = 1;
         this._profileItem.status = ProfileItemStatusEnum.IN_USE;
-        this._profileItem.expAt = new Date(Date.now() + this.TIME);
+        this._profileItem.expAt = now.add(this.TIME, "ms").toDate();
       }
       // Subtract 1 item from inventory
       this._profileItem.quantity -= 1;
@@ -37,9 +39,6 @@ export class UltimateTimeItem implements IItemEffectService {
       };
     } catch (error) {
       this.logger.error(error);
-      if (error instanceof HttpException) {
-        throw error;
-      }
       throw new BadRequestException(error);
     }
   }
