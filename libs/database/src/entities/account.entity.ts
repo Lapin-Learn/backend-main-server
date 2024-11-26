@@ -12,7 +12,6 @@ import {
 } from "typeorm";
 import { LearnerProfile } from "./learner-profile.entity";
 import { Bucket } from "@app/database/entities/bucket.entity";
-
 @Entity("accounts")
 export class Account extends BaseEntity implements IAccount {
   @PrimaryGeneratedColumn("uuid")
@@ -59,9 +58,16 @@ export class Account extends BaseEntity implements IAccount {
 
   @OneToOne(() => LearnerProfile)
   @JoinColumn({ name: "learner_profile_id", referencedColumnName: "id" })
-  readonly learnerProfile: ILearnerProfile;
+  learnerProfile: ILearnerProfile;
 
   @OneToOne(() => Bucket)
   @JoinColumn({ name: "avatar_id", referencedColumnName: "id" })
   readonly avatar: Bucket;
+
+  static async createAccount(data: Partial<IAccount>, isVerified: boolean) {
+    if (isVerified) {
+      data.learnerProfile = await LearnerProfile.createNewProfile();
+    }
+    return await this.save({ ...data });
+  }
 }

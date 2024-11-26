@@ -1,13 +1,12 @@
-import { EntitySubscriberInterface, EventSubscriber, InsertEvent } from "typeorm";
-import { Account, LearnerProfile, Streak } from "../entities";
-import { AccountRoleEnum } from "@app/types/enums";
+import { EntitySubscriberInterface, EventSubscriber } from "typeorm";
+import { Account } from "../entities";
 
 @EventSubscriber()
 export class AccountSubscriber implements EntitySubscriberInterface<Account> {
   listenTo(): typeof Account {
     return Account;
   }
-
+  /*
   async beforeInsert(event: InsertEvent<Account>): Promise<void> {
     const { entity, manager } = event;
     const { role = AccountRoleEnum.LEARNER } = entity;
@@ -26,4 +25,5 @@ export class AccountSubscriber implements EntitySubscriberInterface<Account> {
         break;
     }
   }
+  */
 }

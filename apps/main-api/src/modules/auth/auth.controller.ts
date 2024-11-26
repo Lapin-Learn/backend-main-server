@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Query, UseGuards, Request } from "@nestjs/common";
+import { Body, Controller, Get, Post, Query, UseGuards, Request, ParseEnumPipe } from "@nestjs/common";
 import { AuthService } from "./auth.service";
 import {
   LogInUserDto,
@@ -9,9 +9,10 @@ import {
   RefreshTokenRequestDto,
 } from "@app/types/dtos";
 import { ApiBearerAuth, ApiBody, ApiOperation, ApiQuery, ApiResponse, ApiTags } from "@nestjs/swagger";
-import { FirebaseJwtAuthGuard } from "../../guards";
-import { ResetPasswordGuard } from "../../guards/reset-password.guard";
+import { EmailVerifiedGuard, FirebaseJwtAuthGuard, ResetPasswordGuard } from "../../guards";
 import { IResetPasswordAction } from "@app/types/interfaces";
+import { ActionEnum } from "@app/types/enums";
+import { ApiDefaultResponses } from "../../decorators";
 
 @ApiTags("Authentication")
 @Controller("auth")
@@ -52,7 +53,7 @@ export class AuthController {
   @ApiResponse({ status: 201, description: "OTP verified" })
   @ApiResponse({ status: 406, description: "Expired OTP or Invalid OTP" })
   async verifyOtp(@Body() data: VerifyOtpDto) {
-    return this.authService.verifyOtp(data.email, data.otp);
+    return this.authService.verifyOtp(data.email, data.otp, data.action);
   }
 
   @UseGuards(FirebaseJwtAuthGuard, ResetPasswordGuard)
@@ -63,18 +64,29 @@ export class AuthController {
   @ApiResponse({ status: 200, description: "Password updated" })
   @ApiResponse({ status: 400, description: "Invalid uid" })
   @ApiResponse({ status: 401, description: "Unauthorized" })
-  async resetPassword(@Request() request, @Body() data: ResetPasswordDto) {
+  async resetPassword(@Request() request: any, @Body() data: ResetPasswordDto) {
     const { uid } = request.user as IResetPasswordAction;
     return this.authService.updatePassword(uid, data.newPassword);
+  }
+
+  @Post("profile")
+  @ApiBearerAuth()
+  @ApiDefaultResponses()
+  @UseGuards(FirebaseJwtAuthGuard, EmailVerifiedGuard)
+  async createNewProfile(@Request() request: any) {
+    const { uid } = request.user as { uid: string };
+    return this.authService.createProfile(uid);
   }
 
   @Get("otp")
   @ApiOperation({ summary: "Send OTP" })
   @ApiQuery({ name: "email", required: true })
+  @ApiQuery({ name: "action", enum: ActionEnum, required: true })
   @ApiResponse({ status: 200, description: "OTP sent" })
+  @ApiResponse({ status: 422, description: "Send mail fail" })
   @ApiResponse({ status: 406, description: "Email not found" })
-  async sendOtp(@Query("email") email: string) {
-    return this.authService.sendOtp(email);
+  async sendOtp(@Query("email") email: string, @Query("action", new ParseEnumPipe(ActionEnum)) action: ActionEnum) {
+    return this.authService.sendOtp(email, action);
   }
 
   @Post("refresh")

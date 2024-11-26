@@ -26,10 +26,10 @@ export class FirebaseAuthService {
     this.app = initializeApp(options);
   }
 
-  async createUserByEmailAndPassword(email: string, password: string) {
+  async createUserByEmailAndPassword(email: string, password: string, emailVerified: boolean) {
     try {
       const auth = getAuth(this.app);
-      return await auth.createUser({ email, password, emailVerified: true });
+      return await auth.createUser({ email, password, emailVerified });
     } catch (error) {
       if (error.code === "auth/email-already-exists") {
         throw new Error("Email already exists");
@@ -92,6 +92,18 @@ export class FirebaseAuthService {
       const idToken = await this.getIdToken(token);
       const auth = getAuth(this.app);
       return auth.verifyIdToken(idToken);
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
+  async setEmailVerifed(uid: string) {
+    try {
+      const auth = getAuth(this.app);
+      await auth.updateUser(uid, {
+        emailVerified: true,
+      });
     } catch (error) {
       this.logger.error(error);
       throw error;

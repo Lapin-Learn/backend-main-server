@@ -80,10 +80,11 @@ describe("AuthService", function () {
       jest
         .spyOn(firebaseAuthService, "createUserByEmailAndPassword")
         .mockResolvedValueOnce({ email: signUpRequestMock.email, uid: mockUid } as UserRecord);
-      jest.spyOn(Account, "save").mockResolvedValue({
+      jest.spyOn(Account, "createAccount").mockResolvedValue({
         ...userStub(),
         email: signUpRequestMock.email,
       } as Account);
+      jest.spyOn(service, "sendOtp").mockResolvedValue(true);
       jest.spyOn(firebaseAuthService, "generateCustomToken").mockResolvedValueOnce(mockToken);
       jest
         .spyOn(authHelper, "buildTokenResponse")
@@ -132,12 +133,12 @@ describe("AuthService", function () {
       jest.spyOn(novuService, "sendEmail").mockResolvedValueOnce({ data: { acknowledged: true } });
       jest.spyOn(redisService, "set").mockResolvedValueOnce(true);
 
-      const result = await service.sendOtp(signInRequestMock.email);
+      const result = await service.sendOtp(signInRequestMock.email, signInRequestMock.action);
       expect(result).toBe(true);
     });
     it("should return false when the email is not exist", async () => {
       findOne.mockResolvedValueOnce(null);
-      const res = await service.sendOtp(signInRequestMock.email);
+      const res = await service.sendOtp(signInRequestMock.email, signInRequestMock.action);
       expect(res).toBe(false);
     });
   });
