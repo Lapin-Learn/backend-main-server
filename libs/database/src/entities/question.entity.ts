@@ -21,7 +21,7 @@ export class Question extends BaseEntity implements IQuestion {
   @PrimaryGeneratedColumn("uuid")
   id: string;
 
-  @Column({ name: "content_type", type: "enum", enum: ContentTypeEnum, nullable: false })
+  @Column({ name: "content_type", type: "varchar", nullable: false })
   contentType: ContentTypeEnum;
 
   @Column({ name: "content", type: "jsonb", nullable: false })
