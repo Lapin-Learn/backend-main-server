@@ -40,15 +40,12 @@ export class AuthService {
       const { email } = firebaseUser;
       let dbUser: IAccount = await Account.findOne({
         where: { email },
-        relations: {
-          learnerProfile: true,
-        },
       });
       if (!dbUser) {
         const generatedPassword = otpGenerator(8, generateOTPConfig);
         await this.firebaseService.linkWithProvider(firebaseUser.idToken, firebaseUser.email, generatedPassword);
         dbUser = await Account.createAccount({ email, providerId: firebaseUser.localId, username: email }, true);
-      } else if (!dbUser.learnerProfile) {
+      } else if (!dbUser.learnerProfileId) {
         await this.firebaseService.setEmailVerifed(dbUser.providerId);
         dbUser.learnerProfile = await LearnerProfile.createNewProfile();
         dbUser = await Account.save({ ...dbUser }, { reload: true });
@@ -67,11 +64,8 @@ export class AuthService {
       const firebaseUser = await this.firebaseService.verifyUser(email, password);
       const dbUser = await Account.findOneOrFail({
         where: { providerId: firebaseUser.localId, email },
-        relations: {
-          learnerProfile: true,
-        },
       });
-      if (!dbUser.learnerProfile) {
+      if (!dbUser.learnerProfileId) {
         await this.sendOtp(email, ActionEnum.VERIFY_MAIL);
         return "You have not verified email";
       }
@@ -150,11 +144,8 @@ export class AuthService {
     try {
       const account = await Account.findOneOrFail({
         where: { providerId: uid },
-        relations: {
-          learnerProfile: true,
-        },
       });
-      if (account.learnerProfile) {
+      if (account.learnerProfileId) {
         return "You already have profile";
       }
       await this.firebaseService.setEmailVerifed(uid);
