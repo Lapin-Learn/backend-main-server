@@ -19,7 +19,7 @@ export class UserService {
       if (firebaseUser) {
         throw new BadRequestException("Email has already existed");
       }
-      firebaseUser = await this.firebaseService.createUserByEmailAndPassword(email, password);
+      firebaseUser = await this.firebaseService.createUserByEmailAndPassword(email, password, true);
       return Account.save({
         email,
         providerId: firebaseUser.uid,

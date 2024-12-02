@@ -1,7 +1,6 @@
 import { ProfileItem } from "@app/database";
 import { ICurrentUser } from "@app/types/interfaces";
 import { BadRequestException, Injectable, Logger } from "@nestjs/common";
-import { MoreThan } from "typeorm";
 import { ItemEffectFactoryService } from "../item-effect/item-effect-factory.service";
 
 @Injectable()
@@ -10,11 +9,18 @@ export class InventoryService {
 
   constructor(private readonly itemEffectFactoryService: ItemEffectFactoryService) {}
 
-  getInventory(user: ICurrentUser) {
+  async getInventory(user: ICurrentUser) {
     try {
-      return ProfileItem.find({
-        where: { profileId: user.profileId, quantity: MoreThan(0) },
+      const profileItems = await ProfileItem.find({
+        where: { profileId: user.profileId },
       });
+      const items = await Promise.all(
+        profileItems.map(async (profileItem) => {
+          const { quantity, expAt, item } = await profileItem.resetItemStatus();
+          return { ...item, quantity, expAt };
+        })
+      );
+      return items;
     } catch (error) {
       this.logger.error(error);
       throw new BadRequestException(error);

@@ -2,9 +2,11 @@ import {
   ActionNameEnum,
   BandScoreEnum,
   IntervalTypeEnum,
+  ItemName,
   MileStonesEnum,
   MissionCategoryNameEnum,
   MissionGroupNameEnum,
+  ProfileItemStatusEnum,
   ProfileMissionProgressStatusEnum,
   RankEnum,
 } from "@app/types/enums";
@@ -46,9 +48,17 @@ import { Lesson } from "@app/database/entities/lesson.entity";
 import { QuestionType } from "@app/database/entities/question-type.entity";
 import { TMileStoneLearnProgress, TMileStoneProfile } from "@app/types/types";
 import moment from "moment-timezone";
+import { getBeginOfOffsetDay, getEndOfOffsetDay } from "@app/utils/time";
 
 @Entity("learner_profiles")
 export class LearnerProfile extends BaseEntity implements ILearnerProfile {
+  constructor(newProfile?: Partial<ILearnerProfile>) {
+    super();
+    if (newProfile) {
+      Object.assign(this, newProfile);
+    }
+  }
+
   @PrimaryGeneratedColumn("uuid")
   id: string;
 
@@ -96,7 +106,7 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
   @OneToMany(() => ProfileMissionProgress, (profileMissionProgress) => profileMissionProgress.profile, { eager: true })
   readonly profileMissionsProgress: ProfileMissionProgress[];
 
-  @OneToMany(() => ProfileItem, (profileItem) => profileItem.profile)
+  @OneToMany(() => ProfileItem, (profileItem) => profileItem.profile, { eager: true })
   readonly profileItems: ProfileItem[];
 
   @OneToMany(() => LessonRecord, (lessonRecord) => lessonRecord.learnerProfile)
@@ -105,13 +115,21 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
   @OneToMany(() => LessonProcess, (lessonProcess) => lessonProcess.learnerProfile, { eager: true })
   readonly lessonProcesses: LessonProcess[];
 
-  public async updateResources(newBonusResources: UpdateResourcesDto): Promise<void> {
+  public async updateResources(newBonusResources: UpdateResourcesDto): Promise<UpdateResourcesDto> {
     const { bonusCarrot = 0, bonusXP = 0 } = newBonusResources;
+    let isDoubleXP = false;
     this.carrots += bonusCarrot;
-    this.xp += bonusXP;
+    const ultimateTime = this.profileItems.find((item) => item.item.name === ItemName.ULTIMATE_TIME);
+    if (ultimateTime) {
+      await ultimateTime.resetItemStatus();
+      isDoubleXP = ultimateTime.status === ProfileItemStatusEnum.IN_USE;
+    }
+    this.xp += bonusXP * (isDoubleXP ? 2 : 1);
     await this.save();
-
-    return;
+    return {
+      bonusXP: bonusXP * (isDoubleXP ? 2 : 1),
+      bonusCarrot,
+    };
   }
 
   public async getProfileMileStones(): Promise<TMileStoneProfile[]> {
@@ -221,15 +239,18 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
   private async isAchieveDailyStreakOrCreate(): Promise<boolean> {
     const bonusStreakPoint = await Activity.getBonusStreakPoint(this.id);
     if (bonusStreakPoint > 0) {
-      const action = await Action.findOne({ where: { name: ActionNameEnum.DAILY_STREAK } });
+      const action = await Action.findByName(ActionNameEnum.DAILY_STREAK);
       await Activity.save({
         profileId: this.id,
         actionId: action.id,
       });
-
-      this.streak.current += bonusStreakPoint;
-      this.streak.record = Math.max(this.streak.record, this.streak.current);
-      await this.streak.save();
+      if (this.streak.extended) {
+        await this.streak.increaseStreak();
+      } else {
+        // If yesterday not learn any new lesson, reset streak to 1
+        this.streak.current = 1;
+        this.streak.extended = true;
+      }
 
       return true;
     }
@@ -270,10 +291,10 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
   // Active Record Pattern
   static async getBrokenStreakProfiles() {
     // Midnight yesterday in GMT+7
-    const beginOfYesterday = moment().tz("Asia/Saigon").subtract(1, "days").startOf("day").toDate();
+    const beginOfYesterday = getBeginOfOffsetDay(-1);
 
     // 23:59:59 yesterday in GMT+7
-    const endOfYesterday = moment().tz("Asia/Saigon").subtract(1, "days").endOf("day").toDate();
+    const endOfYesterday = getEndOfOffsetDay(-1);
 
     const rawValidLearnerProfileIds = await this.createQueryBuilder("learnerProfiles")
       .leftJoinAndSelect("learnerProfiles.activities", "activities")
@@ -297,7 +318,7 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
   }
 
   static async getLearnerProfileById(id: string): Promise<ILearnerProfileInfo> {
-    const profile: ILearnerProfile = await this.createQueryBuilder("learnerProfile")
+    const profile: LearnerProfile = await this.createQueryBuilder("learnerProfile")
       .where("learnerProfile.id = :id", { id })
       .leftJoinAndSelect("learnerProfile.level", "levels")
       .leftJoinAndSelect("learnerProfile.streak", "streaks")
@@ -306,10 +327,12 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
       .leftJoinAndSelect("profileItems.item", "items")
       .getOneOrFail();
 
-    const currentItems = profile.profileItems.map((profileItem) => {
-      const { quantity, expAt } = profileItem;
-      return { ...profileItem.item, quantity, expAt };
-    });
+    const currentItems: ILearnerProfileInfo["currentItems"] = await Promise.all(
+      profile.profileItems.map(async (profileItem) => {
+        const { quantity, expAt, item } = await profileItem.resetItemStatus();
+        return { ...item, quantity, expAt };
+      })
+    );
 
     return { ...profile, currentItems };
   }
@@ -322,13 +345,34 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
       .andWhere("action.name = :actionName", { actionName: ActionNameEnum.DAILY_STREAK })
       .andWhere("activity.finishedAt BETWEEN :startDate AND :endDate", { startDate, endDate })
       .orderBy("activity.finishedAt", "ASC")
+      .distinctOn(["activity.finishedAt"])
+      .getOne();
+
+    return data?.activities || [];
+  }
+
+  static async getFreezeStreakActivities(profileId: string, startDate: Date, endDate: Date): Promise<IActivity[]> {
+    const modifiedStartDate = getBeginOfOffsetDay(1, startDate);
+    const modifiedEndDate = getEndOfOffsetDay(1, endDate);
+
+    const data = await this.createQueryBuilder("learnerProfile")
+      .leftJoinAndSelect("learnerProfile.activities", "activity")
+      .leftJoinAndSelect("activity.action", "action")
+      .where("learnerProfile.id = :profileId", { profileId })
+      .andWhere("action.name = :actionName", { actionName: ActionNameEnum.FREEZE_STREAK })
+      .andWhere("activity.finishedAt BETWEEN :modifiedStartDate AND :modifiedEndDate", {
+        modifiedStartDate,
+        modifiedEndDate,
+      })
+      .orderBy("activity.finishedAt", "ASC")
+      .distinctOn(["activity.finishedAt"])
       .getOne();
 
     return data?.activities || [];
   }
 
   static async getNotCompleteStreakProfiles() {
-    const beginOfToday = moment().tz("Asia/Saigon").startOf("day").utc(true).toDate();
+    const beginOfToday = getBeginOfOffsetDay(0);
 
     const subQuery = this.createQueryBuilder("learnerProfiles")
       .leftJoin("learnerProfiles.activities", "activities")
@@ -403,5 +447,10 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
       })
       .setParameter("actionName", ActionNameEnum.DAILY_STREAK)
       .getMany();
+  }
+  public static async createNewProfile(): Promise<ILearnerProfile> {
+    const streak = await new Streak().save();
+    const level = await Level.findOne({ where: { id: 1 } });
+    return this.save({ streak, level });
   }
 }

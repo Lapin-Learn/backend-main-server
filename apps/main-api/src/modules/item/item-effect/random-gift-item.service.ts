@@ -1,18 +1,16 @@
-import { ItemEffectAbstractService } from "./item-effect-abstract.service";
+import { IItemEffectService } from "./item-effect-abstract.service";
 import { Logger } from "@nestjs/common";
 import { RandomGiftType } from "@app/types/enums";
 import { Item, LearnerProfile, ProfileItem } from "@app/database";
 import { IItem } from "@app/types/interfaces";
 
-export class RandomGiftItemEffect extends ItemEffectAbstractService {
+export class RandomGiftItemEffect implements IItemEffectService {
   private readonly logger = new Logger(RandomGiftItemEffect.name);
   private readonly _profileItem: ProfileItem;
-  private readonly _learner: LearnerProfile;
+  private _learner: LearnerProfile;
 
   constructor(_profileItem: ProfileItem) {
-    super();
     this._profileItem = _profileItem;
-    this._learner = _profileItem.profile;
   }
 
   private getRandomCarrots(
@@ -59,6 +57,9 @@ export class RandomGiftItemEffect extends ItemEffectAbstractService {
     try {
       const result = await this.getRandomGift();
       if (result.type === RandomGiftType.CARROTS) {
+        this._learner = await LearnerProfile.findOne({
+          where: { id: this._profileItem.profileId },
+        });
         // Add the carrot value to the user's profile
         await this._learner.updateResources({ bonusCarrot: result.value });
       } else {

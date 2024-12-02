@@ -6,6 +6,7 @@ import { mock_access_token } from "./test/mocks/tokens.mock";
 import { BadRequestException } from "@nestjs/common";
 import { mockEmail } from "@app/shared-modules/firebase/__mocks__/firebase-auth.service";
 import { VerifyOtpDto } from "@app/types/dtos";
+import { ActionEnum } from "@app/types/enums";
 
 jest.mock("./auth.service");
 describe("AuthController", () => {
@@ -70,13 +71,13 @@ describe("AuthController", () => {
       expect(controller.sendOtp).toBeDefined();
     });
     it("should send otp", async () => {
-      const response = await controller.sendOtp(mockEmail);
-      expect(authService.sendOtp).toHaveBeenCalledWith(mockEmail);
+      const response = await controller.sendOtp(mockEmail, ActionEnum.RESET_PASSWORD);
+      expect(authService.sendOtp).toHaveBeenCalledWith(mockEmail, ActionEnum.RESET_PASSWORD);
       expect(response).toEqual(true);
     });
     it("should throw an error when the email is not found", async () => {
       jest.spyOn(authService, "sendOtp").mockRejectedValue(new BadRequestException("Email not found"));
-      const response = controller.sendOtp(mockEmail);
+      const response = controller.sendOtp(mockEmail, ActionEnum.RESET_PASSWORD);
       await expect(response).rejects.toThrow(BadRequestException);
     });
   });
@@ -84,6 +85,7 @@ describe("AuthController", () => {
     const mockOtpRequest: VerifyOtpDto = {
       email: mockEmail,
       otp: "123456",
+      action: ActionEnum.RESET_PASSWORD,
     };
 
     it("otp should be defined", () => {
@@ -91,7 +93,11 @@ describe("AuthController", () => {
     });
     it("should verify otp", async () => {
       const response = await controller.verifyOtp(mockOtpRequest);
-      expect(authService.verifyOtp).toHaveBeenCalledWith(mockOtpRequest.email, mockOtpRequest.otp);
+      expect(authService.verifyOtp).toHaveBeenCalledWith(
+        mockOtpRequest.email,
+        mockOtpRequest.otp,
+        mockOtpRequest.action
+      );
       expect(response).toEqual({
         accessToken: mock_access_token,
       });

@@ -1,15 +1,15 @@
 import { BadRequestException, Injectable, Logger, NotAcceptableException } from "@nestjs/common";
-import { Account } from "@app/database/entities";
+import { Account, LearnerProfile } from "@app/database/entities";
 import { FirebaseAuthService } from "@app/shared-modules/firebase";
 import { AuthHelper } from "./auth.helper";
 import { generate as otpGenerator } from "otp-generator";
 import { RedisService } from "@app/shared-modules/redis";
-import { ResetPasswordActionEnum } from "@app/types/enums";
+import { ActionEnum } from "@app/types/enums";
 import { IAccount, ICurrentUser } from "@app/types/interfaces";
 import { EntityNotFoundError } from "typeorm";
 import { generateOTPConfig } from "../../config";
 import { NovuService } from "@app/shared-modules/novu";
-import { SEND_OTP_WORKFLOW } from "@app/types/constants";
+import { RESET_PASSWORD_WORKFLOW, VERIFY_EMAIL_WORKFLOW } from "@app/types/constants";
 
 @Injectable()
 export class AuthService {
@@ -24,8 +24,9 @@ export class AuthService {
 
   async registerUser(email: string, password: string) {
     try {
-      const firebaseUser = await this.firebaseService.createUserByEmailAndPassword(email, password);
-      await Account.save({ email, providerId: firebaseUser.uid, username: email });
+      const firebaseUser = await this.firebaseService.createUserByEmailAndPassword(email, password, false);
+      await Account.createAccount({ email, providerId: firebaseUser.uid, username: email }, false);
+      await this.sendOtp(email, ActionEnum.VERIFY_MAIL);
       return "Sign up successfully";
     } catch (error) {
       this.logger.error(error);
@@ -37,11 +38,17 @@ export class AuthService {
     try {
       const firebaseUser = await this.firebaseService.verifyOAuthCredential(credential, provider);
       const { email } = firebaseUser;
-      let dbUser: IAccount = await Account.findOne({ where: { email } });
+      let dbUser: IAccount = await Account.findOne({
+        where: { email },
+      });
       if (!dbUser) {
         const generatedPassword = otpGenerator(8, generateOTPConfig);
         await this.firebaseService.linkWithProvider(firebaseUser.idToken, firebaseUser.email, generatedPassword);
-        dbUser = await Account.save({ email, providerId: firebaseUser.localId, username: email });
+        dbUser = await Account.createAccount({ email, providerId: firebaseUser.localId, username: email }, true);
+      } else if (!dbUser.learnerProfileId) {
+        await this.firebaseService.setEmailVerifed(dbUser.providerId);
+        dbUser.learnerProfile = await LearnerProfile.createNewProfile();
+        dbUser = await Account.save({ ...dbUser }, { reload: true });
       }
       const claims: ICurrentUser = { userId: dbUser.id, profileId: dbUser.learnerProfileId, role: dbUser.role };
       const accessToken = await this.firebaseService.generateCustomToken(dbUser.providerId, claims);
@@ -55,7 +62,13 @@ export class AuthService {
   async login(email: string, password: string) {
     try {
       const firebaseUser = await this.firebaseService.verifyUser(email, password);
-      const dbUser = await Account.findOneOrFail({ where: { providerId: firebaseUser.localId, email } });
+      const dbUser = await Account.findOneOrFail({
+        where: { providerId: firebaseUser.localId, email },
+      });
+      if (!dbUser.learnerProfileId) {
+        await this.sendOtp(email, ActionEnum.VERIFY_MAIL);
+        return "You have not verified email";
+      }
       const accessToken = await this.firebaseService.generateCustomToken(dbUser.providerId, {
         userId: dbUser.id,
         profileId: dbUser.learnerProfileId,
@@ -71,22 +84,23 @@ export class AuthService {
     }
   }
 
-  async sendOtp(email: string) {
+  async sendOtp(email: string, action: ActionEnum) {
     try {
       const dbUser = await Account.findOne({ where: { email } });
       if (!dbUser) {
         throw new NotAcceptableException("Email not found");
       }
       const otp = otpGenerator(6, generateOTPConfig);
-      const resetPasswordToken = await this.firebaseService.generateCustomToken(dbUser.providerId, {
+      const verifyToken = await this.firebaseService.generateCustomToken(dbUser.providerId, {
         uid: dbUser.providerId,
-        action: ResetPasswordActionEnum.RESET_PASSWORD,
+        action,
       });
 
-      await this.redisService.delete(`OTP-${dbUser.email}`);
-      const saved = await this.redisService.set(`OTP-${dbUser.email}`, { otp, resetPasswordToken });
+      await this.redisService.delete(`OTP-${action}-${dbUser.email}`);
+      const saved = await this.redisService.set(`OTP-${action}-${dbUser.email}`, { otp, verifyToken });
       if (saved) {
-        const res = await this.novuService.sendEmail({ data: { otp } }, dbUser.id, email, SEND_OTP_WORKFLOW);
+        const workFlow = action === ActionEnum.RESET_PASSWORD ? RESET_PASSWORD_WORKFLOW : VERIFY_EMAIL_WORKFLOW;
+        const res = await this.novuService.sendEmail({ data: { otp } }, dbUser.id, email, workFlow);
 
         return res.data.acknowledged;
       }
@@ -97,9 +111,9 @@ export class AuthService {
     }
   }
 
-  async verifyOtp(email: string, otp: string) {
+  async verifyOtp(email: string, otp: string, action: ActionEnum) {
     try {
-      const data = await this.redisService.get(`OTP-${email}`);
+      const data = await this.redisService.get(`OTP-${action}-${email}`);
       if (!data) {
         throw new NotAcceptableException("OTP expired");
       }
@@ -108,9 +122,9 @@ export class AuthService {
         throw new NotAcceptableException("Invalid OTP");
       }
 
-      await this.redisService.delete(`OTP-${email}`);
+      await this.redisService.delete(`OTP-${action}-${email}`);
 
-      return this.authHelper.buildTokenResponse(data.resetPasswordToken);
+      return this.authHelper.buildTokenResponse(data.verifyToken);
     } catch (error) {
       this.logger.error(error);
       throw new BadRequestException(error);
@@ -122,6 +136,28 @@ export class AuthService {
       return await this.firebaseService.changePassword(uid, newPassword);
     } catch (error) {
       this.logger.error(error);
+      throw new BadRequestException(error);
+    }
+  }
+
+  async createProfile(uid: string) {
+    try {
+      const account = await Account.findOneOrFail({
+        where: { providerId: uid },
+      });
+      if (account.learnerProfileId) {
+        return "You already have profile";
+      }
+      await this.firebaseService.setEmailVerifed(uid);
+      const newProfile = await LearnerProfile.createNewProfile();
+      account.learnerProfile = newProfile;
+      await account.save();
+      return "Create new profile successfully";
+    } catch (error) {
+      this.logger.error(error);
+      if (error instanceof EntityNotFoundError) {
+        throw new BadRequestException("Account not found");
+      }
       throw new BadRequestException(error);
     }
   }
