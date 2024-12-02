@@ -14,10 +14,16 @@ import { AdminModule } from "../admin/admin.module";
 import { MissionModule } from "../mission/mission.module";
 import { NotificationModule } from "../notification/notification.module";
 import { ItemModule } from "../item/item.module";
+import { ServeStaticModule } from "@nestjs/serve-static";
+import { join } from "path";
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, "public"),
+      exclude: ["/api"],
+    }),
     AuthModule,
     BucketModule,
     UserModule,

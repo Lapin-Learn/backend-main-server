@@ -6,7 +6,7 @@
     "deleteOutDir": true,
     "webpack": true,
     "tsConfigPath": "apps/main-api/tsconfig.app.json",
-    "assets": ["templates/**/*"]
+    "assets": ["templates/**/*", "public/**/*"]
   },
   "monorepo": true,
   "root": "apps/main-api",
