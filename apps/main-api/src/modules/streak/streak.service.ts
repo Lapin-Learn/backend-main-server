@@ -15,7 +15,7 @@ import {
   VN_TIME_ZONE,
 } from "@app/types/constants";
 import { NovuService } from "@app/shared-modules/novu";
-import { getBeginOfOffsetDay } from "@app/utils/time";
+import { getEndOfOffsetDay } from "@app/utils/time";
 
 @Injectable()
 export class StreakService {
@@ -67,7 +67,7 @@ export class StreakService {
 
   async getStreakHistory(user: ICurrentUser, startDate: Date) {
     try {
-      const today = getBeginOfOffsetDay(0);
+      const today = getEndOfOffsetDay(0);
 
       if (moment(startDate).utc(true).isAfter(today)) {
         throw new BadRequestException("Start date cannot be later than end of today");
