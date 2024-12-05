@@ -1,4 +1,5 @@
-import { Module } from "@nestjs/common";
+import { MiddlewareConsumer, Module, NestModule, RequestMethod } from "@nestjs/common";
+import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
 import { MainApiController } from "./main-api.controller";
 import { MainApiService } from "./main-api.service";
 import { AuthModule } from "../auth/auth.module";
@@ -16,6 +17,8 @@ import { NotificationModule } from "../notification/notification.module";
 import { ItemModule } from "../item/item.module";
 import { ServeStaticModule } from "@nestjs/serve-static";
 import { join } from "path";
+import { APP_GUARD } from "@nestjs/core";
+import { loggerMiddleware } from "../../middlewares";
 
 @Module({
   imports: [
@@ -24,6 +27,12 @@ import { join } from "path";
       rootPath: join(__dirname, "public"),
       exclude: ["/api"],
     }),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 30000,
+        limit: 120,
+      },
+    ]),
     AuthModule,
     BucketModule,
     UserModule,
@@ -38,6 +47,16 @@ import { join } from "path";
     ItemModule,
   ],
   controllers: [MainApiController],
-  providers: [MainApiService],
+  providers: [
+    MainApiService,
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
 })
-export class MainApiModule {}
+export class MainApiModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(loggerMiddleware).forRoutes({ path: "*", method: RequestMethod.ALL });
+  }
+}
