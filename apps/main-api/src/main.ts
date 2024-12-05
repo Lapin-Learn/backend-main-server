@@ -1,7 +1,8 @@
 import { Logger } from "@nestjs/common";
 import { NestFactory, Reflector } from "@nestjs/core";
 import { SwaggerModule, DocumentBuilder } from "@nestjs/swagger";
-
+import * as winston from "winston";
+import { utilities as nestWinstonModuleUtilities, WinstonModule } from "nest-winston";
 import { MainApiModule } from "./modules/app/main-api.module";
 import { ExceptionHandlerInterceptor, TransformResponseInterceptor } from "@app/utils/interceptors";
 import { ThrowFirstErrorValidationPipe } from "@app/utils/pipes";
@@ -15,6 +16,18 @@ async function bootstrap() {
       optionsSuccessStatus: 204,
       credentials: true,
     },
+    logger: WinstonModule.createLogger({
+      format: winston.format.uncolorize(),
+      transports: [
+        new winston.transports.Console({
+          format: winston.format.combine(
+            winston.format.timestamp(),
+            winston.format.ms(),
+            nestWinstonModuleUtilities.format.nestLike()
+          ),
+        }),
+      ],
+    }),
   });
   const globalPrefix = "api";
 
