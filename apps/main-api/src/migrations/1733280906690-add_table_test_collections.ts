@@ -61,6 +61,12 @@ export class AddTableTestCollections1733280906690 implements MigrationInterface 
             referencedColumnNames: ["id"],
           },
         ],
+        indices: [
+          {
+            name: "IDX_TEST_COLLECTIONS_KEYWORD",
+            columnNames: ["keyword"],
+          },
+        ],
       })
     );
   }

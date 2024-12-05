@@ -9,6 +9,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
   OneToMany,
+  Index,
 } from "typeorm";
 import { Bucket } from "./bucket.entity";
 import { SimulatedIeltsTest } from "./simulated-ielts-tests.entity";
@@ -28,6 +29,7 @@ export class TestCollection extends BaseEntity implements ITestCollection {
   tags: string[];
 
   @Column({ name: "keyword", type: "varchar", nullable: false, default: "" })
+  @Index("IDX_TEST_COLLECTIONS_KEYWORD")
   keyword: string;
 
   @Column({ name: "description", type: "varchar", nullable: false, default: "" })

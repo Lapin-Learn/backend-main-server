@@ -55,6 +55,12 @@ export class AddTableSimulatedIeltsTests1733280925452 implements MigrationInterf
             referencedColumnNames: ["id"],
           },
         ],
+        indices: [
+          {
+            name: "IDX_SIMULATED_IELTS_TESTS_KEYWORD",
+            columnNames: ["keyword"],
+          },
+        ],
       })
     );
   }
