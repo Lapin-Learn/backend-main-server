@@ -1,4 +1,4 @@
-import { Controller, Get, Res } from "@nestjs/common";
+import { Controller, Get, Query, Res } from "@nestjs/common";
 import { Response } from "express";
 import { MainApiService } from "./main-api.service";
 import { join } from "path";
@@ -13,7 +13,10 @@ export class MainApiController {
   }
 
   @Get("/")
-  getLandingPage(@Res() res: Response) {
-    return res.sendFile(join(__dirname, "..", "public", "index.html"));
+  getLandingPage(@Res() res: Response, @Query("lang") lang?: string) {
+    if (!lang || (lang != "en" && lang != "vn")) {
+      return res.redirect(`/?lang=vn`);
+    }
+    return res.sendFile(join(__dirname, "public", `${lang}.html`));
   }
 }

@@ -1,4 +1,4 @@
-import { Logger } from "@nestjs/common";
+import { Logger, RequestMethod } from "@nestjs/common";
 import { NestFactory, Reflector } from "@nestjs/core";
 import { SwaggerModule, DocumentBuilder } from "@nestjs/swagger";
 
@@ -18,7 +18,12 @@ async function bootstrap() {
   });
   const globalPrefix = "api";
 
-  app.setGlobalPrefix(globalPrefix);
+  app.setGlobalPrefix(globalPrefix, {
+    exclude: [
+      { path: "/", method: RequestMethod.GET },
+      { path: "health", method: RequestMethod.GET },
+    ],
+  });
   app.useGlobalInterceptors(new TransformResponseInterceptor(new Reflector()));
   app.useGlobalInterceptors(new ExceptionHandlerInterceptor());
   app.useGlobalPipes(ThrowFirstErrorValidationPipe);
