@@ -4,6 +4,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
@@ -26,6 +27,7 @@ export class SimulatedIeltsTest extends BaseEntity implements ISimulatedIeltsTes
   testName: string;
 
   @Column({ name: "keyword", type: "varchar" })
+  @Index("IDX_SIMULATED_IELTS_TESTS_KEYWORD")
   keyword: string;
 
   @CreateDateColumn({ name: "created_at", type: "timestamp", nullable: false, default: () => "CURRENT_TIMESTAMP" })
