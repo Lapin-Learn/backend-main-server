@@ -20,3 +20,5 @@ export * from "./question.entity";
 export * from "./question-to-lesson.entity";
 export * from "./question-type.entity";
 export * from "./streak.entity";
+export * from "./test-collections.entity";
+export * from "./simulated-ielts-tests.entity";

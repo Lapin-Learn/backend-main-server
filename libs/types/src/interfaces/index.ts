@@ -26,6 +26,8 @@ export * from "./question-to-lesson.interface";
 export * from "./question-type.interface";
 export * from "./question.interface";
 export * from "./xp-lesson-process.interface";
+export * from "./test-collection.interface";
+export * from "./simulated-ielts-test.interface";
 
 export * from "./current-user.interface";
 export * from "./reset-password-action.interface";

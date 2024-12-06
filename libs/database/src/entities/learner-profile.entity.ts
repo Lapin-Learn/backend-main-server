@@ -250,6 +250,7 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
         // If yesterday not learn any new lesson, reset streak to 1
         this.streak.current = 1;
         this.streak.extended = true;
+        await Streak.save({ ...this.streak });
       }
 
       return true;
