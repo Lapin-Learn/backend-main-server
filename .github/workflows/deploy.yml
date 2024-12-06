@@ -2,9 +2,6 @@ name: Deploy image
 
 on:
   workflow_dispatch:
-    branches:
-      - main
-      - develop
 jobs:
   deploy-image:
     name: Deploy server image
