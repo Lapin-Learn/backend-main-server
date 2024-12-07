@@ -1,5 +1,7 @@
+import { PaginationResponseDto } from "@app/types/response-dtos";
 import { applyDecorators } from "@nestjs/common";
-import { ApiResponse } from "@nestjs/swagger";
+import { ApiExtraModels, ApiOkResponse, ApiResponse, getSchemaPath } from "@nestjs/swagger";
+import { Type } from "@nestjs/common";
 
 export function ApiDefaultResponses() {
   return applyDecorators(
@@ -10,3 +12,24 @@ export function ApiDefaultResponses() {
     ApiResponse({ status: 500, description: "Internal server error" })
   );
 }
+
+export const ApiPaginatedResponse = <TModel extends Type<any>>(model: TModel) => {
+  return applyDecorators(
+    ApiExtraModels(PaginationResponseDto, model),
+    ApiOkResponse({
+      schema: {
+        allOf: [
+          { $ref: getSchemaPath(PaginationResponseDto) },
+          {
+            properties: {
+              items: {
+                type: "array",
+                items: { $ref: getSchemaPath(model) },
+              },
+            },
+          },
+        ],
+      },
+    })
+  );
+};

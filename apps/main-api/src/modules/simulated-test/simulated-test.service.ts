@@ -5,7 +5,7 @@ import { plainToClass } from "class-transformer";
 @Injectable()
 export class SimulatedTestService {
   private readonly logger = new Logger(SimulatedTestService.name);
-  async getAllSimulatedTest(offset: number, limit: number) {
+  async getCollectionsWithSimulatedTest(offset: number, limit: number) {
     try {
       const collections = await TestCollection.getCollectionsWithTests(offset, limit);
       return collections.map((c) => plainToClass(TestCollection, c));

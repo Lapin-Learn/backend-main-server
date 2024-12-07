@@ -18,7 +18,7 @@ import { ItemModule } from "../item/item.module";
 import { ServeStaticModule } from "@nestjs/serve-static";
 import { join } from "path";
 import { APP_GUARD } from "@nestjs/core";
-import { loggerMiddleware } from "../../middlewares";
+import { LoggerMiddleware } from "../../middlewares";
 import { SimulatedTestModule } from "../simulated-test/simulated-test.module";
 
 @Module({
@@ -59,6 +59,6 @@ import { SimulatedTestModule } from "../simulated-test/simulated-test.module";
 })
 export class MainApiModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(loggerMiddleware).forRoutes({ path: "*", method: RequestMethod.ALL });
+    consumer.apply(LoggerMiddleware).forRoutes({ path: "api/*", method: RequestMethod.ALL });
   }
 }

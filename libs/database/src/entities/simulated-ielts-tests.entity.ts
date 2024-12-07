@@ -11,6 +11,7 @@ import {
   UpdateDateColumn,
 } from "typeorm";
 import { TestCollection } from "./test-collections.entity";
+import { Exclude } from "class-transformer";
 
 @Entity({ name: "simulated_ielts_tests" })
 export class SimulatedIeltsTest extends BaseEntity implements ISimulatedIeltsTest {
@@ -28,6 +29,7 @@ export class SimulatedIeltsTest extends BaseEntity implements ISimulatedIeltsTes
 
   @Column({ name: "keyword", type: "varchar" })
   @Index("IDX_SIMULATED_IELTS_TESTS_KEYWORD")
+  @Exclude()
   keyword: string;
 
   @CreateDateColumn({ name: "created_at", type: "timestamp", nullable: false, default: () => "CURRENT_TIMESTAMP" })
