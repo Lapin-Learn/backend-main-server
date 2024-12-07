@@ -39,8 +39,12 @@ jobs:
       - name: Build Docker image
         env:
           TAG: ${{VARS.TAG}}
+          PRIVATE_TOKEN: ${{secrets.PRIVATE_TOKEN}}
         run: |
-          docker build -f docker/Dockerfile.service -t ${{secrets.DOCKER_USERNAME}}/backend-main-server:$TAG .
+          docker build -f docker/Dockerfile.service \
+          --build-arg PRIVATE_TOKEN=$PRIVATE_TOKEN \
+          --build-arg STAGE=$TAG \
+          -t ${{secrets.DOCKER_USERNAME}}/backend-main-server:$TAG .
 
       - name: Push Docker image
         env:
