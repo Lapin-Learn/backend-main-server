@@ -19,6 +19,7 @@ import { ServeStaticModule } from "@nestjs/serve-static";
 import { join } from "path";
 import { APP_GUARD } from "@nestjs/core";
 import { loggerMiddleware } from "../../middlewares";
+import { SimulatedTestModule } from "../simulated-test/simulated-test.module";
 
 @Module({
   imports: [
@@ -45,6 +46,7 @@ import { loggerMiddleware } from "../../middlewares";
     MissionModule,
     NotificationModule,
     ItemModule,
+    SimulatedTestModule,
   ],
   controllers: [MainApiController],
   providers: [

@@ -17,7 +17,7 @@ export class SimulatedIeltsTest extends BaseEntity implements ISimulatedIeltsTes
   @PrimaryGeneratedColumn("increment")
   id: number;
 
-  @Column({ name: "collection_id", type: "number", nullable: false })
+  @Column({ name: "collection_id", type: "int", nullable: false })
   collectionId: number;
 
   @Column({ name: "order", type: "varchar" })

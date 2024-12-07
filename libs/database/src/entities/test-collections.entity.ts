@@ -13,12 +13,14 @@ import {
 } from "typeorm";
 import { Bucket } from "./bucket.entity";
 import { SimulatedIeltsTest } from "./simulated-ielts-tests.entity";
+import { Exclude } from "class-transformer";
 
 @Entity({ name: "test_collections" })
 export class TestCollection extends BaseEntity implements ITestCollection {
   @PrimaryGeneratedColumn("increment")
   id: number;
 
+  @Exclude()
   @Column({ name: "thumbnail_id", type: "uuid", nullable: true })
   thumbnailId: string;
 
@@ -28,6 +30,7 @@ export class TestCollection extends BaseEntity implements ITestCollection {
   @Column({ name: "tags", type: "varchar", nullable: false, default: [], array: true })
   tags: string[];
 
+  @Exclude()
   @Column({ name: "keyword", type: "varchar", nullable: false, default: "" })
   @Index("IDX_TEST_COLLECTIONS_KEYWORD")
   keyword: string;
@@ -53,4 +56,22 @@ export class TestCollection extends BaseEntity implements ITestCollection {
 
   @OneToMany(() => SimulatedIeltsTest, (simulatedtIeltsTests) => simulatedtIeltsTests.testCollection)
   simulatedIeltsTests: SimulatedIeltsTest[];
+
+  static async getCollectionsWithTests(offset: number, limit: number): Promise<ITestCollection[]> {
+    const data: ITestCollection[] = await this.find({
+      relations: {
+        simulatedIeltsTests: true,
+        thumbnail: true,
+      },
+      skip: offset,
+      take: limit,
+    });
+
+    return data.map((c) => {
+      return {
+        ...c,
+        simulatedIeltsTests: c.simulatedIeltsTests.sort((a, b) => a.order.localeCompare(b.order)).slice(0, 4),
+      };
+    });
+  }
 }
