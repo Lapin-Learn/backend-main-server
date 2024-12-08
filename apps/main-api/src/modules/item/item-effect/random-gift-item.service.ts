@@ -56,10 +56,10 @@ export class RandomGiftItemEffect implements IItemEffectService {
   async applyEffect() {
     try {
       const result = await this.getRandomGift();
+      this._learner = await LearnerProfile.findOne({
+        where: { id: this._profileItem.profileId },
+      });
       if (result.type === RandomGiftType.CARROTS) {
-        this._learner = await LearnerProfile.findOne({
-          where: { id: this._profileItem.profileId },
-        });
         // Add the carrot value to the user's profile
         await this._learner.updateResources({ bonusCarrot: result.value });
       } else {
