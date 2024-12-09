@@ -27,11 +27,19 @@ export class TestCollection extends BaseEntity implements ITestCollection {
   @Column({ name: "name", type: "varchar", nullable: false, default: "" })
   name: string;
 
-  @Column({ name: "tags", type: "varchar", nullable: false, default: [], array: true })
+  @Column({
+    name: "tags",
+    type: "varchar",
+    nullable: false,
+    default: "",
+    transformer: {
+      to: (value: string[] | string) => (Array.isArray(value) ? value.join(",") : value),
+      from: (value: string) => (value ? value.split(",") : []),
+    },
+  })
   tags: string[];
 
-  @Exclude()
-  @Column({ name: "keyword", type: "varchar", nullable: false, default: "" })
+  @Column({ name: "keyword", type: "tsvector", nullable: false, select: false })
   @Index("IDX_TEST_COLLECTIONS_KEYWORD")
   keyword: string;
 
@@ -57,15 +65,23 @@ export class TestCollection extends BaseEntity implements ITestCollection {
   @OneToMany(() => SimulatedIeltsTest, (simulatedtIeltsTests) => simulatedtIeltsTests.testCollection)
   simulatedIeltsTests: SimulatedIeltsTest[];
 
-  static async getCollectionsWithTests(offset: number, limit: number): Promise<ITestCollection[]> {
-    const data: ITestCollection[] = await this.find({
-      relations: {
-        simulatedIeltsTests: true,
-        thumbnail: true,
-      },
-      skip: offset,
-      take: limit,
-    });
+  static async getCollectionsWithTests(offset: number, limit: number, keyword: string): Promise<ITestCollection[]> {
+    const queryBuilder = this.createQueryBuilder("collections")
+      .select("collections")
+      .leftJoinAndSelect("collections.simulatedIeltsTests", "simulatedIeltsTests")
+      .skip(offset)
+      .take(limit);
+
+    if (keyword) {
+      keyword = keyword.replace(/\s+/g, "&") + ":*";
+      queryBuilder
+        .addSelect("ts_rank(collections.keyword, to_tsquery(:query))", "rank")
+        .where("collections.keyword @@ to_tsquery(:query)", {
+          query: keyword,
+        })
+        .orderBy("rank", "DESC");
+    }
+    const data: ITestCollection[] = await queryBuilder.getMany();
 
     return data.map((c) => {
       return {

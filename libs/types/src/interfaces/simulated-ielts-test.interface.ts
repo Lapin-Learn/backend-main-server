@@ -5,7 +5,6 @@ export interface ISimulatedIeltsTest {
   collectionId: number;
   order: string;
   testName: string;
-  keyword: string;
   createdAt: Date;
   updatedAt: Date;
 

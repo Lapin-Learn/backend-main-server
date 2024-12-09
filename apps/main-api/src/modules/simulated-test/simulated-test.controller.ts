@@ -25,13 +25,15 @@ export class SimulatedTestController {
 
   @ApiQuery({ name: "offset", type: Number, required: false })
   @ApiQuery({ name: "limit", type: Number, required: false })
+  @ApiQuery({ name: "keyword", type: String, required: false })
   @ApiPaginatedResponse(TestCollectionDto)
   @UseInterceptors(ClassSerializerInterceptor, PaginationInterceptor)
   @Get("collections")
   async getCollectionWithSimulatedTest(
     @Query("offset", new DefaultValuePipe(0), ParseIntPipe) offset: number,
-    @Query("limit", new DefaultValuePipe(10), ParseIntPipe) limit: number
+    @Query("limit", new DefaultValuePipe(10), ParseIntPipe) limit: number,
+    @Query("keyword") keyword: string = ""
   ) {
-    return this.simulatedTestService.getCollectionsWithSimulatedTest(offset, limit);
+    return this.simulatedTestService.getCollectionsWithSimulatedTest(offset, limit, keyword);
   }
 }
