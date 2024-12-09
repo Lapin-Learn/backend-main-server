@@ -13,7 +13,7 @@ import {
 } from "typeorm";
 import { Bucket } from "./bucket.entity";
 import { SimulatedIeltsTest } from "./simulated-ielts-tests.entity";
-import { Exclude } from "class-transformer";
+import { Exclude, plainToClass } from "class-transformer";
 
 @Entity({ name: "test_collections" })
 export class TestCollection extends BaseEntity implements ITestCollection {
@@ -67,8 +67,9 @@ export class TestCollection extends BaseEntity implements ITestCollection {
 
   static async getCollectionsWithTests(offset: number, limit: number, keyword: string): Promise<ITestCollection[]> {
     const queryBuilder = this.createQueryBuilder("collections")
-      .select("collections")
+      .loadRelationCountAndMap("collections.testCount", "collections.simulatedIeltsTests")
       .leftJoinAndSelect("collections.simulatedIeltsTests", "simulatedIeltsTests")
+      .leftJoinAndSelect("collections.thumbnail", "thumbnail")
       .skip(offset)
       .take(limit);
 
@@ -84,10 +85,10 @@ export class TestCollection extends BaseEntity implements ITestCollection {
     const data: ITestCollection[] = await queryBuilder.getMany();
 
     return data.map((c) => {
-      return {
+      return plainToClass(TestCollection, {
         ...c,
         simulatedIeltsTests: c.simulatedIeltsTests.sort((a, b) => a.order.localeCompare(b.order)).slice(0, 4),
-      };
+      });
     });
   }
 }

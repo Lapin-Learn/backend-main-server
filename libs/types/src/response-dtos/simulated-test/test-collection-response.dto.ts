@@ -20,4 +20,7 @@ export class TestCollectionDto {
 
   @ApiProperty()
   thumbnail: string;
+
+  @ApiProperty()
+  testCount: number;
 }

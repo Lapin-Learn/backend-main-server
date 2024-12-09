@@ -1,14 +1,12 @@
 import { TestCollection } from "@app/database";
 import { BadRequestException, Injectable, Logger } from "@nestjs/common";
-import { plainToClass } from "class-transformer";
 
 @Injectable()
 export class SimulatedTestService {
   private readonly logger = new Logger(SimulatedTestService.name);
   async getCollectionsWithSimulatedTest(offset: number, limit: number, keyword: string) {
     try {
-      const collections = await TestCollection.getCollectionsWithTests(offset, limit, keyword);
-      return collections.map((c) => plainToClass(TestCollection, c));
+      return TestCollection.getCollectionsWithTests(offset, limit, keyword);
     } catch (error) {
       this.logger.error(error);
       throw new BadRequestException("Something went wrong");

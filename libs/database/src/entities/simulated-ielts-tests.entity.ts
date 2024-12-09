@@ -10,12 +10,14 @@ import {
   UpdateDateColumn,
 } from "typeorm";
 import { TestCollection } from "./test-collections.entity";
+import { Exclude } from "class-transformer";
 
 @Entity({ name: "simulated_ielts_tests" })
 export class SimulatedIeltsTest extends BaseEntity implements ISimulatedIeltsTest {
   @PrimaryGeneratedColumn("increment")
   id: number;
 
+  @Exclude()
   @Column({ name: "collection_id", type: "int", nullable: false })
   collectionId: number;
 
