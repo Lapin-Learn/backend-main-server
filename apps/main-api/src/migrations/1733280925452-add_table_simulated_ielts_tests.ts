@@ -29,11 +29,6 @@ export class AddTableSimulatedIeltsTests1733280925452 implements MigrationInterf
             isNullable: false,
           },
           {
-            name: "keyword",
-            type: "varchar",
-            isNullable: false,
-          },
-          {
             name: "created_at",
             type: "timestamp",
             isNullable: false,
@@ -53,12 +48,6 @@ export class AddTableSimulatedIeltsTests1733280925452 implements MigrationInterf
             columnNames: ["collection_id"],
             referencedTableName: "test_collections",
             referencedColumnNames: ["id"],
-          },
-        ],
-        indices: [
-          {
-            name: "IDX_SIMULATED_IELTS_TESTS_KEYWORD",
-            columnNames: ["keyword"],
           },
         ],
       })

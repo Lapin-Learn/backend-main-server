@@ -1,6 +1,5 @@
 import { CallHandler, ExecutionContext, HttpStatus, Injectable, NestInterceptor } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
-import { isNil } from "lodash";
 import { Observable, map } from "rxjs";
 import { ISuccessResponse } from "@app/types/interfaces";
 
@@ -13,14 +12,10 @@ const transform = <T extends DataType>(rawData: T): ISuccessResponse<T> => {
     data: null,
   };
 
-  if (rawData && isNil(rawData.data)) {
-    if (typeof rawData === "string") {
-      response.message = rawData;
-    } else {
-      response.data = rawData;
-    }
+  if (typeof rawData === "string") {
+    response.message = rawData;
   } else {
-    response.data = rawData?.data ?? null;
+    response.data = rawData;
   }
 
   return response;
