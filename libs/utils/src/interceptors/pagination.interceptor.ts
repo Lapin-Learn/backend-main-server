@@ -8,7 +8,10 @@ export class PaginationInterceptor implements NestInterceptor {
     return next.handle().pipe(
       map((data) => {
         const request = context.switchToHttp().getRequest();
-        const { offset = 0, limit = 0 } = request.query;
+        const { offset = 0, limit = 10 } = request.query;
+
+        const numericOffset = Number(offset);
+        const numericLimit = Number(limit);
 
         const total = data?.length || 0;
         const page = Math.floor(offset / limit) + 1 || 0;
@@ -16,8 +19,8 @@ export class PaginationInterceptor implements NestInterceptor {
         return {
           items: data,
           total,
-          offset: Number(offset),
-          limit: Number(limit),
+          offset: numericOffset,
+          limit: numericLimit,
           page,
         };
       })
