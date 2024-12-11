@@ -87,6 +87,7 @@ export class TestCollection extends BaseEntity implements ITestCollection {
     return data.map((c) => {
       return plainToClass(TestCollection, {
         ...c,
+        thumbnail: c.thumbnail ? c.thumbnail["url"] : null,
         simulatedIeltsTests: c.simulatedIeltsTests.sort((a, b) => a.order.localeCompare(b.order)).slice(0, 4),
       });
     });
