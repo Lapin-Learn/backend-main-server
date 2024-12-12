@@ -1,4 +1,6 @@
+import { VN_TIME_ZONE } from "@app/types/constants";
 import { IStreak } from "@app/types/interfaces";
+import moment from "moment-timezone";
 import { BaseEntity, Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 
 @Entity("streaks")
@@ -27,6 +29,9 @@ export class Streak extends BaseEntity implements IStreak {
   @Column({ name: "record", type: "int", nullable: false, default: 0 })
   record: number;
 
+  @Column({ name: "last_date_gain_new_streak", type: "timestamp", nullable: false })
+  lastDateGainNewStreak: Date;
+
   @CreateDateColumn({ name: "created_at", type: "timestamp", nullable: false, default: () => "CURRENT_TIMESTAMP" })
   createdAt: Date;
 
@@ -45,6 +50,7 @@ export class Streak extends BaseEntity implements IStreak {
       this.record = this.current;
     }
     this.extended = true; // Mark today streak as extended
+    this.lastDateGainNewStreak = moment().tz(VN_TIME_ZONE).toDate();
     await this.save();
   }
 }

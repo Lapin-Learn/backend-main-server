@@ -32,7 +32,7 @@ export class StreakController {
   getStreakHistory(@CurrentUser() user: ICurrentUser, @Query("start") start: string) {
     const startDate = start
       ? moment(start).tz(VN_TIME_ZONE).startOf("day").utc(true).toDate()
-      : moment().tz(VN_TIME_ZONE).startOf("day").utc(true).subtract(7, "days").toDate();
+      : moment().tz(VN_TIME_ZONE).startOf("week").utc(true).toDate();
 
     return this.streakService.getStreakHistory(user, startDate);
   }
