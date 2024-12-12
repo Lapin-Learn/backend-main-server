@@ -21,7 +21,8 @@
     "prepare": "husky install",
     "typeorm": "typeorm-ts-node-commonjs",
     "create:migration": "typeorm migration:create apps/main-api/src/migrations -n",
-    "migrate": "npx typeorm-ts-node-commonjs migration:run -d apps/main-api/typeorm.config.ts"
+    "migrate": "npx typeorm-ts-node-commonjs migration:run -d apps/main-api/typeorm.config.ts",
+    "downgrade": "npx typeorm-ts-node-commonjs migration:revert -d apps/main-api/typeorm.config.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.627.0",
@@ -125,3 +126,4 @@
     }
   }
 }
+
