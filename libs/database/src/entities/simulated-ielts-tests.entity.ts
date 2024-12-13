@@ -47,4 +47,15 @@ export class SimulatedIeltsTest extends BaseEntity implements ISimulatedIeltsTes
 
   @OneToMany(() => SkillTest, (skillTest) => skillTest.simulatedIeltsTest)
   skillTests: SkillTest[];
+
+  static async getSimulatedTestInCollections(collectionId: number, offset: number, limit: number) {
+    return this.createQueryBuilder("simulatedTests")
+      .leftJoin("simulatedTests.skillTests", "skillTest")
+      .addSelect(["skillTest.id", "skillTest.skill", "skillTest.partsDetail"])
+      .where("simulatedTests.collection_id = :collectionId", { collectionId })
+      .orderBy("simulatedTests.order")
+      .skip(offset)
+      .take(limit)
+      .getMany();
+  }
 }

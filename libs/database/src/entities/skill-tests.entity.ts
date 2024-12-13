@@ -20,7 +20,7 @@ export class SkillTest extends BaseEntity {
   @Column({ name: "parts_detail", type: "jsonb", nullable: true, default: null })
   partsDetail: IPartDetail[];
 
-  @Column({ name: "parts_content", type: "jsonb", nullable: true, default: null })
+  @Column({ name: "parts_content", type: "jsonb", nullable: true, default: null, select: false })
   partsContent: string;
 
   @ManyToOne(() => SimulatedIeltsTest, (simulatedIeltsTest) => simulatedIeltsTest.skillTests)
