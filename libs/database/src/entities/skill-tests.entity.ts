@@ -1,7 +1,8 @@
 import { SkillEnum } from "@app/types/enums";
 import { IPartDetail } from "@app/types/interfaces";
-import { BaseEntity, Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { BaseEntity, Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 import { SimulatedIeltsTest } from "./simulated-ielts-tests.entity";
+import { SkillTestSession } from "./test-sessions.entity";
 
 @Entity({ name: "skill_tests" })
 export class SkillTest extends BaseEntity {
@@ -26,4 +27,7 @@ export class SkillTest extends BaseEntity {
   @ManyToOne(() => SimulatedIeltsTest, (simulatedIeltsTest) => simulatedIeltsTest.skillTests)
   @JoinColumn({ name: "test_id", referencedColumnName: "id" })
   simulatedIeltsTest: SimulatedIeltsTest;
+
+  @OneToMany(() => SkillTestSession, (skillTestSession) => skillTestSession.skillTest)
+  skillTestSessions: SkillTestSession[];
 }

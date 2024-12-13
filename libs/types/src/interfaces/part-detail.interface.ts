@@ -1,4 +1,5 @@
 export interface IPartDetail {
-  name: string;
   questionTypes: string[];
+  startQuestionIndex: number;
+  endQuestionIndex: number;
 }

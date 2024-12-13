@@ -50,6 +50,8 @@ import { TMileStoneLearnProgress, TMileStoneProfile } from "@app/types/types";
 import moment from "moment-timezone";
 import { getBeginOfOffsetDay, getEndOfOffsetDay } from "@app/utils/time";
 import { VN_TIME_ZONE } from "@app/types/constants";
+import { SkillTestSession } from "./test-sessions.entity";
+import { TestRecord } from "./test-records.entity";
 
 @Entity("learner_profiles")
 export class LearnerProfile extends BaseEntity implements ILearnerProfile {
@@ -115,6 +117,12 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
 
   @OneToMany(() => LessonProcess, (lessonProcess) => lessonProcess.learnerProfile, { eager: true })
   readonly lessonProcesses: LessonProcess[];
+
+  @OneToMany(() => SkillTestSession, (skillTestSession) => skillTestSession.learnerProfile)
+  skillTestSessions: SkillTestSession[];
+
+  @OneToMany(() => TestRecord, (testRecord) => testRecord.learnerProfile)
+  testRecords: TestRecord[];
 
   public async updateResources(newBonusResources: UpdateResourcesDto): Promise<UpdateResourcesDto> {
     const { bonusCarrot = 0, bonusXP = 0 } = newBonusResources;
