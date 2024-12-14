@@ -74,7 +74,7 @@ export class TestCollection extends BaseEntity implements ITestCollection {
       .take(limit);
 
     if (keyword) {
-      keyword = keyword.replace(/\s+/g, "&") + ":*";
+      keyword = keyword.trim().replace(/\s+/g, "&") + ":*";
       queryBuilder
         .addSelect("ts_rank(collections.keyword, to_tsquery(:query))", "rank")
         .where("collections.keyword @@ to_tsquery(:query)", {
