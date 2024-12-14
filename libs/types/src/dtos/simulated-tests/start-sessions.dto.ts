@@ -9,6 +9,10 @@ export class StartSessionDto {
   @IsNumber()
   skillTestId: number;
 
+  @ApiProperty()
+  @IsNumber()
+  timeLimit: number;
+
   @ApiProperty({ enum: TestSessionModeEnum })
   @IsEnum(TestSessionModeEnum, { message: "Invalid test mode" })
   mode: TestSessionModeEnum;

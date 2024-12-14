@@ -10,7 +10,9 @@ import {
 } from "typeorm";
 import { SkillTest } from "./skill-tests.entity";
 import { LearnerProfile } from "./learner-profile.entity";
-import { TestSessionModeEnum } from "@app/types/enums";
+import { TestSessionModeEnum, TestSessionStatusEnum } from "@app/types/enums";
+import { StartSessionDto } from "@app/types/dtos/simulated-tests";
+import { ITestSessionResponse } from "@app/types/interfaces/test-session-responses.interface";
 
 @Entity({ name: "skill_test_sessions" })
 export class SkillTestSession extends BaseEntity {
@@ -23,17 +25,24 @@ export class SkillTestSession extends BaseEntity {
   @Column({ name: "learner_profile_id", type: "uuid", nullable: false })
   learnerProfileId: string;
 
-  @Column({ name: "responses", type: "text", array: true, nullable: true })
-  responses: string[];
+  @Column({ name: "responses", type: "jsonb", nullable: true })
+  responses: ITestSessionResponse[];
 
-  @Column({ name: "results", type: "text", array: true, nullable: true })
-  results: string[];
+  @Column({ name: "results", type: "jsonb", nullable: true })
+  results: object;
+
+  @Column({ name: "time_limit", type: "int", nullable: false, default: 0 })
+  // 0 when option is "unlimited"
+  timeLimit: number;
 
   @Column({ name: "elapsed_time", type: "int", nullable: false, default: 0 })
-  elapsedTIme: number;
+  elapsedTime: number;
 
   @Column({ name: "mode", type: "varchar", nullable: false, default: TestSessionModeEnum.FULL_TEST })
   mode: TestSessionModeEnum;
+
+  @Column({ name: "status", type: "varchar", nullable: false, default: TestSessionStatusEnum.IN_PROGRESS })
+  status: TestSessionStatusEnum;
 
   @Column({ name: "parts", type: "int", array: true, nullable: true })
   parts: number[];
@@ -57,4 +66,14 @@ export class SkillTestSession extends BaseEntity {
   @ManyToOne(() => LearnerProfile, (learnerProfile) => learnerProfile.skillTestSessions)
   @JoinColumn({ name: "learner_profile_id", referencedColumnName: "id" })
   learnerProfile: LearnerProfile;
+
+  static async findExistedSession(learnerId: string, sesionData: StartSessionDto) {
+    return this.createQueryBuilder("session")
+      .where("session.learnerProfileId = :learnerId", { learnerId })
+      .andWhere("session.status = :status", { status: TestSessionStatusEnum.IN_PROGRESS })
+      .andWhere("session.skillTestId = :skillTestId", { skillTestId: sesionData.skillTestId })
+      .andWhere("session.timeLimit = :timeLimit", { timeLimit: sesionData.timeLimit })
+      .andWhere("session.parts @> :parts", { parts: sesionData.parts })
+      .getOne();
+  }
 }

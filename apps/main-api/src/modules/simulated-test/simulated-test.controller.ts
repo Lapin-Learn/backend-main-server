@@ -7,6 +7,7 @@ import {
   Param,
   ParseIntPipe,
   Post,
+  Put,
   Query,
   UseGuards,
   UseInterceptors,
@@ -18,7 +19,7 @@ import { ApiDefaultResponses, ApiPaginatedResponse, CurrentUser } from "../../de
 import { ApiBearerAuth, ApiBody, ApiParam, ApiQuery, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { SimulatedIeltsTestDetailDto, TestCollectionDto } from "@app/types/response-dtos";
 import { ICurrentUser } from "@app/types/interfaces";
-import { StartSessionDto } from "@app/types/dtos/simulated-tests";
+import { StartSessionDto, UpdateSessionDto } from "@app/types/dtos/simulated-tests";
 
 @ApiTags("Simulated tests")
 @ApiDefaultResponses()
@@ -59,8 +60,16 @@ export class SimulatedTestController {
   @ApiBody({ type: StartSessionDto })
   @ApiResponse({ type: String })
   @Post("simulated-tests/session")
-  async startNewSession(@CurrentUser() learner: ICurrentUser, @Body() sessionData: StartSessionDto) {
-    return this.simulatedTestService.startNewSession(learner, sessionData);
+  async startSession(@CurrentUser() learner: ICurrentUser, @Body() sessionData: StartSessionDto) {
+    return this.simulatedTestService.startSession(learner, sessionData);
+  }
+
+  @ApiParam({ name: "id", type: Number, required: true })
+  @ApiBody({ type: UpdateSessionDto })
+  @ApiResponse({ type: String })
+  @Put("simulated-tests/session/:id")
+  async updateSession(@Param("id", ParseIntPipe) sessionId: number, @Body() sessionData: UpdateSessionDto) {
+    return this.simulatedTestService.updateSession(sessionId, sessionData);
   }
 
   @ApiParam({ name: "id", type: Number, required: true })

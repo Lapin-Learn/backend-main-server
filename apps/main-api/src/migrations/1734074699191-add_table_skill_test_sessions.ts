@@ -25,15 +25,19 @@ export class AddTableSkillTestSessions1734074699191 implements MigrationInterfac
           },
           {
             name: "responses",
-            type: "text",
-            isArray: true,
+            type: "jsonb",
             isNullable: true,
           },
           {
             name: "results",
-            type: "text",
-            isArray: true,
+            type: "jsonb",
             isNullable: true,
+          },
+          {
+            name: "time_limit",
+            type: "int",
+            isNullable: false,
+            default: 0,
           },
           {
             name: "elapsed_time",
@@ -46,6 +50,12 @@ export class AddTableSkillTestSessions1734074699191 implements MigrationInterfac
             type: "varchar",
             isNullable: false,
             default: "'full_test'",
+          },
+          {
+            name: "status",
+            type: "varchar",
+            isNullable: false,
+            default: "'in_progress'",
           },
           {
             name: "parts",
