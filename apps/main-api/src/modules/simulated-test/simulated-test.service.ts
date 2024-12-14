@@ -1,5 +1,5 @@
 import { SimulatedIeltsTest, SkillTest, SkillTestSession, TestCollection } from "@app/database";
-import { StartSessionDto } from "@app/types/dtos/simulated-tests";
+import { StartSessionDto, UpdateSessionDto } from "@app/types/dtos/simulated-tests";
 import { ICurrentUser } from "@app/types/interfaces";
 import { BadRequestException, Injectable, Logger } from "@nestjs/common";
 import { isNil } from "lodash";
@@ -39,13 +39,25 @@ export class SimulatedTestService {
     }
   }
 
-  async startNewSession(learner: ICurrentUser, sessionData: StartSessionDto) {
+  async startSession(learner: ICurrentUser, sessionData: StartSessionDto) {
     try {
-      await SkillTestSession.create({
+      const currentSession = await SkillTestSession.findExistedSession(learner.profileId, sessionData);
+      if (currentSession) return currentSession;
+
+      return SkillTestSession.create({
         ...sessionData,
         learnerProfileId: learner.profileId,
       }).save();
-      return "OK";
+    } catch (error) {
+      this.logger.error(error);
+      throw new BadRequestException(error);
+    }
+  }
+
+  async updateSession(sessionId: number, sessionData: UpdateSessionDto) {
+    try {
+      await SkillTestSession.save({ id: sessionId, ...sessionData });
+      return "Ok";
     } catch (error) {
       this.logger.error(error);
       throw new BadRequestException(error);
