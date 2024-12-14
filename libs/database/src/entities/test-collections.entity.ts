@@ -67,11 +67,11 @@ export class TestCollection extends BaseEntity implements ITestCollection {
 
   static async getCollectionsWithTests(offset: number, limit: number, keyword: string): Promise<ITestCollection[]> {
     const queryBuilder = this.createQueryBuilder("collections")
-      .loadRelationCountAndMap("collections.testCount", "collections.simulatedIeltsTests")
       .leftJoinAndSelect("collections.simulatedIeltsTests", "simulatedIeltsTests")
       .leftJoinAndSelect("collections.thumbnail", "thumbnail")
       .skip(offset)
-      .take(limit);
+      .take(limit)
+      .orderBy("simulatedIeltsTests.order");
 
     if (keyword) {
       keyword = keyword.trim().replace(/\s+/g, "&") + ":*";
@@ -87,8 +87,9 @@ export class TestCollection extends BaseEntity implements ITestCollection {
     return data.map((c) => {
       return plainToClass(TestCollection, {
         ...c,
+        testCount: c.simulatedIeltsTests.length,
         thumbnail: c.thumbnail ? c.thumbnail["url"] : null,
-        simulatedIeltsTests: c.simulatedIeltsTests.sort((a, b) => a.order.localeCompare(b.order)).slice(0, 4),
+        simulatedIeltsTests: c.simulatedIeltsTests.slice(0, 4),
       });
     });
   }
