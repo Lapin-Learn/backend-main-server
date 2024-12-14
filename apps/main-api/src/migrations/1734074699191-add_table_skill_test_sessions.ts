@@ -24,11 +24,6 @@ export class AddTableSkillTestSessions1734074699191 implements MigrationInterfac
             isNullable: false,
           },
           {
-            name: "record_id",
-            type: "int",
-            isNullable: false,
-          },
-          {
             name: "responses",
             type: "text",
             isArray: true,
@@ -83,12 +78,6 @@ export class AddTableSkillTestSessions1734074699191 implements MigrationInterfac
             name: "FK_SKILL_TEST_SESSIONS_LEARNER_PROFILE_ID",
             columnNames: ["learner_profile_id"],
             referencedTableName: "learner_profiles",
-            referencedColumnNames: ["id"],
-          },
-          {
-            name: "FK_SKILL_TEST_SESSIONS_RECORD_ID",
-            columnNames: ["record_id"],
-            referencedTableName: "test_records",
             referencedColumnNames: ["id"],
           },
         ],

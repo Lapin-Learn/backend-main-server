@@ -13,7 +13,6 @@ import {
 import { TestCollection } from "./test-collections.entity";
 import { Exclude } from "class-transformer";
 import { SkillTest } from "./skill-tests.entity";
-import { TestRecord } from "./test-records.entity";
 
 @Entity({ name: "simulated_ielts_tests" })
 export class SimulatedIeltsTest extends BaseEntity implements ISimulatedIeltsTest {
@@ -48,9 +47,6 @@ export class SimulatedIeltsTest extends BaseEntity implements ISimulatedIeltsTes
 
   @OneToMany(() => SkillTest, (skillTest) => skillTest.simulatedIeltsTest)
   skillTests: SkillTest[];
-
-  @OneToMany(() => TestRecord, (testRecord) => testRecord.simulatedTest)
-  testRecords: TestRecord[];
 
   static async getSimulatedTestInCollections(collectionId: number, offset: number, limit: number) {
     return this.createQueryBuilder("simulatedTests")

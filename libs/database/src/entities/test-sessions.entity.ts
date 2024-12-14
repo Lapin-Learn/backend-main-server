@@ -10,7 +10,6 @@ import {
 } from "typeorm";
 import { SkillTest } from "./skill-tests.entity";
 import { LearnerProfile } from "./learner-profile.entity";
-import { TestRecord } from "./test-records.entity";
 import { TestSessionModeEnum } from "@app/types/enums";
 
 @Entity({ name: "skill_test_sessions" })
@@ -23,9 +22,6 @@ export class SkillTestSession extends BaseEntity {
 
   @Column({ name: "learner_profile_id", type: "uuid", nullable: false })
   learnerProfileId: string;
-
-  @Column({ name: "record_id", type: "int", nullable: false })
-  recordId: number;
 
   @Column({ name: "responses", type: "text", array: true, nullable: true })
   responses: string[];
@@ -61,8 +57,4 @@ export class SkillTestSession extends BaseEntity {
   @ManyToOne(() => LearnerProfile, (learnerProfile) => learnerProfile.skillTestSessions)
   @JoinColumn({ name: "learner_profile_id", referencedColumnName: "id" })
   learnerProfile: LearnerProfile;
-
-  @ManyToOne(() => TestRecord, (testRecord) => testRecord.skillTestSessions)
-  @JoinColumn({ name: "record_id", referencedColumnName: "id" })
-  testRecord: TestRecord;
 }

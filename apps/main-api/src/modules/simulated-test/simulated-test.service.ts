@@ -1,5 +1,8 @@
-import { SimulatedIeltsTest, TestCollection } from "@app/database";
+import { SimulatedIeltsTest, SkillTest, SkillTestSession, TestCollection } from "@app/database";
+import { StartSessionDto } from "@app/types/dtos/simulated-tests";
+import { ICurrentUser } from "@app/types/interfaces";
 import { BadRequestException, Injectable, Logger } from "@nestjs/common";
+import { isNil } from "lodash";
 
 @Injectable()
 export class SimulatedTestService {
@@ -32,6 +35,37 @@ export class SimulatedTestService {
       });
     } catch (error) {
       this.logger.error(error);
+      throw new BadRequestException(error);
+    }
+  }
+
+  async startNewSession(learner: ICurrentUser, sessionData: StartSessionDto) {
+    try {
+      await SkillTestSession.create({
+        ...sessionData,
+        learnerProfileId: learner.profileId,
+      }).save();
+      return "OK";
+    } catch (error) {
+      this.logger.error(error);
+      throw new BadRequestException(error);
+    }
+  }
+
+  async getSkillTestContent(skillTestId: number, part: number) {
+    try {
+      const skillTest = await SkillTest.findOne({
+        where: { id: skillTestId },
+        select: {
+          partsContent: true,
+        },
+      });
+
+      if (isNil(skillTest) || isNil(skillTest.partsContent)) throw new BadRequestException("Test data doesn't existed");
+      if (skillTest.partsContent.length < part) throw new BadRequestException(`Test doesn't have part ${part}`);
+      return skillTest.partsContent[part - 1];
+    } catch (error) {
+      this.logger.log(error);
       throw new BadRequestException(error);
     }
   }
