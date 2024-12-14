@@ -66,22 +66,21 @@ export class TestCollection extends BaseEntity implements ITestCollection {
   simulatedIeltsTests: SimulatedIeltsTest[];
 
   static async getCollectionsWithTests(offset: number, limit: number, keyword: string): Promise<ITestCollection[]> {
+    const subquery = this.createQueryBuilder("collections")
+      .select("collections.id")
+      .addSelect("ts_rank(collections.keyword, to_tsquery(:query))", "rank")
+      .where("collections.keyword @@ to_tsquery(:query)", { query: keyword.trim().replace(/\s+/g, "&") + ":*" })
+      .orderBy("rank", "DESC")
+      .skip(offset)
+      .take(limit);
+
     const queryBuilder = this.createQueryBuilder("collections")
+      .innerJoin("(" + subquery.getQuery() + ")", "filtered", "collections.id = filtered.collections_id")
       .leftJoinAndSelect("collections.simulatedIeltsTests", "simulatedIeltsTests")
       .leftJoinAndSelect("collections.thumbnail", "thumbnail")
-      .skip(offset)
-      .take(limit)
-      .orderBy("simulatedIeltsTests.order");
+      .orderBy("simulatedIeltsTests.order")
+      .setParameters(subquery.getParameters());
 
-    if (keyword) {
-      keyword = keyword.trim().replace(/\s+/g, "&") + ":*";
-      queryBuilder
-        .addSelect("ts_rank(collections.keyword, to_tsquery(:query))", "rank")
-        .where("collections.keyword @@ to_tsquery(:query)", {
-          query: keyword,
-        })
-        .orderBy("rank", "DESC");
-    }
     const data: ITestCollection[] = await queryBuilder.getMany();
 
     return data.map((c) => {
