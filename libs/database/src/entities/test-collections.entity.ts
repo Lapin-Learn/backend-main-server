@@ -74,7 +74,7 @@ export class TestCollection extends BaseEntity implements ITestCollection {
       .take(limit);
 
     if (keyword) {
-      keyword = keyword.replace(/\s+/g, "&") + ":*";
+      keyword = keyword.trim().replace(/\s+/g, "&") + ":*";
       queryBuilder
         .addSelect("ts_rank(collections.keyword, to_tsquery(:query))", "rank")
         .where("collections.keyword @@ to_tsquery(:query)", {
@@ -87,6 +87,7 @@ export class TestCollection extends BaseEntity implements ITestCollection {
     return data.map((c) => {
       return plainToClass(TestCollection, {
         ...c,
+        thumbnail: c.thumbnail ? c.thumbnail["url"] : null,
         simulatedIeltsTests: c.simulatedIeltsTests.sort((a, b) => a.order.localeCompare(b.order)).slice(0, 4),
       });
     });

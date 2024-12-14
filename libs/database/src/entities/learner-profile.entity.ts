@@ -49,6 +49,8 @@ import { QuestionType } from "@app/database/entities/question-type.entity";
 import { TMileStoneLearnProgress, TMileStoneProfile } from "@app/types/types";
 import moment from "moment-timezone";
 import { getBeginOfOffsetDay, getEndOfOffsetDay } from "@app/utils/time";
+import { VN_TIME_ZONE } from "@app/types/constants";
+import { SkillTestSession } from "./test-sessions.entity";
 
 @Entity("learner_profiles")
 export class LearnerProfile extends BaseEntity implements ILearnerProfile {
@@ -114,6 +116,9 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
 
   @OneToMany(() => LessonProcess, (lessonProcess) => lessonProcess.learnerProfile, { eager: true })
   readonly lessonProcesses: LessonProcess[];
+
+  @OneToMany(() => SkillTestSession, (skillTestSession) => skillTestSession.learnerProfile)
+  skillTestSessions: SkillTestSession[];
 
   public async updateResources(newBonusResources: UpdateResourcesDto): Promise<UpdateResourcesDto> {
     const { bonusCarrot = 0, bonusXP = 0 } = newBonusResources;
@@ -250,6 +255,7 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
         // If yesterday not learn any new lesson, reset streak to 1
         this.streak.current = 1;
         this.streak.extended = true;
+        this.streak.lastDateGainNewStreak = moment().tz(VN_TIME_ZONE).toDate();
         await Streak.save({ ...this.streak });
       }
 
@@ -345,8 +351,8 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
       .where("learnerProfile.id = :profileId", { profileId })
       .andWhere("action.name = :actionName", { actionName: ActionNameEnum.DAILY_STREAK })
       .andWhere("activity.finishedAt BETWEEN :startDate AND :endDate", { startDate, endDate })
-      .orderBy("activity.finishedAt", "ASC")
-      .distinctOn(["activity.finishedAt"])
+      .orderBy("DATE_TRUNC('day', activity.finishedAt)", "ASC")
+      .distinctOn(["DATE_TRUNC('day', activity.finishedAt)"])
       .getOne();
 
     return data?.activities || [];
@@ -405,25 +411,16 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
       .leftJoinAndSelect("learnerProfiles.streak", "streaks")
       .where("NOT EXISTS (" + subquery(this.createQueryBuilder()).getQuery() + ")")
       .andWhere("streaks.current > 0")
+      .andWhere("streaks.extended = true")
       .setParameter("actionName", ActionNameEnum.DAILY_STREAK)
       .getMany();
   }
 
   static async getMissingStreakProfiles() {
-    const getStreakActivityInLastTwoDays = (qb: SelectQueryBuilder<LearnerProfile>) => {
-      return qb
-        .select("1")
-        .from("activities", "activities")
-        .leftJoin("activities.action", "actions")
-        .where("activities.profileId = learnerProfiles.id")
-        .andWhere("actions.name = :actionName")
-        .andWhere("DATE(activities.finishedAt) = CURRENT_DATE - 2");
-    };
-
     return await this.createQueryBuilder("learnerProfiles")
       .leftJoinAndSelect("learnerProfiles.streak", "streaks")
-      .where("streaks.current = 0")
-      .andWhere("EXISTS (" + getStreakActivityInLastTwoDays(this.createQueryBuilder()).getQuery() + ")") //Check the missing streak is yesterday
+      .where("streaks.current > 0")
+      .andWhere("streaks.extended = false")
       .setParameter("actionName", ActionNameEnum.DAILY_STREAK)
       .getMany();
   }

@@ -19,7 +19,6 @@ export const ApiPaginatedResponse = <TModel extends Type<any>>(model: TModel) =>
     ApiOkResponse({
       schema: {
         allOf: [
-          { $ref: getSchemaPath(PaginationResponseDto) },
           {
             properties: {
               items: {
@@ -28,6 +27,8 @@ export const ApiPaginatedResponse = <TModel extends Type<any>>(model: TModel) =>
               },
             },
           },
+
+          { $ref: getSchemaPath(PaginationResponseDto) },
         ],
       },
     })

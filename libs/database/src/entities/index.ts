@@ -22,3 +22,5 @@ export * from "./question-type.entity";
 export * from "./streak.entity";
 export * from "./test-collections.entity";
 export * from "./simulated-ielts-tests.entity";
+export * from "./skill-tests.entity";
+export * from "./test-sessions.entity";

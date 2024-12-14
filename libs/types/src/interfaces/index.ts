@@ -28,15 +28,12 @@ export * from "./question.interface";
 export * from "./xp-lesson-process.interface";
 export * from "./test-collection.interface";
 export * from "./simulated-ielts-test.interface";
-
 export * from "./current-user.interface";
 export * from "./reset-password-action.interface";
-
 export * from "./list-question.interface";
 export * from "./learner-profile-info.interface";
 export * from "./milestone-info.interfaces";
-
 export * from "./decoded-token.interface";
 export * from "./band-score-require.interface";
-
 export * from "./profile-streak-activity.interface";
+export * from "./part-detail.interface";

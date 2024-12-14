@@ -17,3 +17,5 @@ export * from "./mission-category-name.enum";
 export * from "./profile-item-status.enum";
 export * from "./random-gift-type.enum";
 export * from "./item-name.enum";
+export * from "./test-session-mode.enum";
+export * from "./test-session-status.enum";

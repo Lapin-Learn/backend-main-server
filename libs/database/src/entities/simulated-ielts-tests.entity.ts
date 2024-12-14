@@ -6,11 +6,13 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from "typeorm";
 import { TestCollection } from "./test-collections.entity";
 import { Exclude } from "class-transformer";
+import { SkillTest } from "./skill-tests.entity";
 
 @Entity({ name: "simulated_ielts_tests" })
 export class SimulatedIeltsTest extends BaseEntity implements ISimulatedIeltsTest {
@@ -42,4 +44,18 @@ export class SimulatedIeltsTest extends BaseEntity implements ISimulatedIeltsTes
   @ManyToOne(() => TestCollection, (testCollection) => testCollection.simulatedIeltsTests)
   @JoinColumn({ name: "collection_id", referencedColumnName: "id" })
   testCollection: TestCollection;
+
+  @OneToMany(() => SkillTest, (skillTest) => skillTest.simulatedIeltsTest)
+  skillTests: SkillTest[];
+
+  static async getSimulatedTestInCollections(collectionId: number, offset: number, limit: number) {
+    return this.createQueryBuilder("simulatedTests")
+      .leftJoin("simulatedTests.skillTests", "skillTest")
+      .addSelect(["skillTest.id", "skillTest.skill", "skillTest.partsDetail"])
+      .where("simulatedTests.collection_id = :collectionId", { collectionId })
+      .orderBy("simulatedTests.order")
+      .skip(offset)
+      .take(limit)
+      .getMany();
+  }
 }

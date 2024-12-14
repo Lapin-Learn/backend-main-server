@@ -12,10 +12,10 @@ export class MainApiController {
     return this.mainApiService.getHello();
   }
 
-  @Get("/")
+  @Get("")
   getLandingPage(@Res() res: Response, @Query("lang") lang?: string) {
     if (!lang || (lang != "en" && lang != "vn")) {
-      return res.redirect(`/?lang=vn`);
+      return res.redirect(`?lang=vn`);
     }
     return res.sendFile(join(__dirname, "public", `${lang}.html`));
   }
