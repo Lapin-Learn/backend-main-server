@@ -47,6 +47,9 @@ export class SkillTestSession extends BaseEntity {
   @Column({ name: "parts", type: "int", array: true, nullable: true })
   parts: number[];
 
+  @Column({ name: "estimated_band_score", type: "double precision", nullable: true })
+  estimatedBandScore: number;
+
   @CreateDateColumn({ name: "created_at", type: "timestamp", nullable: false, default: () => "CURRENT_TIMESTAMPT" })
   createdAt: Date;
 
