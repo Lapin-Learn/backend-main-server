@@ -9,9 +9,9 @@ import { BucketService } from "../bucket/bucket.service";
 export class SimulatedTestService {
   private readonly logger = new Logger(SimulatedTestService.name);
   constructor(private readonly bucketService: BucketService) {}
-  async getCollectionsWithSimulatedTest(offset: number, limit: number, keyword: string) {
+  async getCollectionsWithSimulatedTest(offset: number, limit: number, keyword: string, profileId: string) {
     try {
-      const data = await TestCollection.getCollectionsWithTests(offset, limit, keyword);
+      const data = await TestCollection.getCollectionsWithTests(offset, limit, keyword, profileId);
       return Promise.all(
         data.map(async (collection) => ({
           ...collection,
