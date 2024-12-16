@@ -13,14 +13,12 @@ import {
 } from "typeorm";
 import { Bucket } from "./bucket.entity";
 import { SimulatedIeltsTest } from "./simulated-ielts-tests.entity";
-import { Exclude, plainToClass } from "class-transformer";
 
 @Entity({ name: "test_collections" })
 export class TestCollection extends BaseEntity implements ITestCollection {
   @PrimaryGeneratedColumn("increment")
   id: number;
 
-  @Exclude()
   @Column({ name: "thumbnail_id", type: "uuid", nullable: true })
   thumbnailId: string;
 
@@ -65,31 +63,14 @@ export class TestCollection extends BaseEntity implements ITestCollection {
   @OneToMany(() => SimulatedIeltsTest, (simulatedtIeltsTests) => simulatedtIeltsTests.testCollection)
   simulatedIeltsTests: SimulatedIeltsTest[];
 
-  static async getCollectionsWithTests(offset: number, limit: number, keyword: string): Promise<ITestCollection[]> {
-    const subquery = this.createQueryBuilder("collections")
-      .select("collections.id")
-      .addSelect("ts_rank(collections.keyword, to_tsquery(:query))", "rank")
-      .where("collections.keyword @@ to_tsquery(:query)", { query: keyword.trim().replace(/\s+/g, "&") + ":*" })
-      .orderBy("rank", "DESC")
-      .skip(offset)
-      .take(limit);
-
-    const queryBuilder = this.createQueryBuilder("collections")
-      .innerJoin("(" + subquery.getQuery() + ")", "filtered", "collections.id = filtered.collections_id")
-      .leftJoinAndSelect("collections.simulatedIeltsTests", "simulatedIeltsTests")
-      .leftJoinAndSelect("collections.thumbnail", "thumbnail")
-      .orderBy("simulatedIeltsTests.order")
-      .setParameters(subquery.getParameters());
-
-    const data: ITestCollection[] = await queryBuilder.getMany();
-
-    return data.map((c) => {
-      return plainToClass(TestCollection, {
-        ...c,
-        testCount: c.simulatedIeltsTests.length,
-        thumbnail: c.thumbnail ? c.thumbnail["url"] : null,
-        simulatedIeltsTests: c.simulatedIeltsTests.slice(0, 4),
-      });
-    });
+  static async getCollectionsWithTests(offset: number, limit: number, keyword: string) {
+    if (keyword) {
+      keyword = keyword.trim().replace(/\s+/g, "&");
+    }
+    return this.createQueryBuilder().connection.query(`SELECT * from get_filtered_collections($1, $2, $3)`, [
+      offset,
+      limit,
+      keyword,
+    ]);
   }
 }
