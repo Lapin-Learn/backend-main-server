@@ -3,13 +3,21 @@ import { StartSessionDto, UpdateSessionDto } from "@app/types/dtos/simulated-tes
 import { ICurrentUser } from "@app/types/interfaces";
 import { BadRequestException, Injectable, Logger } from "@nestjs/common";
 import { isNil } from "lodash";
+import { BucketService } from "../bucket/bucket.service";
 
 @Injectable()
 export class SimulatedTestService {
   private readonly logger = new Logger(SimulatedTestService.name);
+  constructor(private readonly bucketService: BucketService) {}
   async getCollectionsWithSimulatedTest(offset: number, limit: number, keyword: string) {
     try {
-      return TestCollection.getCollectionsWithTests(offset, limit, keyword);
+      const data = await TestCollection.getCollectionsWithTests(offset, limit, keyword);
+      return Promise.all(
+        data.map(async (collection) => ({
+          ...collection,
+          thumbnail: await this.bucketService.getPresignedDownloadUrlForAfterLoad(collection.thumbnail),
+        }))
+      );
     } catch (error) {
       this.logger.error(error);
       throw new BadRequestException(error);

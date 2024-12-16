@@ -7,8 +7,8 @@ CREATE OR REPLACE FUNCTION get_filtered_collections(
     name varchar,
     tags TEXT[],
     description TEXT,
-    test_count INT,
-    top_tests JSONB,
+    testCount INT,
+    simulatedIeltsTests JSONB,
     thumbnail JSONB
 ) AS $$
 BEGIN
@@ -59,13 +59,14 @@ BEGIN
         c.name,
         string_to_array(c.tags, ',') AS tags,
         c.description::text AS description,
-        COUNT(t.id)::integer AS test_count,
+        COUNT(t.id)::integer AS testCount,
         COALESCE(
             (SELECT lt.limited_top_tests FROM limited_tests lt WHERE lt.collection_id = c.id),
             '[]'::JSONB
-        ) AS top_tests,
+        ) AS simulatedIeltsTests,
         JSONB_BUILD_OBJECT(
-            'id', th.id
+            'id', th.id,
+            'name', th.name
         ) AS thumbnail
     FROM
         ranked_collections rc
