@@ -20,6 +20,7 @@ import { join } from "path";
 import { APP_GUARD } from "@nestjs/core";
 import { LoggerMiddleware } from "../../middlewares";
 import { SimulatedTestModule } from "../simulated-test/simulated-test.module";
+import { AIModule } from "../ai/ai.module";
 
 @Module({
   imports: [
@@ -47,6 +48,7 @@ import { SimulatedTestModule } from "../simulated-test/simulated-test.module";
     NotificationModule,
     ItemModule,
     SimulatedTestModule,
+    AIModule,
   ],
   controllers: [MainApiController],
   providers: [
