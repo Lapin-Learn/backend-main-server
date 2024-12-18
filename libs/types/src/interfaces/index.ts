@@ -1,8 +1,5 @@
-//response
 export * from "./error-response.interface";
 export * from "./success-response.interface";
-
-//entities
 export * from "./account.interface";
 export * from "./action.interface";
 export * from "./activity.interface";
@@ -37,3 +34,4 @@ export * from "./decoded-token.interface";
 export * from "./band-score-require.interface";
 export * from "./profile-streak-activity.interface";
 export * from "./part-detail.interface";
+export * from "./guidance.interface";
