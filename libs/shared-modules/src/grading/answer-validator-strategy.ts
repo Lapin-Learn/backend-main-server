@@ -1,31 +1,22 @@
 import { Injectable } from "@nestjs/common";
-import {
-  TestAnswer,
-  ExactTestAnswer,
-  VariantsTestAnswer,
-  SuggestTestAnswer,
-} from "@app/types/interfaces/test-answer.interface";
-
-export interface AnswerValidator {
-  validate(response: string, answer: TestAnswer): boolean | string;
-}
-
+import { ExactTestAnswer, VariantsTestAnswer, SuggestTestAnswer } from "@app/types/interfaces/test-answer.interface";
+import { IAnswerValidatorStrategy } from "@app/types/interfaces";
 @Injectable()
-export class ExactValidator implements AnswerValidator {
+export class ExactStrategy implements IAnswerValidatorStrategy {
   validate(response: string, answer: ExactTestAnswer): boolean {
     return response === answer.valid;
   }
 }
 
 @Injectable()
-export class VariantsValidator implements AnswerValidator {
+export class VariantStrategy implements IAnswerValidatorStrategy {
   validate(response: string, answer: VariantsTestAnswer): boolean {
     return answer.variants.includes(response);
   }
 }
 
 @Injectable()
-export class EvaluatetValidator implements AnswerValidator {
+export class SuggetStrategy implements IAnswerValidatorStrategy {
   serviceAI(prompt: string, response: string): string {
     return `This is the prompt: ${prompt} for response: ${response}`;
   }

@@ -1,25 +1,17 @@
 import { AnswerTypeEnum } from "../enums";
 
-export interface TestAnswer {
+export interface ITestAnswer {
   type: AnswerTypeEnum;
-  getAnswer(): string | string;
 }
 
-export class ExactTestAnswer implements TestAnswer {
-  type = AnswerTypeEnum.EXCACT;
+export interface ExactTestAnswer extends ITestAnswer {
   valid: string;
-
-  getAnswer(): string {
-    return this.valid;
-  }
 }
 
-export interface VariantsTestAnswer extends TestAnswer {
+export interface VariantsTestAnswer extends ITestAnswer {
   variants: string[];
-
-  getAnswer();
 }
 
-export interface SuggestTestAnswer extends TestAnswer {
+export interface SuggestTestAnswer extends ITestAnswer {
   prompt: string;
 }

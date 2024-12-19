@@ -1,19 +1,24 @@
-import { SimulatedIeltsTest, SkillTest, SkillTestSession, TestCollection } from "@app/database";
+import { SimulatedIeltsTest, SkillTest, SkillTestAnswer, SkillTestSession, TestCollection } from "@app/database";
 import { StartSessionDto, UpdateSessionDto } from "@app/types/dtos/simulated-tests";
-import { ICurrentUser } from "@app/types/interfaces";
+import { ICurrentUser, ITestCollection } from "@app/types/interfaces";
 import { BadRequestException, Injectable, Logger } from "@nestjs/common";
 import { isNil } from "lodash";
 import { BucketService } from "../bucket/bucket.service";
+import { GradingContext } from "@app/shared-modules/grading";
+import { TestSessionStatusEnum } from "@app/types/enums";
 
 @Injectable()
 export class SimulatedTestService {
   private readonly logger = new Logger(SimulatedTestService.name);
-  constructor(private readonly bucketService: BucketService) {}
+  constructor(
+    private readonly bucketService: BucketService,
+    private readonly gradingContext: GradingContext
+  ) {}
   async getCollectionsWithSimulatedTest(offset: number, limit: number, keyword: string, profileId: string) {
     try {
       const data = await TestCollection.getCollectionsWithTests(offset, limit, keyword, profileId);
       return Promise.all(
-        data.map(async (collection) => ({
+        data.map(async (collection: ITestCollection) => ({
           ...collection,
           thumbnail: await this.bucketService.getPresignedDownloadUrlForAfterLoad(collection.thumbnail),
         }))
@@ -64,6 +69,18 @@ export class SimulatedTestService {
 
   async updateSession(sessionId: number, sessionData: UpdateSessionDto) {
     try {
+      const { status, responses } = sessionData;
+      if (status === TestSessionStatusEnum.FINISHED) {
+        const { skillTestId } = await SkillTestSession.findOne({ where: { id: sessionId } });
+        const { answers } = await SkillTestAnswer.findOne({ where: { skillTestId } });
+        const result = [];
+        responses.map((r) => {
+          const answer = answers[r.questionNo];
+          this.gradingContext.setValidator(answer);
+          result.push(this.gradingContext.executeStrategy(r.answer, answer));
+        });
+        sessionData["results"] = result;
+      }
       await SkillTestSession.save({ id: sessionId, ...sessionData });
       return "Ok";
     } catch (error) {

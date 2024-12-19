@@ -1,5 +1,5 @@
 export enum AnswerTypeEnum {
-  EXCACT = "exact",
+  EXACT = "exact",
   VARIANT = "variant",
-  PROMPT = "prompt",
+  SUGGEST = "suggest",
 }

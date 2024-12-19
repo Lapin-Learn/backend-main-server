@@ -35,3 +35,5 @@ export * from "./band-score-require.interface";
 export * from "./profile-streak-activity.interface";
 export * from "./part-detail.interface";
 export * from "./guidance.interface";
+export * from "./test-answer.interface";
+export * from "./answer-validator-strategy.interface";

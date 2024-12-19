@@ -1,4 +1,5 @@
 import { IGuidance } from "@app/types/interfaces";
+import { ITestAnswer } from "@app/types/interfaces";
 import { Entity, BaseEntity, Column, CreateDateColumn, PrimaryColumn, UpdateDateColumn } from "typeorm";
 
 @Entity({ name: "skill_test_answers" })
@@ -10,7 +11,7 @@ export class SkillTestAnswer extends BaseEntity {
   guidances: IGuidance[];
 
   @Column({ name: "answers", type: "jsonb", nullable: true, default: null })
-  answers: object[];
+  answers: ITestAnswer[];
 
   @CreateDateColumn({ name: "created_at", type: "timestamp", nullable: false, default: "CURRENT_TIMESTAMP" })
   createdAt: Date;
