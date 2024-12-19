@@ -13,14 +13,12 @@ import {
 } from "typeorm";
 import { Bucket } from "./bucket.entity";
 import { SimulatedIeltsTest } from "./simulated-ielts-tests.entity";
-import { Exclude, plainToClass } from "class-transformer";
 
 @Entity({ name: "test_collections" })
 export class TestCollection extends BaseEntity implements ITestCollection {
   @PrimaryGeneratedColumn("increment")
   id: number;
 
-  @Exclude()
   @Column({ name: "thumbnail_id", type: "uuid", nullable: true })
   thumbnailId: string;
 
@@ -65,31 +63,15 @@ export class TestCollection extends BaseEntity implements ITestCollection {
   @OneToMany(() => SimulatedIeltsTest, (simulatedtIeltsTests) => simulatedtIeltsTests.testCollection)
   simulatedIeltsTests: SimulatedIeltsTest[];
 
-  static async getCollectionsWithTests(offset: number, limit: number, keyword: string): Promise<ITestCollection[]> {
-    const queryBuilder = this.createQueryBuilder("collections")
-      .loadRelationCountAndMap("collections.testCount", "collections.simulatedIeltsTests")
-      .leftJoinAndSelect("collections.simulatedIeltsTests", "simulatedIeltsTests")
-      .leftJoinAndSelect("collections.thumbnail", "thumbnail")
-      .skip(offset)
-      .take(limit);
-
+  static async getCollectionsWithTests(offset: number, limit: number, keyword: string, profileId: string) {
     if (keyword) {
-      keyword = keyword.trim().replace(/\s+/g, "&") + ":*";
-      queryBuilder
-        .addSelect("ts_rank(collections.keyword, to_tsquery(:query))", "rank")
-        .where("collections.keyword @@ to_tsquery(:query)", {
-          query: keyword,
-        })
-        .orderBy("rank", "DESC");
+      keyword = keyword.trim().replace(/\s+/g, "&");
     }
-    const data: ITestCollection[] = await queryBuilder.getMany();
-
-    return data.map((c) => {
-      return plainToClass(TestCollection, {
-        ...c,
-        thumbnail: c.thumbnail ? c.thumbnail["url"] : null,
-        simulatedIeltsTests: c.simulatedIeltsTests.sort((a, b) => a.order.localeCompare(b.order)).slice(0, 4),
-      });
-    });
+    return this.createQueryBuilder().connection.query(`SELECT * from get_filtered_collections($1, $2, $3, $4)`, [
+      offset,
+      limit,
+      keyword,
+      profileId,
+    ]);
   }
 }

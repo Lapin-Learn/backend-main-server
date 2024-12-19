@@ -38,9 +38,10 @@ export class SimulatedTestController {
   async getCollectionWithSimulatedTest(
     @Query("offset", new DefaultValuePipe(0), ParseIntPipe) offset: number,
     @Query("limit", new DefaultValuePipe(10), ParseIntPipe) limit: number,
-    @Query("keyword") keyword: string = ""
+    @Query("keyword") keyword: string = "",
+    @CurrentUser() user: ICurrentUser
   ) {
-    return this.simulatedTestService.getCollectionsWithSimulatedTest(offset, limit, keyword);
+    return this.simulatedTestService.getCollectionsWithSimulatedTest(offset, limit, keyword, user.profileId);
   }
 
   @ApiParam({ name: "id", type: Number, required: true })

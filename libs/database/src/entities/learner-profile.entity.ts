@@ -243,7 +243,7 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
 
   private async isAchieveDailyStreakOrCreate(): Promise<boolean> {
     const bonusStreakPoint = await Activity.getBonusStreakPoint(this.id);
-    if (bonusStreakPoint > 0) {
+    if (bonusStreakPoint == 0) {
       const action = await Action.findByName(ActionNameEnum.DAILY_STREAK);
       await Activity.save({
         profileId: this.id,
