@@ -8,7 +8,7 @@ export interface ExactTestAnswer extends ITestAnswer {
   valid: string;
 }
 
-export interface VariantsTestAnswer extends ITestAnswer {
+export interface VariantTestAnswer extends ITestAnswer {
   variants: string[];
 }
 

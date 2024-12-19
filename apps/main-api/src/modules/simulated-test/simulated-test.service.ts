@@ -5,7 +5,7 @@ import { BadRequestException, Injectable, Logger } from "@nestjs/common";
 import { isNil } from "lodash";
 import { BucketService } from "../bucket/bucket.service";
 import { GradingContext } from "@app/shared-modules/grading";
-import { TestSessionStatusEnum } from "@app/types/enums";
+import { TestSessionModeEnum, TestSessionStatusEnum } from "@app/types/enums";
 
 @Injectable()
 export class SimulatedTestService {
@@ -71,15 +71,29 @@ export class SimulatedTestService {
     try {
       const { status, responses } = sessionData;
       if (status === TestSessionStatusEnum.FINISHED) {
-        const { skillTestId } = await SkillTestSession.findOne({ where: { id: sessionId } });
-        const { answers } = await SkillTestAnswer.findOne({ where: { skillTestId } });
-        const result = [];
-        responses.map((r) => {
-          const answer = answers[r.questionNo];
-          this.gradingContext.setValidator(answer);
-          result.push(this.gradingContext.executeStrategy(r.answer, answer));
+        const { skillTestId, mode } = await SkillTestSession.findOne({ where: { id: sessionId } });
+        const { answers, skillTest } = await SkillTestAnswer.findOne({
+          where: { skillTestId },
+          relations: { skillTest: true },
         });
-        sessionData["results"] = result;
+        const results = [];
+
+        if (answers && answers.length > 0) {
+          responses.map((r) => {
+            const answer = answers[r.questionNo - 1];
+            if (answer) {
+              this.gradingContext.setValidator(answer);
+              results.push(this.gradingContext.validate(r.answer, answer));
+            } else {
+              results.push(null);
+            }
+          });
+          sessionData["results"] = results;
+        }
+        if (mode == TestSessionModeEnum.FULL_TEST) {
+          this.gradingContext.setGradingStrategy(skillTest.skill);
+          sessionData["estimatedBandScore"] = this.gradingContext.grade(results);
+        }
       }
       await SkillTestSession.save({ id: sessionId, ...sessionData });
       return "Ok";

@@ -1,6 +1,16 @@
 import { IGuidance } from "@app/types/interfaces";
 import { ITestAnswer } from "@app/types/interfaces";
-import { Entity, BaseEntity, Column, CreateDateColumn, PrimaryColumn, UpdateDateColumn } from "typeorm";
+import {
+  Entity,
+  BaseEntity,
+  Column,
+  CreateDateColumn,
+  PrimaryColumn,
+  UpdateDateColumn,
+  OneToOne,
+  JoinColumn,
+} from "typeorm";
+import { SkillTest } from "./skill-tests.entity";
 
 @Entity({ name: "skill_test_answers" })
 export class SkillTestAnswer extends BaseEntity {
@@ -24,4 +34,8 @@ export class SkillTestAnswer extends BaseEntity {
     onUpdate: "CURRENT_TIMESTAMP",
   })
   updatedAt: Date;
+
+  @OneToOne(() => SkillTest, { eager: true })
+  @JoinColumn({ name: "skill_test_id", referencedColumnName: "id" })
+  skillTest: SkillTest;
 }
