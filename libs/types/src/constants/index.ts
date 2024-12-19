@@ -5,3 +5,4 @@ export * from "./list-days.constant";
 export * from "./time-zone.constant";
 export * from "./novu-provider.constant";
 export * from "./workflows-name.constanst";
+export * from "./band-score-ranges.constant";

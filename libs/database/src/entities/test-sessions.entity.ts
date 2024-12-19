@@ -29,7 +29,7 @@ export class SkillTestSession extends BaseEntity {
   responses: ITestSessionResponse[];
 
   @Column({ name: "results", type: "jsonb", nullable: true })
-  results: object;
+  results: object[];
 
   @Column({ name: "time_limit", type: "int", nullable: false, default: 0 })
   // 0 when option is "unlimited"
