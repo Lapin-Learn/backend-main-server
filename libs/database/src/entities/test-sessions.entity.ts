@@ -28,7 +28,7 @@ export class SkillTestSession extends BaseEntity {
   @Column({ name: "responses", type: "jsonb", nullable: true })
   responses: ITestSessionResponse[];
 
-  @Column({ name: "results", type: "jsonb", nullable: true })
+  @Column({ name: "results", type: "jsonb", nullable: true, select: false })
   results: object[];
 
   @Column({ name: "time_limit", type: "int", nullable: false, default: 0 })
@@ -77,6 +77,26 @@ export class SkillTestSession extends BaseEntity {
       .andWhere("session.skillTestId = :skillTestId", { skillTestId: sesionData.skillTestId })
       .andWhere("session.timeLimit = :timeLimit", { timeLimit: sesionData.timeLimit })
       .andWhere("session.parts @> :parts", { parts: sesionData.parts })
+      .getOne();
+  }
+
+  static async getSessionDetail(sessionId: number, learnerId: string) {
+    return this.createQueryBuilder("session")
+      .select([
+        "session.id",
+        "session.responses",
+        "session.timeLimit",
+        "session.elapsedTime",
+        "session.mode",
+        "session.parts",
+        "session.status",
+      ])
+      .leftJoin("session.skillTest", "skillTest")
+      .addSelect(["skillTest.id", "skillTest.skill", "skillTest.partsDetail"])
+      .leftJoin("skillTest.simulatedIeltsTest", "test")
+      .addSelect(["test.id", "test.testName"])
+      .where("session.id = :sessionId", { sessionId })
+      .andWhere("session.learnerProfileId = :learnerId", { learnerId })
       .getOne();
   }
 }
