@@ -67,6 +67,24 @@ export class SimulatedTestService {
     }
   }
 
+  async getSessionDetail(sessionId: number, profileId: string) {
+    try {
+      const session = await SkillTestSession.getSessionDetail(sessionId, profileId);
+      if (session) {
+        const parts = session.parts;
+        const partsDetail = session.skillTest?.partsDetail || [];
+
+        session.skillTest.partsDetail = parts
+          .filter((partIndex) => partIndex > 0 && partIndex <= partsDetail.length)
+          .map((partIndex) => partsDetail[partIndex - 1]);
+      }
+      return session;
+    } catch (error) {
+      this.logger.error(error);
+      throw new BadRequestException(error);
+    }
+  }
+
   async updateSession(sessionId: number, sessionData: UpdateSessionDto) {
     try {
       const { status, responses } = sessionData;
