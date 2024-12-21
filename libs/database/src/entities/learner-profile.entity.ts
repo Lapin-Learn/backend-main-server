@@ -297,19 +297,10 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
 
   // Active Record Pattern
   static async getBrokenStreakProfiles() {
-    // Midnight yesterday in GMT+7
-    const beginOfYesterday = getBeginOfOffsetDay(-1);
-
-    // 23:59:59 yesterday in GMT+7
-    const endOfYesterday = getEndOfOffsetDay(-1);
-
     const rawValidLearnerProfileIds = await this.createQueryBuilder("learnerProfiles")
       .leftJoinAndSelect("learnerProfiles.activities", "activities")
       .leftJoinAndSelect("activities.action", "actions")
-      .where("activities.finishedAt BETWEEN :beginOfYesterday AND :endOfYesterday", {
-        beginOfYesterday,
-        endOfYesterday,
-      })
+      .where("DATE(activities.finishedAt) = CURRENT_DATE - 1")
       .andWhere("actions.name = :actionName", { actionName: ActionNameEnum.DAILY_STREAK })
       .select("learnerProfiles.id")
       .getMany();
@@ -430,6 +421,7 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
       .leftJoinAndSelect("learnerProfiles.streak", "streaks")
       .leftJoinAndSelect("learnerProfiles.activities", "activities")
       .where("streaks.current IN (:...milestones)", { milestones: [7, 30, 100] })
+      .andWhere("streaks.extended = false")
       .andWhere((qb) => {
         const subQuery = qb
           .subQuery()
