@@ -13,6 +13,7 @@ import {
 import { TestCollection } from "./test-collections.entity";
 import { Exclude } from "class-transformer";
 import { SkillTest } from "./skill-tests.entity";
+import { SkillTestSession } from "./test-sessions.entity";
 
 @Entity({ name: "simulated_ielts_tests" })
 export class SimulatedIeltsTest extends BaseEntity implements ISimulatedIeltsTest {
@@ -48,14 +49,45 @@ export class SimulatedIeltsTest extends BaseEntity implements ISimulatedIeltsTes
   @OneToMany(() => SkillTest, (skillTest) => skillTest.simulatedIeltsTest)
   skillTests: SkillTest[];
 
-  static async getSimulatedTestInCollections(collectionId: number, offset: number, limit: number) {
+  static async getSimulatedTestInCollections(collectionId: number, offset: number, limit: number, profileId: string) {
     return this.createQueryBuilder("simulatedTests")
+      .select(["simulatedTests.id as id", "simulatedTests.testName as testName", "simulatedTests.order as order"])
       .leftJoin("simulatedTests.skillTests", "skillTest")
-      .addSelect(["skillTest.id", "skillTest.skill", "skillTest.partsDetail"])
-      .where("simulatedTests.collection_id = :collectionId", { collectionId })
+      .addSelect(["skillTest.id as skillTestId", "skillTest.skill as skill", "skillTest.partsDetail as partsDetail"])
+      .leftJoin(
+        (subQuery) => {
+          return subQuery
+            .select([
+              "session.id as sessionId",
+              "session.skillTestId as sessionSkillTestId",
+              "session.estimatedBandScore as estimatedBandScore",
+              "session.status as status",
+              "COALESCE(session.elapsedTime, 0) as elapsedTime",
+            ])
+            .from(SkillTestSession, "session")
+            .where("session.learnerProfileId = :profileId", { profileId })
+            .andWhere(
+              `session.createdAt = (
+                SELECT MAX(subsession.created_at) 
+                FROM skill_test_sessions subsession 
+                WHERE subsession.skill_test_id = session.skill_test_id)`
+            );
+        },
+        "latestSession",
+        '"latestSession".sessionSkillTestId = skillTest.id',
+        { profileId }
+      )
+      .addSelect([
+        '"latestSession".status',
+        '"latestSession".estimatedBandScore ',
+        '"latestSession".sessionId',
+        '"latestSession".elapsedTime',
+      ])
+      .where("simulatedTests.collectionId = :collectionId", { collectionId })
       .orderBy("simulatedTests.order")
+      .addOrderBy("skillTest.skill")
       .skip(offset)
       .take(limit)
-      .getMany();
+      .getRawMany();
   }
 }

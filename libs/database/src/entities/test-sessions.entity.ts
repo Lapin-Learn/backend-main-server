@@ -28,7 +28,7 @@ export class SkillTestSession extends BaseEntity {
   @Column({ name: "responses", type: "jsonb", nullable: true })
   responses: ITestSessionResponse[];
 
-  @Column({ name: "results", type: "jsonb", nullable: true, select: false })
+  @Column({ name: "results", type: "jsonb", nullable: true })
   results: object[];
 
   @Column({ name: "time_limit", type: "int", nullable: false, default: 0 })
@@ -91,6 +91,8 @@ export class SkillTestSession extends BaseEntity {
         "session.mode",
         "session.parts",
         "session.status",
+        "session.results",
+        "session.updatedAt",
       ])
       .leftJoin("session.skillTest", "skillTest")
       .addSelect(["skillTest.id", "skillTest.skill", "skillTest.partsDetail"])

@@ -53,9 +53,10 @@ export class SimulatedTestController {
   async getSimulatedTestsOfCollection(
     @Param("id", ParseIntPipe) collectionId: number,
     @Query("offset", new DefaultValuePipe(0), ParseIntPipe) offset: number,
-    @Query("limit", new DefaultValuePipe(10), ParseIntPipe) limit: number
+    @Query("limit", new DefaultValuePipe(10), ParseIntPipe) limit: number,
+    @CurrentUser() user: ICurrentUser
   ) {
-    return this.simulatedTestService.getSimulatedTestsInCollections(collectionId, offset, limit);
+    return this.simulatedTestService.getSimulatedTestsInCollections(collectionId, offset, limit, user.profileId);
   }
 
   @ApiBody({ type: StartSessionDto })
