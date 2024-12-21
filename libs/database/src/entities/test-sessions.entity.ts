@@ -92,6 +92,7 @@ export class SkillTestSession extends BaseEntity {
         "session.parts",
         "session.status",
         "session.results",
+        "session.estimatedBandScore",
         "session.updatedAt",
       ])
       .leftJoin("session.skillTest", "skillTest")
