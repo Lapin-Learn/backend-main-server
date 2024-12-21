@@ -70,13 +70,14 @@ export class SkillTestSession extends BaseEntity {
   @JoinColumn({ name: "learner_profile_id", referencedColumnName: "id" })
   learnerProfile: LearnerProfile;
 
-  static async findExistedSession(learnerId: string, sesionData: StartSessionDto) {
+  static async findExistedSession(learnerId: string, sessionData: StartSessionDto) {
     return this.createQueryBuilder("session")
       .where("session.learnerProfileId = :learnerId", { learnerId })
+      .andWhere("session.mode = :mode", { mode: sessionData.mode })
       .andWhere("session.status = :status", { status: TestSessionStatusEnum.IN_PROGRESS })
-      .andWhere("session.skillTestId = :skillTestId", { skillTestId: sesionData.skillTestId })
-      .andWhere("session.timeLimit = :timeLimit", { timeLimit: sesionData.timeLimit })
-      .andWhere("session.parts @> :parts", { parts: sesionData.parts })
+      .andWhere("session.skillTestId = :skillTestId", { skillTestId: sessionData.skillTestId })
+      .andWhere("session.timeLimit = :timeLimit", { timeLimit: sessionData.timeLimit })
+      .andWhere("session.parts @> :parts", { parts: sessionData.parts })
       .getOne();
   }
 
