@@ -34,9 +34,10 @@ export class SimulatedTestService {
       const items = await SimulatedIeltsTest.getSimulatedTestInCollections(collectionId, offset, limit, profileId);
       const groupedItems = _.groupBy(items, "id");
 
-      const formattedItems = _.map(groupedItems, (group, testName) => {
+      const formattedItems = _.map(groupedItems, (group) => {
         const collectionId = group[0].id || null;
         const order = group[0].order || null;
+        const testName = group[0].testname || "";
         let totalTimeSpent = 0;
 
         const skillTests = _.map(group, (item) => {
