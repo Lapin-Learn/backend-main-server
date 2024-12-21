@@ -46,7 +46,7 @@ export class GradingContext {
   }
 
   validate(userResponse: string, testAnswer: ITestAnswer) {
-    const preprocessResponse = userResponse.trim().toLowerCase().replace(/\s+/g, " ");
+    const preprocessResponse = userResponse != null ? userResponse.trim().toLowerCase().replace(/\s+/g, " ") : "";
     return this.validatorStrategy.validate(preprocessResponse, testAnswer);
   }
 

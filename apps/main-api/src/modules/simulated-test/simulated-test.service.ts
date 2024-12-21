@@ -106,6 +106,9 @@ export class SimulatedTestService {
         session.skillTest.partsDetail = parts
           .filter((partIndex) => partIndex > 0 && partIndex <= partsDetail.length)
           .map((partIndex) => partsDetail[partIndex - 1]);
+
+        session.skillTest["answers"] = session.skillTest.skillTestAnswer.answers ?? [];
+        delete session.skillTest.skillTestAnswer;
       }
       return session;
     } catch (error) {
