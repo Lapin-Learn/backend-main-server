@@ -430,6 +430,7 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
       .leftJoinAndSelect("learnerProfiles.streak", "streaks")
       .leftJoinAndSelect("learnerProfiles.activities", "activities")
       .where("streaks.current IN (:...milestones)", { milestones: [7, 30, 100] })
+      .andWhere("streaks.extended = false")
       .andWhere((qb) => {
         const subQuery = qb
           .subQuery()
