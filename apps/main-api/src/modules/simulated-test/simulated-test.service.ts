@@ -2,7 +2,7 @@ import { SimulatedIeltsTest, SkillTest, SkillTestAnswer, SkillTestSession, TestC
 import { StartSessionDto, UpdateSessionDto } from "@app/types/dtos/simulated-tests";
 import { ICurrentUser, ITestCollection } from "@app/types/interfaces";
 import { BadRequestException, Injectable, Logger } from "@nestjs/common";
-import { isNil } from "lodash";
+import _ from "lodash";
 import { BucketService } from "../bucket/bucket.service";
 import { GradingContext } from "@app/shared-modules/grading";
 import { TestSessionModeEnum, TestSessionStatusEnum } from "@app/types/enums";
@@ -29,9 +29,37 @@ export class SimulatedTestService {
     }
   }
 
-  async getSimulatedTestsInCollections(collectionId: number, offset: number, limit: number) {
+  async getSimulatedTestsInCollections(collectionId: number, offset: number, limit: number, profileId: string) {
     try {
-      return SimulatedIeltsTest.getSimulatedTestInCollections(collectionId, offset, limit);
+      const items = await SimulatedIeltsTest.getSimulatedTestInCollections(collectionId, offset, limit, profileId);
+      const groupedItems = _.groupBy(items, "id");
+
+      const formattedItems = _.map(groupedItems, (group, testName) => {
+        const collectionId = group[0].id || null;
+        const order = group[0].order || null;
+        let totalTimeSpent = 0;
+
+        const skillTests = _.map(group, (item) => {
+          totalTimeSpent += item.elapsedtime;
+          return {
+            id: item.skilltestid,
+            skill: item.skill,
+            partsDetail: item.partsdetail || [],
+            status: item.status || null,
+            estimatedBandScore: item.estimatedbandscore || null,
+            sessionId: item.sessionid,
+          };
+        });
+
+        return {
+          id: collectionId,
+          order,
+          testName,
+          totalTimeSpent,
+          skillTests,
+        };
+      });
+      return formattedItems;
     } catch (error) {
       this.logger.error(error);
       throw new BadRequestException(error);
@@ -130,7 +158,8 @@ export class SimulatedTestService {
         },
       });
 
-      if (isNil(skillTest) || isNil(skillTest.partsContent)) throw new BadRequestException("Test data doesn't existed");
+      if (_.isNil(skillTest) || _.isNil(skillTest.partsContent))
+        throw new BadRequestException("Test data doesn't existed");
       if (skillTest.partsContent.length < part) throw new BadRequestException(`Test doesn't have part ${part}`);
       return skillTest.partsContent[part - 1];
     } catch (error) {
