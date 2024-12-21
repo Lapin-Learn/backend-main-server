@@ -89,7 +89,7 @@ export class SimulatedTestService {
     try {
       const { status, responses } = sessionData;
       if (status === TestSessionStatusEnum.FINISHED) {
-        const { skillTestId, mode } = await SkillTestSession.findOne({ where: { id: sessionId } });
+        const { skillTestId, mode, parts } = await SkillTestSession.findOne({ where: { id: sessionId } });
         const { answers, skillTest } = await SkillTestAnswer.findOne({
           where: { skillTestId },
           relations: { skillTest: true },
@@ -108,7 +108,7 @@ export class SimulatedTestService {
           });
           sessionData["results"] = results;
         }
-        if (mode == TestSessionModeEnum.FULL_TEST) {
+        if (mode == TestSessionModeEnum.FULL_TEST || parts.length === skillTest.partsDetail.length) {
           this.gradingContext.setGradingStrategy(skillTest.skill);
           sessionData["estimatedBandScore"] = this.gradingContext.grade(results);
         }
