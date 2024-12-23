@@ -95,6 +95,7 @@ export class UserService {
           email: true,
           dob: true,
           gender: true,
+          role: true,
         },
       });
     } catch (error) {
