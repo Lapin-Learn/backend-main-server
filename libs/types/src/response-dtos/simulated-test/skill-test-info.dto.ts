@@ -1,4 +1,4 @@
-import { SkillEnum } from "@app/types/enums";
+import { SkillEnum, TestSessionStatusEnum } from "@app/types/enums";
 import { ApiProperty } from "@nestjs/swagger";
 
 export class PartDetailDto {
@@ -15,4 +15,10 @@ export class SkillTestInfo {
 
   @ApiProperty({ type: PartDetailDto, isArray: true })
   partsDetail: PartDetailDto;
+
+  @ApiProperty({ type: Number, nullable: true })
+  estimatedBandScore: number;
+
+  @ApiProperty({ enum: TestSessionStatusEnum })
+  status: TestSessionStatusEnum;
 }

@@ -28,7 +28,7 @@ export class SkillTestSession extends BaseEntity {
   @Column({ name: "responses", type: "jsonb", nullable: true })
   responses: ITestSessionResponse[];
 
-  @Column({ name: "results", type: "jsonb", nullable: true, select: false })
+  @Column({ name: "results", type: "jsonb", nullable: true })
   results: object[];
 
   @Column({ name: "time_limit", type: "int", nullable: false, default: 0 })
@@ -70,13 +70,14 @@ export class SkillTestSession extends BaseEntity {
   @JoinColumn({ name: "learner_profile_id", referencedColumnName: "id" })
   learnerProfile: LearnerProfile;
 
-  static async findExistedSession(learnerId: string, sesionData: StartSessionDto) {
+  static async findExistedSession(learnerId: string, sessionData: StartSessionDto) {
     return this.createQueryBuilder("session")
       .where("session.learnerProfileId = :learnerId", { learnerId })
+      .andWhere("session.mode = :mode", { mode: sessionData.mode })
       .andWhere("session.status = :status", { status: TestSessionStatusEnum.IN_PROGRESS })
-      .andWhere("session.skillTestId = :skillTestId", { skillTestId: sesionData.skillTestId })
-      .andWhere("session.timeLimit = :timeLimit", { timeLimit: sesionData.timeLimit })
-      .andWhere("session.parts @> :parts", { parts: sesionData.parts })
+      .andWhere("session.skillTestId = :skillTestId", { skillTestId: sessionData.skillTestId })
+      .andWhere("session.timeLimit = :timeLimit", { timeLimit: sessionData.timeLimit })
+      .andWhere("session.parts @> :parts", { parts: sessionData.parts })
       .getOne();
   }
 
@@ -90,11 +91,16 @@ export class SkillTestSession extends BaseEntity {
         "session.mode",
         "session.parts",
         "session.status",
+        "session.results",
+        "session.estimatedBandScore",
+        "session.updatedAt",
       ])
       .leftJoin("session.skillTest", "skillTest")
       .addSelect(["skillTest.id", "skillTest.skill", "skillTest.partsDetail"])
       .leftJoin("skillTest.simulatedIeltsTest", "test")
       .addSelect(["test.id", "test.testName"])
+      .leftJoin("skillTest.skillTestAnswer", "answer")
+      .addSelect(["answer.answers"])
       .where("session.id = :sessionId", { sessionId })
       .andWhere("session.learnerProfileId = :learnerId", { learnerId })
       .getOne();

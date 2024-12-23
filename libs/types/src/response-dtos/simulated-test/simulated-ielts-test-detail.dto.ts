@@ -13,4 +13,7 @@ export class SimulatedIeltsTestDetailDto {
 
   @ApiProperty({ type: SkillTestInfo, isArray: true })
   skillTests: SkillTestInfo[];
+
+  @ApiProperty({ type: Number })
+  totalTimeSpent: number;
 }

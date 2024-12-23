@@ -5,7 +5,7 @@ import { Account, LearnerProfile } from "@app/database";
 import { isNil } from "lodash";
 import { CreateUserDto, UpdateAccountByAdminDto, UpdateAccountDto } from "@app/types/dtos";
 import { EntityNotFoundError } from "typeorm";
-import { IAccount } from "@app/types/interfaces";
+import { IAccount, ICurrentUser } from "@app/types/interfaces";
 
 @Injectable()
 export class UserService {
@@ -154,6 +154,18 @@ export class UserService {
       } else if (error instanceof EntityNotFoundError) {
         throw new BadRequestException("User not found");
       }
+      throw new BadRequestException(error);
+    }
+  }
+
+  async deleteAccount(user: ICurrentUser) {
+    try {
+      const dbUser = await Account.findOneOrFail({ where: { id: user.userId } });
+      await this.firebaseService.deleteFirebaseAccount(dbUser.providerId);
+      await Account.softRemove(dbUser);
+      return "OK";
+    } catch (error) {
+      this.logger.error(error);
       throw new BadRequestException(error);
     }
   }

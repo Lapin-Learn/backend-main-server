@@ -4,6 +4,7 @@ import {
   BaseEntity,
   Column,
   CreateDateColumn,
+  DeleteDateColumn,
   Entity,
   JoinColumn,
   OneToOne,
@@ -46,6 +47,9 @@ export class Account extends BaseEntity implements IAccount {
 
   @CreateDateColumn({ name: "created_at", type: "timestamp", nullable: false, default: () => "CURRENT_TIMESTAMP" })
   createdAt: Date;
+
+  @DeleteDateColumn({ name: "deleted_at", type: "timestamp", nullable: true })
+  deletedAt: Date;
 
   @UpdateDateColumn({
     name: "updated_at",

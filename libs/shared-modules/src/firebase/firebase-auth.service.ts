@@ -55,7 +55,6 @@ export class FirebaseAuthService {
     const additionalClaims = data ? { data } : {};
     return getAuth(this.app).createCustomToken(uid, additionalClaims);
   }
-
   async verifyUser(email: string, password: string) {
     try {
       const response = await this.httpService.post(
@@ -170,6 +169,16 @@ export class FirebaseAuthService {
     try {
       const auth = getAuth(this.app);
       await auth.revokeRefreshTokens(uid);
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
+  async deleteFirebaseAccount(uid: string) {
+    try {
+      const auth = getAuth(this.app);
+      await auth.deleteUser(uid);
     } catch (error) {
       this.logger.error(error);
       throw error;
