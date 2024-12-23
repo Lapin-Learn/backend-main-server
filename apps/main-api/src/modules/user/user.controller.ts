@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Put, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Put, UseGuards } from "@nestjs/common";
 import { UserService } from "./user.service";
 import { FirebaseJwtAuthGuard } from "../../guards";
 import { ApiDefaultResponses, CurrentUser } from "../../decorators";
@@ -45,5 +45,10 @@ export class UserController {
   @ApiBody({ type: ChangePasswordDto })
   async changePassword(@CurrentUser() user: ICurrentUser, @Body() data: ChangePasswordDto) {
     return this.userService.changePassword(user.userId, data.oldPassword, data.newPassword);
+  }
+
+  @Delete("account")
+  async deleteAccount(@CurrentUser() user: ICurrentUser) {
+    return this.userService.deleteAccount(user);
   }
 }
