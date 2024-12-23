@@ -1,25 +1,33 @@
-import { GENAI_FILE_MANAGER, GENAI_SPEAKING_SCORE_EVALUATION, GENAI_SPEECH_TO_IPA } from "@app/types/constants";
-import { GenerativeModel } from "@google/generative-ai";
+import { GENAI_FILE_MANAGER, GENAI_MANAGER } from "@app/types/constants";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { GoogleAIFileManager } from "@google/generative-ai/server";
 import { BadRequestException, Inject, Injectable, Logger } from "@nestjs/common";
 import * as tmp from "tmp";
 import * as fs from "fs";
 import path from "path";
 import DiffMatchPatch from "diff-match-patch";
+import { GenAISpeakingModel } from "@app/shared-modules/genai/model/genai-speaking-model.service";
+import { GenAISpeakingIPAModel, GenAISpeakingScoreModel } from "@app/shared-modules/genai";
 
 const PUNCTUATION = "/[.,/#!$%^&*;:{}=-_`~()]/g";
 
 @Injectable()
 export class AISpeakingService {
   private readonly logger = new Logger(AISpeakingService.name);
+  private genAISpeakingModel: GenAISpeakingModel;
+  private genAISpeakingScoreEvaluationModel: GenAISpeakingScoreModel;
+  private genAISpeechToIPAModel: GenAISpeakingIPAModel;
 
   constructor(
-    @Inject(GENAI_SPEAKING_SCORE_EVALUATION) private readonly genAISpeakingScoreEvaluationModel: GenerativeModel,
-    @Inject(GENAI_SPEECH_TO_IPA) private readonly genAISpeechToIPAModel: GenerativeModel,
-    @Inject(GENAI_FILE_MANAGER) private readonly fileManager: GoogleAIFileManager
-  ) {}
+    @Inject(GENAI_MANAGER) private readonly genAIManager: GoogleGenerativeAI,
+    @Inject(GENAI_FILE_MANAGER) private readonly genAIFileManager: GoogleAIFileManager
+  ) {
+    this.genAISpeakingModel = new GenAISpeakingModel(this.genAIManager);
+    this.genAISpeakingScoreEvaluationModel = new GenAISpeakingScoreModel(this.genAIManager);
+    this.genAISpeechToIPAModel = new GenAISpeakingIPAModel(this.genAIManager);
+  }
 
-  async generateResponse(file: Express.Multer.File) {
+  async generateScore(file: Express.Multer.File) {
     // Create a temporary file with automatic cleanup
     const tempFile = tmp.fileSync({ postfix: path.extname(file.originalname) });
 
@@ -28,7 +36,7 @@ export class AISpeakingService {
       fs.writeFileSync(tempFile.name, file.buffer);
 
       // Upload file using the file manager
-      const uploadResult = await this.fileManager.uploadFile(tempFile.name, {
+      const uploadResult = await this.genAIFileManager.uploadFile(tempFile.name, {
         mimeType: file.mimetype,
         displayName: file.originalname,
       });
@@ -44,7 +52,7 @@ export class AISpeakingService {
         },
       ]);
 
-      return JSON.parse(result.response.text());
+      return result;
     } catch (error) {
       this.logger.error(error);
       throw new BadRequestException(error);
@@ -62,7 +70,7 @@ export class AISpeakingService {
       fs.writeFileSync(tempFile.name, file.buffer);
 
       // Upload file using the file manager
-      const uploadResult = await this.fileManager.uploadFile(tempFile.name, {
+      const uploadResult = await this.genAIFileManager.uploadFile(tempFile.name, {
         mimeType: file.mimetype,
         displayName: file.originalname,
       });
@@ -85,8 +93,9 @@ export class AISpeakingService {
         },
       ]);
 
-      const speechIPA = JSON.parse(speechIPAResult.response.text())?.ipa;
-      const originalIPA = JSON.parse(originalIPAResult.response.text())?.ipa;
+      const speechIPA = speechIPAResult.ipa;
+      const originalIPA = originalIPAResult.ipa;
+      console.log(originalIPAResult);
       const matchingBlocks = AISpeakingService.getMatchingBlocks(speechIPA, originalIPA);
       const mappedStringArray = originalIPA.split("")?.map((c: string) => {
         if (c === " ") return " ";
@@ -107,7 +116,7 @@ export class AISpeakingService {
       );
 
       const wordSplits = mappedStringArray.join("").split(" ");
-      const correctLetters = AISpeakingService.evaluateWords(wordSplits);
+      const correctLetters = this.evaluateWords(wordSplits);
 
       return {
         original_ipa_transcript: originalIPA,
@@ -149,7 +158,7 @@ export class AISpeakingService {
     return matchingBlocks;
   }
 
-  static evaluateWords(wordSplits: string[]) {
+  evaluateWords(wordSplits: string[]) {
     const result = []; // Store results (0, 1, or 2)
 
     for (const word of wordSplits) {
@@ -165,5 +174,14 @@ export class AISpeakingService {
     }
 
     return result;
+  }
+
+  async generateQuestion() {
+    try {
+      return this.genAISpeakingModel.generateContent();
+    } catch (error) {
+      this.logger.error(error);
+      throw new BadRequestException(error);
+    }
   }
 }

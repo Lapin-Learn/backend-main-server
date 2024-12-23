@@ -1,10 +1,11 @@
 import { Module } from "@nestjs/common";
 import { AISpeakingController } from "./ai-speaking.controller";
 import { AISpeakingService } from "./ai-speaking.service";
-import { GenAIFileManagerProvider, GenAISpeakingScoreProvider, GenAISpeech2IPAProvider } from "../providers";
+import { GenAIModule } from "@app/shared-modules/genai";
 
 @Module({
+  imports: [GenAIModule],
   controllers: [AISpeakingController],
-  providers: [AISpeakingService, GenAISpeakingScoreProvider, GenAIFileManagerProvider, GenAISpeech2IPAProvider],
+  providers: [AISpeakingService],
 })
 export class AISpeakingModule {}
