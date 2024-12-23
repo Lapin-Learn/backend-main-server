@@ -1,11 +1,12 @@
-import { GENAI_SPEAKING_SCORE_EVALUATION } from "@app/types/constants";
+import { GenAIModelAbstract } from "@app/types/abstracts";
 import { GoogleGenerativeAI, ResponseSchema, SchemaType } from "@google/generative-ai";
-import { FactoryProvider } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
 
-export const GenAISpeakingScoreProvider: FactoryProvider = {
-  provide: GENAI_SPEAKING_SCORE_EVALUATION,
-  useFactory: async (configService: ConfigService) => {
+export class GenAISpeakingScoreModel extends GenAIModelAbstract {
+  constructor(readonly genAIManager: GoogleGenerativeAI) {
+    super(genAIManager);
+  }
+
+  getSchema(): ResponseSchema {
     const schema: ResponseSchema = {
       type: SchemaType.OBJECT,
       properties: {
@@ -19,15 +20,11 @@ export const GenAISpeakingScoreProvider: FactoryProvider = {
         },
       },
     };
+    return schema;
+  }
 
-    const genAI = new GoogleGenerativeAI(configService.get("GEMINI_API_KEY"));
-    const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash",
-      generationConfig: {
-        responseMimeType: "application/json",
-        responseSchema: schema,
-      },
-      systemInstruction: `
+  getSystemInstruction(): string {
+    return `
         You are an AI assistant designed to evaluate the IELTS Speaking test based on official band score criteria. 
         Your role is to analyze the user's audio input and provide:
         1. A band score (0-9) based on the following categories:
@@ -36,10 +33,6 @@ export const GenAISpeakingScoreProvider: FactoryProvider = {
            - Grammatical Range and Accuracy: Check sentence structures and error frequency.
            - Pronunciation: Determine clarity, stress, rhythm, and intonation.
         2. Feedback: Offer specific and constructive feedback for improvement in each category.
-        `,
-    });
-
-    return model;
-  },
-  inject: [ConfigService],
-};
+        `;
+  }
+}
