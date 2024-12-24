@@ -6,6 +6,7 @@ import { ILevel } from "./level.interface";
 import { IProfileBadge } from "./profile-badge.interface";
 import { IProfileItem } from "./profile-item.interface";
 import { IProfileMissionProgress } from "./profile-mission-progress.interface";
+import { ISpeakingRoom } from "./speaking-room.interface";
 import { IStreak } from "./streak.interface";
 
 export interface ILearnerProfile {
@@ -27,4 +28,5 @@ export interface ILearnerProfile {
   readonly profileItems: IProfileItem[];
   readonly lessonRecords: ILessonRecord[];
   readonly lessonProcesses: ILessonProcess[];
+  readonly speakingRooms: ISpeakingRoom[];
 }

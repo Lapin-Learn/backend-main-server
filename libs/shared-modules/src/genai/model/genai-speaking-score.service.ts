@@ -14,11 +14,24 @@ export class GenAISpeakingScoreModel extends GenAIModelAbstract {
           type: SchemaType.NUMBER,
           description: "The estimated band score",
         },
-        feedback: {
+        fluencyCoherence: {
           type: SchemaType.STRING,
-          description: "Feedback for the user",
+          description: "Fluency and Coherence feedback",
+        },
+        lexicalResource: {
+          type: SchemaType.STRING,
+          description: "Lexical Resource feedback",
+        },
+        grammaticalRangeAccuracy: {
+          type: SchemaType.STRING,
+          description: "Grammatical Range and Accuracy feedback",
+        },
+        pronunciation: {
+          type: SchemaType.STRING,
+          description: "Pronunciation feedback",
         },
       },
+      required: ["bandScore", "fluencyCoherence", "lexicalResource", "grammaticalRangeAccuracy", "pronunciation"],
     };
     return schema;
   }
@@ -33,6 +46,7 @@ export class GenAISpeakingScoreModel extends GenAIModelAbstract {
            - Grammatical Range and Accuracy: Check sentence structures and error frequency.
            - Pronunciation: Determine clarity, stress, rhythm, and intonation.
         2. Feedback: Offer specific and constructive feedback for improvement in each category.
+        3. Use users' previous feedback to adapt and improve your evaluation (if available).
         `;
   }
 }
