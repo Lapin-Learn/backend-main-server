@@ -25,3 +25,4 @@ export * from "./simulated-ielts-tests.entity";
 export * from "./skill-tests.entity";
 export * from "./test-sessions.entity";
 export * from "./skill_test_answers.entity";
+export * from "./speaking-room.entity";
