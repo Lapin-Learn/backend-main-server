@@ -8,6 +8,8 @@ import path from "path";
 import DiffMatchPatch from "diff-match-patch";
 import { GenAISpeakingModel } from "@app/shared-modules/genai/model/genai-speaking-model.service";
 import { GenAISpeakingIPAModel, GenAISpeakingScoreModel } from "@app/shared-modules/genai";
+import { ICurrentUser } from "@app/types/interfaces";
+import { SpeakingRoom } from "@app/database";
 
 const PUNCTUATION = "/[.,/#!$%^&*;:{}=-_`~()]/g";
 
@@ -27,11 +29,33 @@ export class AISpeakingService {
     this.genAISpeechToIPAModel = new GenAISpeakingIPAModel(this.genAIManager);
   }
 
-  async generateScore(file: Express.Multer.File) {
+  async generateQuestion(user: ICurrentUser) {
+    try {
+      const result = await this.genAISpeakingModel.generateContent();
+      const speakingRoom = await SpeakingRoom.save({
+        profileId: user.profileId,
+        content: result?.content,
+      });
+      return {
+        id: speakingRoom.id,
+        content: result?.content,
+      };
+    } catch (error) {
+      this.logger.error(error);
+      throw new BadRequestException(error);
+    }
+  }
+
+  async generateScore(id: string, part: number, order: number, file: Express.Multer.File, user: ICurrentUser) {
     // Create a temporary file with automatic cleanup
     const tempFile = tmp.fileSync({ postfix: path.extname(file.originalname) });
+    let geminiFileName = "";
 
     try {
+      // Find the current speaking room
+      const speakingRoom = await SpeakingRoom.findOneOrFail({ where: { id, profileId: user.profileId } });
+      const question = speakingRoom.content[part.toString()][order - 1]; // Order is 1-based
+
       // Write the uploaded file buffer to the temp file
       fs.writeFileSync(tempFile.name, file.buffer);
 
@@ -40,10 +64,15 @@ export class AISpeakingService {
         mimeType: file.mimetype,
         displayName: file.originalname,
       });
+      geminiFileName = uploadResult.file.name;
 
       // Generate content using the AI model
       const result = await this.genAISpeakingScoreEvaluationModel.generateContent([
-        "Follow the instructions",
+        `Evaluate speaking score for the following question and previous evaluation (if available): 
+        {
+          "question": "${question}",
+          "previousEvaluation": "${speakingRoom?.evaluation}",
+        }`,
         {
           fileData: {
             fileUri: uploadResult.file.uri,
@@ -51,6 +80,7 @@ export class AISpeakingService {
           },
         },
       ]);
+      await SpeakingRoom.update({ id }, { evaluation: result });
 
       return result;
     } catch (error) {
@@ -58,6 +88,23 @@ export class AISpeakingService {
       throw new BadRequestException(error);
     } finally {
       tempFile.removeCallback();
+      this.genAIFileManager.deleteFile(geminiFileName);
+      // Delete it manually
+      // Or it will automatically be adeleted after 48 hours
+    }
+  }
+
+  async getQuestionById(id: string, user: ICurrentUser) {
+    try {
+      const speakingRoom = await SpeakingRoom.findOneOrFail({ where: { id, profileId: user.profileId } });
+      return {
+        id: speakingRoom.id,
+        content: speakingRoom.content,
+        evaluation: speakingRoom.evaluation,
+      };
+    } catch (error) {
+      this.logger.error(error);
+      throw new BadRequestException(error);
     }
   }
 
@@ -96,7 +143,7 @@ export class AISpeakingService {
       const speechIPA = speechIPAResult.ipa;
       const originalIPA = originalIPAResult.ipa;
       console.log(originalIPAResult);
-      const matchingBlocks = AISpeakingService.getMatchingBlocks(speechIPA, originalIPA);
+      const matchingBlocks = this.getMatchingBlocks(speechIPA, originalIPA);
       const mappedStringArray = originalIPA.split("")?.map((c: string) => {
         if (c === " ") return " ";
         if (c.match(PUNCTUATION)) return "1";
@@ -130,7 +177,7 @@ export class AISpeakingService {
     }
   }
 
-  static getMatchingBlocks(src: string, dest: string) {
+  getMatchingBlocks(src: string, dest: string) {
     const dmp = new DiffMatchPatch();
     const diffs = dmp.diff_main(src, dest);
     dmp.diff_cleanupSemantic(diffs);
@@ -174,14 +221,5 @@ export class AISpeakingService {
     }
 
     return result;
-  }
-
-  async generateQuestion() {
-    try {
-      return this.genAISpeakingModel.generateContent();
-    } catch (error) {
-      this.logger.error(error);
-      throw new BadRequestException(error);
-    }
   }
 }
