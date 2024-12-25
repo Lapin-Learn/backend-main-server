@@ -9,7 +9,7 @@ import DiffMatchPatch from "diff-match-patch";
 import { GenAISpeakingModel } from "@app/shared-modules/genai/model/genai-speaking-model.service";
 import { GenAISpeakingIPAModel, GenAISpeakingScoreModel } from "@app/shared-modules/genai";
 import { ICurrentUser } from "@app/types/interfaces";
-import { SpeakingRoom } from "@app/database";
+import { SpeakingRoom, SpeakingRoomEvaluation } from "@app/database";
 
 const PUNCTUATION = "/[.,/#!$%^&*;:{}=-_`~()]/g";
 
@@ -29,11 +29,10 @@ export class AISpeakingService {
     this.genAISpeechToIPAModel = new GenAISpeakingIPAModel(this.genAIManager);
   }
 
-  async generateQuestion(user: ICurrentUser) {
+  async generateQuestion() {
     try {
       const result = await this.genAISpeakingModel.generateContent();
       const speakingRoom = await SpeakingRoom.save({
-        profileId: user.profileId,
         content: result?.content,
       });
       return {
@@ -53,8 +52,9 @@ export class AISpeakingService {
 
     try {
       // Find the current speaking room
-      const speakingRoom = await SpeakingRoom.findOneOrFail({ where: { id, profileId: user.profileId } });
+      const speakingRoom = await SpeakingRoom.findOneOrFail({ where: { id } });
       const question = speakingRoom.content[part.toString()][order - 1]; // Order is 1-based
+      const allQuestions = speakingRoom.content;
 
       // Write the uploaded file buffer to the temp file
       fs.writeFileSync(tempFile.name, file.buffer);
@@ -66,12 +66,24 @@ export class AISpeakingService {
       });
       geminiFileName = uploadResult.file.name;
 
+      // Get current evaluation
+      const existedEvaluation = await SpeakingRoomEvaluation.findOne({
+        where: { speakingRoomId: id, profileId: user.profileId },
+      });
+      let currentEvaluation = existedEvaluation;
+      if (!existedEvaluation) {
+        currentEvaluation = await SpeakingRoomEvaluation.save({
+          speakingRoomId: id,
+          profileId: user.profileId,
+        });
+      }
+
       // Generate content using the AI model
-      const result = await this.genAISpeakingScoreEvaluationModel.generateContent([
-        `Evaluate speaking score for the following question and previous evaluation (if available): 
+      const singlePartEvaluation = await this.genAISpeakingScoreEvaluationModel.generateContent([
+        `Evaluate speaking score for the following question and previous evaluation: 
         {
           "question": "${question}",
-          "previousEvaluation": "${speakingRoom?.evaluation}",
+          "previousEvaluation": "${currentEvaluation[`part${part}`] || ""}",
         }`,
         {
           fileData: {
@@ -80,9 +92,31 @@ export class AISpeakingService {
           },
         },
       ]);
-      await SpeakingRoom.update({ id }, { evaluation: result });
 
-      return result;
+      // Update current evaluation
+      currentEvaluation[`part${part}`] = singlePartEvaluation;
+
+      console.log(currentEvaluation);
+
+      const overallEvaluation = await this.genAISpeakingScoreEvaluationModel.generateContent(
+        `Calculate the overall speaking score based on the evaluation three parts, including all questions, band score, and previous evaluation: 
+        {
+          "allQuestions": ${JSON.stringify(allQuestions)},
+          "part1Evaluation": "${currentEvaluation.part1 || ""}",
+          "part2Evaluation": "${currentEvaluation.part2 || ""}",
+          "part3Evaluation": "${currentEvaluation.part3 || ""}",
+          "overallEvaluation": "${currentEvaluation.overall || ""}",
+        }`
+      );
+
+      // Update overall evaluation
+      currentEvaluation.overall = overallEvaluation;
+
+      SpeakingRoomEvaluation.save({
+        ...currentEvaluation,
+      });
+
+      return currentEvaluation;
     } catch (error) {
       this.logger.error(error);
       throw new BadRequestException(error);
@@ -94,14 +128,18 @@ export class AISpeakingService {
     }
   }
 
-  async getQuestionById(id: string, user: ICurrentUser) {
+  async getQuestionById(id: string) {
     try {
-      const speakingRoom = await SpeakingRoom.findOneOrFail({ where: { id, profileId: user.profileId } });
-      return {
-        id: speakingRoom.id,
-        content: speakingRoom.content,
-        evaluation: speakingRoom.evaluation,
-      };
+      return SpeakingRoom.findOneOrFail({ where: { id } });
+    } catch (error) {
+      this.logger.error(error);
+      throw new BadRequestException(error);
+    }
+  }
+
+  getEvaluationByQuestionId(id: string, user: ICurrentUser) {
+    try {
+      return SpeakingRoomEvaluation.findOneOrFail({ where: { speakingRoomId: id, profileId: user.profileId } });
     } catch (error) {
       this.logger.error(error);
       throw new BadRequestException(error);
@@ -142,7 +180,7 @@ export class AISpeakingService {
 
       const speechIPA = speechIPAResult.ipa;
       const originalIPA = originalIPAResult.ipa;
-      console.log(originalIPAResult);
+
       const matchingBlocks = this.getMatchingBlocks(speechIPA, originalIPA);
       const mappedStringArray = originalIPA.split("")?.map((c: string) => {
         if (c === " ") return " ";

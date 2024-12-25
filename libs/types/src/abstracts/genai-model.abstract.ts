@@ -5,6 +5,7 @@ export abstract class GenAIModelAbstract {
   constructor(protected readonly genAIManager: GoogleGenerativeAI) {
     this.model = this.genAIManager.getGenerativeModel({
       model: "gemini-exp-1206",
+      // model: "gemini-2.0-flash-thinking-exp-1219",
       generationConfig: {
         responseMimeType: "application/json",
         responseSchema: this.getSchema(),
