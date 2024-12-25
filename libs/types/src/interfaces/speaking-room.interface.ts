@@ -1,13 +1,11 @@
-import { ILearnerProfile } from "./learner-profile.interface";
+import { ISpeakingRoomEvaluation } from "./speaking-room-evaluations.interface";
 
 export interface ISpeakingRoom {
   id: string;
-  profileId: string;
   content: object;
-  evaluation: object;
   createdAt: Date;
   updatedAt: Date;
 
   // Relations
-  readonly profile: ILearnerProfile;
+  speakingRoomEvaluations: ISpeakingRoomEvaluation[];
 }

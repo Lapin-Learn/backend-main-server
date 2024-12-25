@@ -42,15 +42,21 @@ export class AISpeakingController {
     return this.aiSpeakingService.generateIpaEvaluation(file, original);
   }
 
-  @Roles(AccountRoleEnum.LEARNER)
+  @Roles(AccountRoleEnum.ADMIN)
   @Get("questions")
-  async generateQuestion(@CurrentUser() user: ICurrentUser) {
-    return this.aiSpeakingService.generateQuestion(user);
+  async generateQuestion() {
+    return this.aiSpeakingService.generateQuestion();
   }
 
   @Roles(AccountRoleEnum.LEARNER)
   @Get("questions/:id")
-  async generateQuestionById(@Param("id", new ParseUUIDPipe()) id: string, @CurrentUser() user: ICurrentUser) {
-    return this.aiSpeakingService.getQuestionById(id, user);
+  async generateQuestionById(@Param("id", new ParseUUIDPipe()) id: string) {
+    return this.aiSpeakingService.getQuestionById(id);
+  }
+
+  @Roles(AccountRoleEnum.LEARNER)
+  @Get("questions/:id/evaluation")
+  async getEvaluationByQuestionId(@Param("id", new ParseUUIDPipe()) id: string, @CurrentUser() user: ICurrentUser) {
+    return this.aiSpeakingService.getEvaluationByQuestionId(id, user);
   }
 }

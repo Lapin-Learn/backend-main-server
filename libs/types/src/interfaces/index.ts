@@ -26,6 +26,7 @@ export * from "./xp-lesson-process.interface";
 export * from "./test-collection.interface";
 export * from "./simulated-ielts-test.interface";
 export * from "./speaking-room.interface";
+export * from "./speaking-room-evaluations.interface";
 export * from "./current-user.interface";
 export * from "./reset-password-action.interface";
 export * from "./list-question.interface";
