@@ -51,3 +51,11 @@ jobs:
           TAG: ${{VARS.TAG}}
         run: |
           docker push ${{secrets.DOCKER_USERNAME}}/backend-main-server:$TAG
+
+      - name: Workflow Webhook Action
+        uses: distributhor/workflow-webhook@v3.0.7
+        with:
+          webhook_url: ${{secrets.WEBHOOK_URL}}
+          verbose: false
+          max_time: 360
+
