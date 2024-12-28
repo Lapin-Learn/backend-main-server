@@ -100,7 +100,7 @@ export class SkillTestSession extends BaseEntity {
       .leftJoin("skillTest.simulatedIeltsTest", "test")
       .addSelect(["test.id", "test.testName"])
       .leftJoin("skillTest.skillTestAnswer", "answer")
-      .addSelect(["answer.answers"])
+      .addSelect(["answer.answers", "answer.guidances"])
       .where("session.id = :sessionId", { sessionId })
       .andWhere("session.learnerProfileId = :learnerId", { learnerId })
       .getOne();

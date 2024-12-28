@@ -108,6 +108,8 @@ export class SimulatedTestService {
           .map((partIndex) => partsDetail[partIndex - 1]);
 
         session.skillTest["answers"] = session.skillTest.skillTestAnswer.answers ?? [];
+        session.skillTest["guidances"] = session.skillTest.skillTestAnswer.guidances ?? [];
+        delete session.skillTest.skillTestAnswer;
         delete session.skillTest.skillTestAnswer;
       }
       return session;
