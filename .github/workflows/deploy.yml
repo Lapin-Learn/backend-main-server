@@ -45,7 +45,8 @@ jobs:
           docker build -f docker/Dockerfile.service \
           --build-arg PRIVATE_TOKEN=$PRIVATE_TOKEN \
           --build-arg STAGE=$STAGE \
-          -t ${{secrets.DOCKER_USERNAME}}/backend-main-server:latest-$TAG .
+          -t ${{secrets.DOCKER_USERNAME}}/backend-main-server:latest \
+          -t ${{secrets.DOCKER_USERNAME}}/backend-main-server:$TAG .
 
       - name: Push Docker image
         env:
