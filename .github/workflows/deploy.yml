@@ -59,4 +59,5 @@ jobs:
           webhook_url: ${{secrets.WEBHOOK_URL}}
           verbose: false
           max_time: 360
-          curl_options: "--insecure"
+          curl_opts: "--insecure"
+          verify_ssl: false
