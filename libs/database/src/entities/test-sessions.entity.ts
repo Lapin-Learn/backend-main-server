@@ -28,8 +28,16 @@ export class SkillTestSession extends BaseEntity {
   @Column({ name: "responses", type: "jsonb", nullable: true })
   responses: ITestSessionResponse[];
 
-  @Column({ name: "results", type: "jsonb", nullable: true })
-  results: object[];
+  @Column({
+    name: "results",
+    type: "jsonb",
+    nullable: true,
+    transformer: {
+      to: (value) => value,
+      from: (value) => (value === null ? [] : value),
+    },
+  })
+  results: object[] | boolean[];
 
   @Column({ name: "time_limit", type: "int", nullable: false, default: 0 })
   // 0 when option is "unlimited"
@@ -104,5 +112,27 @@ export class SkillTestSession extends BaseEntity {
       .where("session.id = :sessionId", { sessionId })
       .andWhere("session.learnerProfileId = :learnerId", { learnerId })
       .getOne();
+  }
+
+  static async getSessionHistory(learnerId: string, offset: number, limit: number) {
+    return this.createQueryBuilder("session")
+      .select([
+        "session.id",
+        "session.createdAt",
+        "session.estimatedBandScore",
+        "session.elapsedTime",
+        "session.results",
+        "session.mode",
+      ])
+      .leftJoin("session.skillTest", "skillTest")
+      .addSelect(["skillTest.id", "skillTest.skill"])
+      .leftJoin("skillTest.simulatedIeltsTest", "test")
+      .addSelect(["test.testName"])
+      .where("session.learner_profile_id = :learnerId", { learnerId })
+      .andWhere("session.status = :status", { status: TestSessionStatusEnum.FINISHED })
+      .skip(offset)
+      .take(limit)
+      .orderBy("session.createdAt", "DESC")
+      .getMany();
   }
 }

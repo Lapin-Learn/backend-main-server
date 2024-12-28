@@ -59,6 +59,18 @@ export class SimulatedTestController {
     return this.simulatedTestService.getSimulatedTestsInCollections(collectionId, offset, limit, user.profileId);
   }
 
+  @ApiQuery({ name: "offset", type: Number, required: false })
+  @ApiQuery({ name: "limit", type: Number, required: false })
+  @Get("simulated-tests/sessions")
+  @UseInterceptors(PaginationInterceptor)
+  async getSessionHistory(
+    @CurrentUser() learner: ICurrentUser,
+    @Query("offset", new DefaultValuePipe(0), ParseIntPipe) offset: number,
+    @Query("limit", new DefaultValuePipe(10), ParseIntPipe) limit: number
+  ) {
+    return this.simulatedTestService.getSessionHistory(learner, offset, limit);
+  }
+
   @ApiBody({ type: StartSessionDto })
   @ApiResponse({ type: String })
   @Post("simulated-tests/session")
