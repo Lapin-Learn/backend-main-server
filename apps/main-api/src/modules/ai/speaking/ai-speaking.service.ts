@@ -9,7 +9,7 @@ import DiffMatchPatch from "diff-match-patch";
 import { GenAISpeakingModel } from "@app/shared-modules/genai/model/genai-speaking-model.service";
 import { GenAISpeakingIPAModel, GenAISpeakingScoreModel } from "@app/shared-modules/genai";
 import { ICurrentUser } from "@app/types/interfaces";
-import { SpeakingRoom, SpeakingRoomEvaluation } from "@app/database";
+import { SkillTest, SkillTestSession, SpeakingRoom } from "@app/database";
 
 const PUNCTUATION = "/[.,/#!$%^&*;:{}=-_`~()]/g";
 
@@ -45,17 +45,12 @@ export class AISpeakingService {
     }
   }
 
-  async generateScore(id: string, part: number, order: number, file: Express.Multer.File, user: ICurrentUser) {
+  async generateScore(sessionId: number, part: number, order: number, file: Express.Multer.File, user: ICurrentUser) {
     // Create a temporary file with automatic cleanup
     const tempFile = tmp.fileSync({ postfix: path.extname(file.originalname) });
     let geminiFileName = "";
 
     try {
-      // Find the current speaking room
-      const speakingRoom = await SpeakingRoom.findOneOrFail({ where: { id } });
-      const question = speakingRoom.content[part.toString()][order - 1]; // Order is 1-based
-      const allQuestions = speakingRoom.content;
-
       // Write the uploaded file buffer to the temp file
       fs.writeFileSync(tempFile.name, file.buffer);
 
@@ -67,16 +62,31 @@ export class AISpeakingService {
       geminiFileName = uploadResult.file.name;
 
       // Get current evaluation
-      const existedEvaluation = await SpeakingRoomEvaluation.findOne({
-        where: { speakingRoomId: id, profileId: user.profileId },
+      const existedSession = await SkillTestSession.findOneOrFail({
+        where: { id: sessionId, learnerProfileId: user.profileId },
       });
-      let currentEvaluation = existedEvaluation;
-      if (!existedEvaluation) {
-        currentEvaluation = await SpeakingRoomEvaluation.save({
-          speakingRoomId: id,
-          profileId: user.profileId,
-        });
-      }
+
+      const skillTest = await SkillTest.findOne({
+        where: { id: existedSession.skillTestId },
+        select: ["partsContent"],
+      });
+      const question = skillTest?.partsContent[0][`part${part}`][order - 1]; // Order is 1-based
+      const allQuestions = skillTest?.partsContent[0][`part${part}`];
+
+      const currentEvaluation =
+        existedSession?.results && existedSession.results[0]
+          ? (existedSession.results[0] as {
+              part1: object;
+              part2: object;
+              part3: object;
+              overall: object;
+            })
+          : {
+              part1: {},
+              part2: {},
+              part3: {},
+              overall: {},
+            };
 
       // Generate content using the AI model
       const singlePartEvaluation = await this.genAISpeakingScoreEvaluationModel.generateContent([
@@ -96,25 +106,27 @@ export class AISpeakingService {
       // Update current evaluation
       currentEvaluation[`part${part}`] = singlePartEvaluation;
 
-      console.log(currentEvaluation);
-
       const overallEvaluation = await this.genAISpeakingScoreEvaluationModel.generateContent(
         `Calculate the overall speaking score based on the evaluation three parts, including all questions, band score, and previous evaluation: 
         {
           "allQuestions": ${JSON.stringify(allQuestions)},
-          "part1Evaluation": "${currentEvaluation.part1 || ""}",
-          "part2Evaluation": "${currentEvaluation.part2 || ""}",
-          "part3Evaluation": "${currentEvaluation.part3 || ""}",
-          "overallEvaluation": "${currentEvaluation.overall || ""}",
-        }`
+          "part1": "${currentEvaluation.part1 || ""}",
+          "part2": "${currentEvaluation.part2 || ""}",
+          "part3": "${currentEvaluation.part3 || ""}",
+          "overall": "${currentEvaluation.overall || ""}",
+        }
+        Response MUST restrict to the system schema
+        `
       );
 
       // Update overall evaluation
       currentEvaluation.overall = overallEvaluation;
-
-      SpeakingRoomEvaluation.save({
-        ...currentEvaluation,
-      });
+      SkillTestSession.update(
+        { id: sessionId },
+        {
+          results: [currentEvaluation],
+        }
+      );
 
       return currentEvaluation;
     } catch (error) {
@@ -128,6 +140,15 @@ export class AISpeakingService {
     }
   }
 
+  async getQuestions() {
+    try {
+      return SpeakingRoom.find();
+    } catch (error) {
+      this.logger.error(error);
+      throw new BadRequestException(error);
+    }
+  }
+
   async getQuestionById(id: string) {
     try {
       return SpeakingRoom.findOneOrFail({ where: { id } });
@@ -137,9 +158,10 @@ export class AISpeakingService {
     }
   }
 
-  getEvaluationByQuestionId(id: string, user: ICurrentUser) {
+  async getEvaluationByQuestionId(id: number, user: ICurrentUser) {
     try {
-      return SpeakingRoomEvaluation.findOneOrFail({ where: { speakingRoomId: id, profileId: user.profileId } });
+      const record = await SkillTestSession.findOneOrFail({ where: { id, learnerProfileId: user.profileId } });
+      return record?.results[0] || {};
     } catch (error) {
       this.logger.error(error);
       throw new BadRequestException(error);

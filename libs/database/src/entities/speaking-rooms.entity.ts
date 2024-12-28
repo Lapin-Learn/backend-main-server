@@ -1,14 +1,5 @@
-import { ISpeakingRoom, ISpeakingRoomEvaluation } from "@app/types/interfaces";
-import {
-  BaseEntity,
-  Column,
-  CreateDateColumn,
-  Entity,
-  OneToMany,
-  PrimaryGeneratedColumn,
-  UpdateDateColumn,
-} from "typeorm";
-import { SpeakingRoomEvaluation } from "./speaking-room-evaluations.entity";
+import { ISpeakingRoom, ISpeakingRoomContent } from "@app/types/interfaces";
+import { BaseEntity, Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 
 @Entity("speaking_rooms")
 export class SpeakingRoom extends BaseEntity implements ISpeakingRoom {
@@ -16,7 +7,7 @@ export class SpeakingRoom extends BaseEntity implements ISpeakingRoom {
   id: string;
 
   @Column({ name: "content", type: "jsonb", nullable: true })
-  content: object;
+  content: ISpeakingRoomContent;
 
   @CreateDateColumn({ name: "created_at", type: "timestamp", nullable: false, default: () => "CURRENT_TIMESTAMP" })
   createdAt: Date;
@@ -29,8 +20,4 @@ export class SpeakingRoom extends BaseEntity implements ISpeakingRoom {
     onUpdate: "CURRENT_TIMESTAMP",
   })
   updatedAt: Date;
-
-  // Relations
-  @OneToMany(() => SpeakingRoomEvaluation, (evaluation) => evaluation.speakingRoom)
-  speakingRoomEvaluations: ISpeakingRoomEvaluation[];
 }

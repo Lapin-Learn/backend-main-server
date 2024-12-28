@@ -51,7 +51,6 @@ import moment from "moment-timezone";
 import { getBeginOfOffsetDay, getEndOfOffsetDay } from "@app/utils/time";
 import { VN_TIME_ZONE } from "@app/types/constants";
 import { SkillTestSession } from "./test-sessions.entity";
-import { SpeakingRoomEvaluation } from "./speaking-room-evaluations.entity";
 
 @Entity("learner_profiles")
 export class LearnerProfile extends BaseEntity implements ILearnerProfile {
@@ -120,9 +119,6 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
 
   @OneToMany(() => SkillTestSession, (skillTestSession) => skillTestSession.learnerProfile)
   skillTestSessions: SkillTestSession[];
-
-  @OneToMany(() => SpeakingRoomEvaluation, (speakingRoomEvaluation) => speakingRoomEvaluation.profile)
-  readonly speakingRoomEvaluations: SpeakingRoomEvaluation[];
 
   public async updateResources(newBonusResources: UpdateResourcesDto): Promise<UpdateResourcesDto> {
     const { bonusCarrot = 0, bonusXP = 0 } = newBonusResources;

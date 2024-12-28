@@ -11,7 +11,6 @@ import {
   IProfileBadge,
   IProfileItem,
   IProfileMissionProgress,
-  ISpeakingRoomEvaluation,
   IStreak,
 } from "@app/types/interfaces";
 import { mockEmail, mockUid } from "@app/shared-modules/firebase/__mocks__/firebase-auth.service";
@@ -41,7 +40,6 @@ const learnerProfile: ILearnerProfile = {
   profileBadges: [] as IProfileBadge[],
   lessonRecords: [] as ILessonRecord[],
   lessonProcesses: [] as ILessonProcess[],
-  speakingRoomEvaluations: [] as ISpeakingRoomEvaluation[],
   createdAt: new Date(),
   updatedAt: new Date(),
 };

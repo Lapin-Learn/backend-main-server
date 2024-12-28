@@ -10,11 +10,11 @@ export class GenAISpeakingScoreModel extends GenAIModelAbstract {
     const schema: ResponseSchema = {
       type: SchemaType.OBJECT,
       properties: {
-        bandScore: {
+        score: {
           type: SchemaType.NUMBER,
           description: "The estimated band score",
         },
-        fluencyCoherence: {
+        fluencyAndCoherence: {
           type: SchemaType.STRING,
           description: "Fluency and Coherence feedback",
         },
@@ -22,7 +22,7 @@ export class GenAISpeakingScoreModel extends GenAIModelAbstract {
           type: SchemaType.STRING,
           description: "Lexical Resource feedback",
         },
-        grammaticalRangeAccuracy: {
+        grammaticalAndRangeAccuracy: {
           type: SchemaType.STRING,
           description: "Grammatical Range and Accuracy feedback",
         },
@@ -31,7 +31,7 @@ export class GenAISpeakingScoreModel extends GenAIModelAbstract {
           description: "Pronunciation feedback",
         },
       },
-      required: ["bandScore", "fluencyCoherence", "lexicalResource", "grammaticalRangeAccuracy", "pronunciation"],
+      required: ["score", "fluencyAndCoherence", "lexicalResource", "grammaticalAndRangeAccuracy", "pronunciation"],
     };
     return schema;
   }
