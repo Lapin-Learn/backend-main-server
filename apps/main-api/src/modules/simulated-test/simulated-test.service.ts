@@ -5,7 +5,7 @@ import { BadRequestException, Injectable, Logger } from "@nestjs/common";
 import _ from "lodash";
 import { BucketService } from "../bucket/bucket.service";
 import { GradingContext } from "@app/shared-modules/grading";
-import { TestSessionModeEnum, TestSessionStatusEnum } from "@app/types/enums";
+import { SkillEnum, TestSessionModeEnum, TestSessionStatusEnum } from "@app/types/enums";
 
 @Injectable()
 export class SimulatedTestService {
@@ -96,6 +96,30 @@ export class SimulatedTestService {
     }
   }
 
+  async getSessionHistory(learner: ICurrentUser, offset: number, limit: number) {
+    try {
+      const histories = await SkillTestSession.getSessionHistory(learner.profileId, offset, limit);
+      histories.map((h: SkillTestSession) => {
+        h["totalQuestions"] = h.results.length;
+        h["testName"] = h.skillTest.simulatedIeltsTest.testName;
+        h["skill"] = h.skillTest.skill;
+        if (
+          !h.estimatedBandScore &&
+          (h.skillTest.skill === SkillEnum.READING || h.skillTest.skill === SkillEnum.LISTENING)
+        ) {
+          h["correctAnswers"] = h.results.filter((r) => r === true).length;
+        }
+        delete h.results;
+        delete h.skillTest;
+        return h;
+      });
+      return histories;
+    } catch (error) {
+      this.logger.error(error);
+      throw new BadRequestException(error);
+    }
+  }
+
   async getSessionDetail(sessionId: number, profileId: string) {
     try {
       const session = await SkillTestSession.getSessionDetail(sessionId, profileId);
@@ -108,8 +132,8 @@ export class SimulatedTestService {
           .map((partIndex) => partsDetail[partIndex - 1]);
 
         session.skillTest["answers"] = session.skillTest.skillTestAnswer.answers ?? [];
-        session.skillTest["guidances"] = session.skillTest.skillTestAnswer.guidances ?? [];
-        delete session.skillTest.skillTestAnswer;
+        session.status === TestSessionStatusEnum.FINISHED &&
+          (session.skillTest["guidances"] = session.skillTest.skillTestAnswer.guidances);
         delete session.skillTest.skillTestAnswer;
       }
       return session;
