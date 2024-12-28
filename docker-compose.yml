@@ -38,7 +38,9 @@ services:
       - ll-network
 
   main-api:
-    image: ${IMAGE_NAME}
+    image: "${IMAGE_NAME}"
+    env_file:
+      - stack.env
     ports:
       - "3000:3000"
     container_name: main-api
