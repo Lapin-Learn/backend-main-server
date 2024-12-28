@@ -71,6 +71,11 @@ export class SimulatedTestController {
     return this.simulatedTestService.getSessionHistory(learner, offset, limit);
   }
 
+  @Get("simulated-tests/report")
+  async getBandScoreReport(@CurrentUser() learner: ICurrentUser) {
+    return this.simulatedTestService.getBandScoreReport(learner);
+  }
+
   @ApiBody({ type: StartSessionDto })
   @ApiResponse({ type: String })
   @Post("simulated-tests/session")
