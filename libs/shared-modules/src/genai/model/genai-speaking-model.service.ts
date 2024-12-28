@@ -18,21 +18,21 @@ export class GenAISpeakingModel extends GenAIModelAbstract {
               type: SchemaType.STRING,
               description: "The name after summarizing parts 2 and 3 of the generated questions.",
             },
-            "1": {
+            part1: {
               type: SchemaType.ARRAY,
               description: "A string array of 3 questions generated for speaking part 1",
               items: {
                 type: SchemaType.STRING,
               },
             },
-            "2": {
+            part2: {
               type: SchemaType.ARRAY,
               description: "A string array of a question only generated for speaking part 2",
               items: {
                 type: SchemaType.STRING,
               },
             },
-            "3": {
+            part3: {
               type: SchemaType.ARRAY,
               description: "A string array of 3 questions generated for speaking part 3",
               items: {
@@ -40,7 +40,7 @@ export class GenAISpeakingModel extends GenAIModelAbstract {
               },
             },
           },
-          required: ["name", "1", "2", "3"],
+          required: ["name", "part1", "part2", "part3"],
         },
       },
     };

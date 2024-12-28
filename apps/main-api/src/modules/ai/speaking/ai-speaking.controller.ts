@@ -27,15 +27,16 @@ export class AISpeakingController {
   @Post("score")
   @UseInterceptors(FileInterceptor("file"))
   async generateResponse(
-    @Body("id", new ParseUUIDPipe()) id: string,
+    @Body("sessionId", new ParseIntPipe()) sessionId: number,
     @Body("part", new ParseIntPipe()) part: number,
     @Body("order", new ParseIntPipe()) order: number,
     @UploadedFile() file: Express.Multer.File,
     @CurrentUser() user: ICurrentUser
   ) {
-    return this.aiSpeakingService.generateScore(id, part, order, file, user);
+    return this.aiSpeakingService.generateScore(sessionId, part, order, file, user);
   }
 
+  @Roles(AccountRoleEnum.LEARNER)
   @Post("speech-evaluation")
   @UseInterceptors(FileInterceptor("file"))
   async generateIpaEvaluation(@UploadedFile() file: Express.Multer.File, @Body("original") original: string) {
@@ -43,9 +44,15 @@ export class AISpeakingController {
   }
 
   @Roles(AccountRoleEnum.ADMIN)
-  @Get("questions")
+  @Post("questions/generate")
   async generateQuestion() {
     return this.aiSpeakingService.generateQuestion();
+  }
+
+  @Roles(AccountRoleEnum.ADMIN, AccountRoleEnum.LEARNER)
+  @Get("questions")
+  async getQuestions() {
+    return this.aiSpeakingService.getQuestions();
   }
 
   @Roles(AccountRoleEnum.LEARNER)
@@ -56,7 +63,7 @@ export class AISpeakingController {
 
   @Roles(AccountRoleEnum.LEARNER)
   @Get("questions/:id/evaluation")
-  async getEvaluationByQuestionId(@Param("id", new ParseUUIDPipe()) id: string, @CurrentUser() user: ICurrentUser) {
+  async getEvaluationByQuestionId(@Param("id", new ParseIntPipe()) id: number, @CurrentUser() user: ICurrentUser) {
     return this.aiSpeakingService.getEvaluationByQuestionId(id, user);
   }
 }
