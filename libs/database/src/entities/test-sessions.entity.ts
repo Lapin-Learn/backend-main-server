@@ -12,7 +12,7 @@ import { SkillTest } from "./skill-tests.entity";
 import { LearnerProfile } from "./learner-profile.entity";
 import { TestSessionModeEnum, TestSessionStatusEnum } from "@app/types/enums";
 import { StartSessionDto } from "@app/types/dtos/simulated-tests";
-import { ITestSessionResponse } from "@app/types/interfaces/test-session-responses.interface";
+import { ITestSessionResponse } from "@app/types/interfaces";
 
 @Entity({ name: "skill_test_sessions" })
 export class SkillTestSession extends BaseEntity {
@@ -134,5 +134,18 @@ export class SkillTestSession extends BaseEntity {
       .take(limit)
       .orderBy("session.createdAt", "DESC")
       .getMany();
+  }
+
+  static async getBandScoreReport(learnerId: string) {
+    return await this.createQueryBuilder("session")
+      .select(['COALESCE(AVG(session.estimatedBandScore), 0) as "bandScore"'])
+      .leftJoin("session.skillTest", "test")
+      .addSelect(['test.skill as "skill"'])
+      .leftJoin("session.learnerProfile", "learner")
+      .where("session.status = :status", { status: TestSessionStatusEnum.FINISHED })
+      .andWhere("session.learnerProfileId = :learnerId", { learnerId })
+      .andWhere("session.estimatedBandScore IS NOT NULL")
+      .groupBy("test.skill")
+      .getRawMany();
   }
 }

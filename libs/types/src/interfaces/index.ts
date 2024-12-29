@@ -39,3 +39,4 @@ export * from "./test-answer.interface";
 export * from "./answer-validator-strategy.interface";
 export * from "./band-score-range.interface";
 export * from "./grading-strategy.interface";
+export * from "./test-session-responses.interface";

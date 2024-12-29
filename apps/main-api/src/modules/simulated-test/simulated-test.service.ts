@@ -197,4 +197,8 @@ export class SimulatedTestService {
       throw new BadRequestException(error);
     }
   }
+
+  async getBandScoreReport(learner: ICurrentUser) {
+    return SkillTestSession.getBandScoreReport(learner.profileId);
+  }
 }

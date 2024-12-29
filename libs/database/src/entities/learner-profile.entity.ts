@@ -438,6 +438,7 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
       .setParameter("actionName", ActionNameEnum.DAILY_STREAK)
       .getMany();
   }
+
   public static async createNewProfile(): Promise<ILearnerProfile> {
     const streak = await new Streak().save();
     const level = await Level.findOne({ where: { id: 1 } });
