@@ -2,6 +2,7 @@ import { ProfileItem } from "@app/database";
 import { ICurrentUser } from "@app/types/interfaces";
 import { BadRequestException, Injectable, Logger } from "@nestjs/common";
 import { ItemEffectFactoryService } from "../item-effect/item-effect-factory.service";
+import { ItemName } from "@app/types/enums";
 
 @Injectable()
 export class InventoryService {
@@ -15,10 +16,12 @@ export class InventoryService {
         where: { profileId: user.profileId },
       });
       const items = await Promise.all(
-        profileItems.map(async (profileItem) => {
-          const { quantity, expAt, item } = await profileItem.resetItemStatus();
-          return { ...item, quantity, expAt };
-        })
+        profileItems
+          .filter((profileItem) => profileItem.item.name !== ItemName.IDENTIFICATION)
+          .map(async (profileItem) => {
+            const { quantity, expAt, item } = await profileItem.resetItemStatus();
+            return { ...item, quantity, expAt };
+          })
       );
       return items;
     } catch (error) {

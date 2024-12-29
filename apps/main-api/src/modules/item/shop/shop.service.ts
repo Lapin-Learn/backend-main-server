@@ -12,28 +12,28 @@ export class ShopService {
     try {
       const items: IItem[] = await Item.find();
 
-      return items.map((item) => {
-        const popular = (() => {
-          switch (item.name) {
-            case ItemName.STREAK_FREEZE:
-              return "1";
-            case ItemName.RANDOM_GIFT:
-              return "1";
-            case ItemName.ULTIMATE_TIME:
-              return "1";
-            case ItemName.IDENTIFICATION:
-              return "2";
-            default:
-              return "1";
-          }
-        })();
+      return items
+        .filter((item) => item.name !== ItemName.IDENTIFICATION)
+        .map((item) => {
+          const popular = (() => {
+            switch (item.name) {
+              case ItemName.STREAK_FREEZE:
+              case ItemName.RANDOM_GIFT:
+              case ItemName.ULTIMATE_TIME:
+                return "1";
+              case ItemName.IDENTIFICATION:
+                return "2";
+              default:
+                return "1";
+            }
+          })();
 
-        return {
-          ...item,
-          popular,
-          isPopular: item.name === ItemName.IDENTIFICATION ? true : false,
-        };
-      });
+          return {
+            ...item,
+            popular,
+            isPopular: item.name === ItemName.IDENTIFICATION ? true : false,
+          };
+        });
     } catch (error) {
       this.logger.error(error);
       throw new BadRequestException(error);
