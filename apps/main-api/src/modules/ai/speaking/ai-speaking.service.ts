@@ -8,7 +8,7 @@ import path from "path";
 import DiffMatchPatch from "diff-match-patch";
 import { GenAISpeakingModel } from "@app/shared-modules/genai/model/genai-speaking-model.service";
 import { GenAISpeakingIPAModel, GenAISpeakingScoreModel } from "@app/shared-modules/genai";
-import { ICurrentUser } from "@app/types/interfaces";
+import { ICurrentUser, ISpeakingEvaluation } from "@app/types/interfaces";
 import { SkillTest, SkillTestSession, SpeakingRoom } from "@app/database";
 
 const PUNCTUATION = "/[.,/#!$%^&*;:{}=-_`~()]/g";
@@ -76,16 +76,16 @@ export class AISpeakingService {
       const currentEvaluation =
         existedSession?.results && existedSession.results[0]
           ? (existedSession.results[0] as {
-              part1: object;
-              part2: object;
-              part3: object;
-              overall: object;
+              part1: ISpeakingEvaluation;
+              part2: ISpeakingEvaluation;
+              part3: ISpeakingEvaluation;
+              overall: ISpeakingEvaluation;
             })
           : {
-              part1: {},
-              part2: {},
-              part3: {},
-              overall: {},
+              part1: null,
+              part2: null,
+              part3: null,
+              overall: null,
             };
 
       // Generate content using the AI model
@@ -125,6 +125,7 @@ export class AISpeakingService {
         { id: sessionId },
         {
           results: [currentEvaluation],
+          estimatedBandScore: currentEvaluation.overall?.score,
         }
       );
 
