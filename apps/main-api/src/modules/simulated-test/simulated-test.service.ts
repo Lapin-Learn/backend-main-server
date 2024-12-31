@@ -17,12 +17,16 @@ export class SimulatedTestService {
   async getCollectionsWithSimulatedTest(offset: number, limit: number, keyword: string, profileId: string) {
     try {
       const data = await TestCollection.getCollectionsWithTests(offset, limit, keyword, profileId);
-      return Promise.all(
-        data.map(async (collection: ITestCollection) => ({
-          ...collection,
-          thumbnail: await this.bucketService.getPresignedDownloadUrlForAfterLoad(collection.thumbnail),
-        }))
-      );
+      const total = await TestCollection.count();
+      return {
+        items: await Promise.all(
+          data.map(async (collection: ITestCollection) => ({
+            ...collection,
+            thumbnail: await this.bucketService.getPresignedDownloadUrlForAfterLoad(collection.thumbnail),
+          }))
+        ),
+        total,
+      };
     } catch (error) {
       this.logger.error(error);
       throw new BadRequestException(error);
@@ -60,7 +64,9 @@ export class SimulatedTestService {
           skillTests,
         };
       });
-      return formattedItems;
+
+      const total = await SimulatedIeltsTest.countBy({ collectionId });
+      return { items: formattedItems, total };
     } catch (error) {
       this.logger.error(error);
       throw new BadRequestException(error);
@@ -113,7 +119,12 @@ export class SimulatedTestService {
         delete h.skillTest;
         return h;
       });
-      return histories;
+
+      const total = await SkillTestSession.countBy({
+        learnerProfileId: learner.profileId,
+        status: TestSessionStatusEnum.FINISHED,
+      });
+      return { items: histories, total };
     } catch (error) {
       this.logger.error(error);
       throw new BadRequestException(error);
