@@ -6,13 +6,16 @@ import _ from "lodash";
 import { BucketService } from "../bucket/bucket.service";
 import { GradingContext } from "@app/shared-modules/grading";
 import { SkillEnum, TestSessionModeEnum, TestSessionStatusEnum } from "@app/types/enums";
+import { InjectQueue } from "@nestjs/bullmq";
+import { Queue } from "bullmq";
 
 @Injectable()
 export class SimulatedTestService {
   private readonly logger = new Logger(SimulatedTestService.name);
   constructor(
     private readonly bucketService: BucketService,
-    private readonly gradingContext: GradingContext
+    private readonly gradingContext: GradingContext,
+    @InjectQueue("evaluate-speaking") private evaluateSpeakingQueue: Queue
   ) {}
   async getCollectionsWithSimulatedTest(offset: number, limit: number, keyword: string, profileId: string) {
     try {
@@ -167,11 +170,20 @@ export class SimulatedTestService {
     try {
       const { status, responses } = sessionData;
       if (status === TestSessionStatusEnum.FINISHED) {
-        const { skillTestId, mode, parts } = await SkillTestSession.findOne({ where: { id: sessionId } });
-        const { answers, skillTest } = await SkillTestAnswer.findOne({
+        const { skillTestId, mode, parts, skillTest } = await SkillTestSession.findOne({
+          where: { id: sessionId },
+          relations: { skillTest: true },
+        });
+
+        if (skillTest.skill === SkillEnum.SPEAKING) {
+          await this.evaluateSpeakingQueue.add("evaluate-speaking", { responses });
+          return;
+        }
+        const { answers } = await SkillTestAnswer.findOneOrFail({
           where: { skillTestId },
           relations: { skillTest: true },
         });
+
         const results = [];
 
         if (answers && answers.length > 0) {
