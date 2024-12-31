@@ -13,12 +13,10 @@ export class PaginationInterceptor implements NestInterceptor {
         const numericOffset = Number(offset);
         const numericLimit = Number(limit);
 
-        const total = data?.length || 0;
         const page = Math.floor(offset / limit) + 1 || 0;
 
         return {
-          items: data,
-          total,
+          ...data,
           offset: numericOffset,
           limit: numericLimit,
           page,
