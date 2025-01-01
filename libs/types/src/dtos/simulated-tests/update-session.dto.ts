@@ -1,23 +1,48 @@
-import { TestSessionStatusEnum } from "@app/types/enums";
+import { SkillEnum, TestSessionStatusEnum } from "@app/types/enums";
 import { ApiProperty } from "@nestjs/swagger";
 import { Type } from "class-transformer";
-import { ArrayNotEmpty, IsEnum, IsInt, IsOptional, IsString, ValidateIf, ValidateNested } from "class-validator";
+import { IsEnum, IsInt, IsNumber, IsOptional, ValidateNested } from "class-validator";
 
 class TestSessionResponseDto {
-  @ApiProperty()
+  @IsEnum(SkillEnum)
+  skill: SkillEnum;
+}
+
+export class InfoSpeakingResponseDto {
   @IsInt()
   questionNo: number;
 
-  @ApiProperty({ nullable: true })
-  @IsString()
-  @ValidateIf((_, value) => value != null)
+  @IsInt()
+  partNo: number;
+
+  @IsNumber()
+  timeStamp: number;
+}
+
+export class InfoTextResponseDto {
+  @IsInt()
+  questionNo: number;
+
+  @IsOptional()
   answer: string | null;
+}
+
+export class TextResponseDto extends TestSessionResponseDto {
+  @ValidateNested({ each: true })
+  @Type(() => InfoTextResponseDto)
+  info: InfoTextResponseDto[];
+}
+
+export class SpeakingResponseDto extends TestSessionResponseDto {
+  @ValidateNested({ each: true })
+  @Type(() => InfoSpeakingResponseDto)
+  info: InfoSpeakingResponseDto[];
 }
 
 export class UpdateSessionDto {
   @ApiProperty()
   @IsOptional()
-  @IsInt()
+  @IsNumber()
   elapsedTime: number;
 
   @ApiProperty({ enum: TestSessionStatusEnum })
@@ -26,9 +51,18 @@ export class UpdateSessionDto {
   status: TestSessionStatusEnum;
 
   @ApiProperty({ type: [TestSessionResponseDto] })
-  @IsOptional()
-  @ValidateNested({ each: true })
-  @Type(() => TestSessionResponseDto)
-  @ArrayNotEmpty()
-  responses: TestSessionResponseDto[];
+  // @ValidateNested({ each: true })
+  @Type(() => TestSessionResponseDto, {
+    discriminator: {
+      property: "skill",
+      subTypes: [
+        { value: SpeakingResponseDto, name: SkillEnum.SPEAKING },
+        { value: TextResponseDto, name: SkillEnum.WRITING },
+        { value: TextResponseDto, name: SkillEnum.READING },
+        { value: TextResponseDto, name: SkillEnum.LISTENING },
+      ],
+    },
+    keepDiscriminatorProperty: true,
+  })
+  response: SpeakingResponseDto | TextResponseDto;
 }
