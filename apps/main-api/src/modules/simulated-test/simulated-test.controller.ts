@@ -9,6 +9,7 @@ import {
   Post,
   Put,
   Query,
+  UploadedFile,
   UseGuards,
   UseInterceptors,
 } from "@nestjs/common";
@@ -21,6 +22,8 @@ import { SimulatedIeltsTestDetailDto, TestCollectionDto } from "@app/types/respo
 import { ICurrentUser } from "@app/types/interfaces";
 import { StartSessionDto, UpdateSessionDto } from "@app/types/dtos/simulated-tests";
 import { SkillEnum } from "@app/types/enums";
+import { FileInterceptor } from "@nestjs/platform-express";
+import { plainToClass } from "class-transformer";
 
 @ApiTags("Simulated tests")
 @ApiDefaultResponses()
@@ -108,9 +111,17 @@ export class SimulatedTestController {
   @ApiParam({ name: "id", type: Number, required: true })
   @ApiBody({ type: UpdateSessionDto })
   @ApiResponse({ type: String })
-  @Put("simulated-tests/sessions/:id")
-  async updateSession(@Param("id", ParseIntPipe) sessionId: number, @Body() sessionData: UpdateSessionDto) {
-    return this.simulatedTestService.updateSession(sessionId, sessionData);
+  @UseInterceptors(FileInterceptor("file"))
+  @Put("simulated-tests/session/:id")
+  async updateSession(
+    @Param("id", ParseIntPipe) sessionId: number,
+    @Body() sessionData: any,
+    @UploadedFile("file") file?: Express.Multer.File
+  ) {
+    sessionData.response = JSON.parse(sessionData.response);
+    const data: UpdateSessionDto = plainToClass(UpdateSessionDto, sessionData);
+
+    return this.simulatedTestService.updateSession(sessionId, data, file);
   }
 
   @ApiParam({ name: "id", type: Number, required: true })
