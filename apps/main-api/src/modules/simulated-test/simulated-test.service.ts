@@ -1,5 +1,10 @@
 import { SimulatedIeltsTest, SkillTest, SkillTestAnswer, SkillTestSession, TestCollection } from "@app/database";
-import { StartSessionDto, UpdateSessionDto } from "@app/types/dtos/simulated-tests";
+import {
+  SpeakingResponseDto,
+  StartSessionDto,
+  TextResponseDto,
+  UpdateSessionDto,
+} from "@app/types/dtos/simulated-tests";
 import { ICurrentUser, ITestCollection } from "@app/types/interfaces";
 import { BadRequestException, Injectable, Logger } from "@nestjs/common";
 import _ from "lodash";
@@ -166,44 +171,59 @@ export class SimulatedTestService {
     }
   }
 
-  async updateSession(sessionId: number, sessionData: UpdateSessionDto) {
+  async updateSession(
+    sessionId: number,
+    sessionData: UpdateSessionDto,
+    additionalResource: Express.Multer.File = null
+  ) {
     try {
-      const { status, responses } = sessionData;
+      const { status, response } = sessionData;
+      const { skillTestId, mode, parts, skillTest } = await SkillTestSession.findOne({
+        where: { id: sessionId },
+        relations: { skillTest: true },
+      });
+
+      let responseInfo = null;
       if (status === TestSessionStatusEnum.FINISHED) {
-        const { skillTestId, mode, parts, skillTest } = await SkillTestSession.findOne({
-          where: { id: sessionId },
-          relations: { skillTest: true },
-        });
+        const { response } = sessionData;
 
-        if (skillTest.skill === SkillEnum.SPEAKING) {
-          await this.evaluateSpeakingQueue.add("evaluate-speaking", { responses });
-          return;
-        }
-        const { answers } = await SkillTestAnswer.findOneOrFail({
-          where: { skillTestId },
-          relations: { skillTest: true },
-        });
-
-        const results = [];
-
-        if (answers && answers.length > 0) {
-          responses.map((r) => {
-            const answer = answers[r.questionNo - 1];
-            if (answer) {
-              this.gradingContext.setValidator(answer);
-              results.push(this.gradingContext.validate(r.answer, answer));
-            } else {
-              results.push(null);
-            }
+        if (response instanceof SpeakingResponseDto) {
+          await SkillTestSession.save({ id: skillTestId, status: TestSessionStatusEnum.IN_EVALUATING });
+          await this.evaluateSpeakingQueue.add("evaluate-speaking", { sessionId, response, file: additionalResource });
+          sessionData.status = TestSessionStatusEnum.IN_EVALUATING;
+        } else if (response instanceof TextResponseDto) {
+          const { answers } = await SkillTestAnswer.findOneOrFail({
+            where: { skillTestId },
+            relations: { skillTest: true },
           });
-          sessionData["results"] = results;
+
+          const results = [];
+          const { info } = response;
+          responseInfo = info;
+
+          if (answers && answers.length > 0) {
+            info.map((r) => {
+              const answer = answers[r.questionNo - 1];
+              if (answer) {
+                this.gradingContext.setValidator(answer);
+                results.push(this.gradingContext.validate(r.answer, answer));
+              } else {
+                results.push(null);
+              }
+            });
+            sessionData["results"] = results;
+          }
+          if (mode == TestSessionModeEnum.FULL_TEST || parts.length === skillTest.partsDetail.length) {
+            this.gradingContext.setGradingStrategy(skillTest.skill);
+            sessionData["estimatedBandScore"] = this.gradingContext.grade(results);
+          }
         }
-        if (mode == TestSessionModeEnum.FULL_TEST || parts.length === skillTest.partsDetail.length) {
-          this.gradingContext.setGradingStrategy(skillTest.skill);
-          sessionData["estimatedBandScore"] = this.gradingContext.grade(results);
+      } else if (status === TestSessionStatusEnum.IN_PROGRESS) {
+        if (response instanceof TextResponseDto && mode === TestSessionModeEnum.PRACTICE) {
+          responseInfo = response.info;
         }
       }
-      await SkillTestSession.save({ id: sessionId, ...sessionData });
+      await SkillTestSession.save({ id: sessionId, ...sessionData, responses: responseInfo });
       return "Ok";
     } catch (error) {
       this.logger.error(error);
