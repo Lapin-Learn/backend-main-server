@@ -1,5 +1,4 @@
-import { IGuidance } from "@app/types/interfaces";
-import { ITestAnswer } from "@app/types/interfaces";
+import { IGuidance, TestAnswer } from "@app/types/interfaces";
 import {
   Entity,
   BaseEntity,
@@ -21,7 +20,7 @@ export class SkillTestAnswer extends BaseEntity {
   guidances: IGuidance[];
 
   @Column({ name: "answers", type: "jsonb", nullable: true, default: null })
-  answers: ITestAnswer[];
+  answers: TestAnswer[];
 
   @CreateDateColumn({ name: "created_at", type: "timestamp", nullable: false, default: "CURRENT_TIMESTAMP" })
   createdAt: Date;
