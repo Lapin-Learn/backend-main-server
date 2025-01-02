@@ -23,7 +23,7 @@ import { ICurrentUser } from "@app/types/interfaces";
 import { StartSessionDto, UpdateSessionDto } from "@app/types/dtos/simulated-tests";
 import { SkillEnum } from "@app/types/enums";
 import { FileInterceptor } from "@nestjs/platform-express";
-import { plainToClass } from "class-transformer";
+import { plainToInstance } from "class-transformer";
 
 @ApiTags("Simulated tests")
 @ApiDefaultResponses()
@@ -119,7 +119,7 @@ export class SimulatedTestController {
     @UploadedFile("file") file?: Express.Multer.File
   ) {
     sessionData.response = JSON.parse(sessionData.response);
-    const data: UpdateSessionDto = plainToClass(UpdateSessionDto, sessionData);
+    const data: UpdateSessionDto = plainToInstance(UpdateSessionDto, sessionData);
 
     return this.simulatedTestService.updateSession(sessionId, data, file);
   }

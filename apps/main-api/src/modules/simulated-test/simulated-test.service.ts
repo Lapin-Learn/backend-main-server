@@ -13,6 +13,8 @@ import { GradingContext } from "@app/shared-modules/grading";
 import { SkillEnum, TestSessionModeEnum, TestSessionStatusEnum } from "@app/types/enums";
 import { InjectQueue } from "@nestjs/bullmq";
 import { Queue } from "bullmq";
+import { EvaluateSpeaking, EvaluateWriting, RangeGradingStrategy } from "@app/shared-modules/grading/grading-strategy";
+import { EVALUATE_SPEAKING_QUEUE, EVALUATE_WRITING_QUEUE } from "@app/types/constants";
 
 @Injectable()
 export class SimulatedTestService {
@@ -20,7 +22,8 @@ export class SimulatedTestService {
   constructor(
     private readonly bucketService: BucketService,
     private readonly gradingContext: GradingContext,
-    @InjectQueue("evaluate-speaking") private evaluateSpeakingQueue: Queue
+    @InjectQueue(EVALUATE_SPEAKING_QUEUE) private evaluateSpeakingQueue: Queue,
+    @InjectQueue(EVALUATE_WRITING_QUEUE) private evaluateWritingQueue: Queue
   ) {}
   async getCollectionsWithSimulatedTest(offset: number, limit: number, keyword: string, profileId: string) {
     try {
@@ -178,45 +181,61 @@ export class SimulatedTestService {
   ) {
     try {
       const { status, response } = sessionData;
-      const { skillTestId, mode, parts, skillTest } = await SkillTestSession.findOne({
+      const {
+        skillTestId,
+        mode,
+        parts,
+        skillTest,
+        status: sessionStatus,
+      } = await SkillTestSession.findOneOrFail({
         where: { id: sessionId },
         relations: { skillTest: true },
       });
+
+      if (sessionStatus === TestSessionStatusEnum.FINISHED || sessionStatus === TestSessionStatusEnum.CANCELED) {
+        throw new BadRequestException("Session can not be updated");
+      }
 
       let responseInfo = null;
       if (status === TestSessionStatusEnum.FINISHED) {
         const { response } = sessionData;
 
         if (response instanceof SpeakingResponseDto) {
-          await SkillTestSession.save({ id: skillTestId, status: TestSessionStatusEnum.IN_EVALUATING });
-          await this.evaluateSpeakingQueue.add("evaluate-speaking", { sessionId, response, file: additionalResource });
+          this.gradingContext.setGradingStrategy(
+            new EvaluateSpeaking(
+              this.evaluateSpeakingQueue,
+              sessionId,
+              EVALUATE_SPEAKING_QUEUE,
+              additionalResource,
+              response.info
+            )
+          );
           sessionData.status = TestSessionStatusEnum.IN_EVALUATING;
+          responseInfo = response.info;
         } else if (response instanceof TextResponseDto) {
-          const { answers } = await SkillTestAnswer.findOneOrFail({
-            where: { skillTestId },
-            relations: { skillTest: true },
-          });
-
-          const results = [];
           const { info } = response;
           responseInfo = info;
 
-          if (answers && answers.length > 0) {
-            info.map((r) => {
-              const answer = answers[r.questionNo - 1];
-              if (answer) {
-                this.gradingContext.setValidator(answer);
-                results.push(this.gradingContext.validate(r.answer, answer));
-              } else {
-                results.push(null);
-              }
+          if (skillTest.skill === SkillEnum.WRITING) {
+            this.gradingContext.setGradingStrategy(
+              new EvaluateWriting(this.evaluateWritingQueue, sessionId, EVALUATE_WRITING_QUEUE, info)
+            );
+            sessionData.status = TestSessionStatusEnum.IN_EVALUATING;
+          } else {
+            const { answers } = await SkillTestAnswer.findOneOrFail({
+              where: { skillTestId },
+              relations: { skillTest: true },
             });
-            sessionData["results"] = results;
+
+            this.gradingContext.setGradingStrategy(new RangeGradingStrategy(answers, info, skillTest.skill));
           }
-          if (mode == TestSessionModeEnum.FULL_TEST || parts.length === skillTest.partsDetail.length) {
-            this.gradingContext.setGradingStrategy(skillTest.skill);
-            sessionData["estimatedBandScore"] = this.gradingContext.grade(results);
-          }
+        }
+
+        this.gradingContext.evaluateBandScore();
+
+        sessionData["results"] = this.gradingContext.getResults();
+        if (mode === TestSessionModeEnum.FULL_TEST || parts.length === skillTest.partsDetail.length) {
+          sessionData["estimatedBandScore"] = this.gradingContext.getEstimatedScore();
         }
       } else if (status === TestSessionStatusEnum.IN_PROGRESS) {
         if (response instanceof TextResponseDto && mode === TestSessionModeEnum.PRACTICE) {
