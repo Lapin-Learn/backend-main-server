@@ -1,7 +1,7 @@
 import { SkillEnum, TestSessionStatusEnum } from "@app/types/enums";
 import { ApiProperty } from "@nestjs/swagger";
 import { Type } from "class-transformer";
-import { IsEnum, IsInt, IsNumber, IsOptional, ValidateNested } from "class-validator";
+import { IsArray, IsEnum, IsInt, IsNotEmpty, IsNumber, IsOptional, ValidateNested } from "class-validator";
 
 class TestSessionResponseDto {
   @IsEnum(SkillEnum)
@@ -28,12 +28,14 @@ export class InfoTextResponseDto {
 }
 
 export class TextResponseDto extends TestSessionResponseDto {
+  @IsArray()
   @ValidateNested({ each: true })
   @Type(() => InfoTextResponseDto)
   info: InfoTextResponseDto[];
 }
 
 export class SpeakingResponseDto extends TestSessionResponseDto {
+  @IsArray()
   @ValidateNested({ each: true })
   @Type(() => InfoSpeakingResponseDto)
   info: InfoSpeakingResponseDto[];
@@ -51,7 +53,7 @@ export class UpdateSessionDto {
   status: TestSessionStatusEnum;
 
   @ApiProperty({ type: [TestSessionResponseDto] })
-  // @ValidateNested({ each: true })
+  @IsNotEmpty()
   @Type(() => TestSessionResponseDto, {
     discriminator: {
       property: "skill",

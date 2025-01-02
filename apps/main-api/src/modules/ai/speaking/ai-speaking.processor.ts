@@ -1,8 +1,9 @@
 import { Processor, WorkerHost } from "@nestjs/bullmq";
 import { AISpeakingService } from "./ai-speaking.service";
 import { Job } from "bullmq";
+import { EVALUATE_SPEAKING_QUEUE } from "@app/types/constants";
 
-@Processor("evaluate-speaking")
+@Processor(EVALUATE_SPEAKING_QUEUE)
 export class AISpeakingConsumer extends WorkerHost {
   constructor(private readonly aiSpeakingService: AISpeakingService) {
     super();
