@@ -20,6 +20,7 @@ import { ApiBearerAuth, ApiBody, ApiParam, ApiQuery, ApiResponse, ApiTags } from
 import { SimulatedIeltsTestDetailDto, TestCollectionDto } from "@app/types/response-dtos";
 import { ICurrentUser } from "@app/types/interfaces";
 import { StartSessionDto, UpdateSessionDto } from "@app/types/dtos/simulated-tests";
+import { SkillEnum } from "@app/types/enums";
 
 @ApiTags("Simulated tests")
 @ApiDefaultResponses()
@@ -71,6 +72,18 @@ export class SimulatedTestController {
     return this.simulatedTestService.getSessionHistory(learner, offset, limit);
   }
 
+  @Get("simulated-tests/:id/sessions")
+  @UseInterceptors(PaginationInterceptor)
+  async getSessionHistoryOfSimulatedTest(
+    @CurrentUser() learner: ICurrentUser,
+    @Param("id", ParseIntPipe) simulatedTestId: number,
+    @Query("offset", new DefaultValuePipe(0), ParseIntPipe) offset: number,
+    @Query("limit", new DefaultValuePipe(10), ParseIntPipe) limit: number,
+    @Query("skill") skill?: SkillEnum
+  ) {
+    return this.simulatedTestService.getSessionHistory(learner, offset, limit, { simulatedTestId, skill });
+  }
+
   @Get("simulated-tests/report")
   async getBandScoreReport(@CurrentUser() learner: ICurrentUser) {
     return this.simulatedTestService.getBandScoreReport(learner);
@@ -78,13 +91,13 @@ export class SimulatedTestController {
 
   @ApiBody({ type: StartSessionDto })
   @ApiResponse({ type: String })
-  @Post("simulated-tests/session")
+  @Post("simulated-tests/sessions")
   async startSession(@CurrentUser() learner: ICurrentUser, @Body() sessionData: StartSessionDto) {
     return this.simulatedTestService.startSession(learner, sessionData);
   }
 
   @ApiParam({ name: "id", type: Number, required: true })
-  @Get("simulated-tests/session/:id")
+  @Get("simulated-tests/sessions/:id")
   async getSessionDetail(@CurrentUser() learner: ICurrentUser, @Param("id", ParseIntPipe) sessionId: number) {
     return this.simulatedTestService.getSessionDetail(sessionId, learner.profileId);
   }
@@ -92,7 +105,7 @@ export class SimulatedTestController {
   @ApiParam({ name: "id", type: Number, required: true })
   @ApiBody({ type: UpdateSessionDto })
   @ApiResponse({ type: String })
-  @Put("simulated-tests/session/:id")
+  @Put("simulated-tests/sessions/:id")
   async updateSession(@Param("id", ParseIntPipe) sessionId: number, @Body() sessionData: UpdateSessionDto) {
     return this.simulatedTestService.updateSession(sessionId, sessionData);
   }

@@ -102,10 +102,23 @@ export class SimulatedTestService {
     }
   }
 
-  async getSessionHistory(learner: ICurrentUser, offset: number, limit: number) {
+  async getSessionHistory(
+    learner: ICurrentUser,
+    offset: number,
+    limit: number,
+    filter?: { simulatedTestId: number; skill: SkillEnum }
+  ) {
     try {
-      const histories = await SkillTestSession.getSessionHistory(learner.profileId, offset, limit);
-      histories.map((h: SkillTestSession) => {
+      const { simulatedTestId, skill } = filter || {};
+      const { items, total } = await SkillTestSession.getSessionHistory(
+        learner.profileId,
+        offset,
+        limit,
+        simulatedTestId,
+        skill
+      );
+
+      items.map((h: SkillTestSession) => {
         h["totalQuestions"] = h.results.length;
         h["testName"] = h.skillTest.simulatedIeltsTest.testName;
         h["skill"] = h.skillTest.skill;
@@ -120,11 +133,7 @@ export class SimulatedTestService {
         return h;
       });
 
-      const total = await SkillTestSession.countBy({
-        learnerProfileId: learner.profileId,
-        status: TestSessionStatusEnum.FINISHED,
-      });
-      return { items: histories, total };
+      return { items, total };
     } catch (error) {
       this.logger.error(error);
       throw new BadRequestException(error);
