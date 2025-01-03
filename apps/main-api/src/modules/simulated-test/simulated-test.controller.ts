@@ -115,13 +115,14 @@ export class SimulatedTestController {
   @Put("simulated-tests/session/:id")
   async updateSession(
     @Param("id", ParseIntPipe) sessionId: number,
+    @CurrentUser() learner: ICurrentUser,
     @Body() sessionData: any,
     @UploadedFile("file") file?: Express.Multer.File
   ) {
     sessionData.response = JSON.parse(sessionData.response);
     const data: UpdateSessionDto = plainToInstance(UpdateSessionDto, sessionData);
 
-    return this.simulatedTestService.updateSession(sessionId, data, file);
+    return this.simulatedTestService.updateSession(sessionId, data, learner, file);
   }
 
   @ApiParam({ name: "id", type: Number, required: true })

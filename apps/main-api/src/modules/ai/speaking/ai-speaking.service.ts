@@ -8,8 +8,10 @@ import path from "path";
 import DiffMatchPatch from "diff-match-patch";
 import { GenAISpeakingModel } from "@app/shared-modules/genai/model/genai-speaking-model.service";
 import { GenAISpeakingIPAModel, GenAISpeakingScoreModel } from "@app/shared-modules/genai";
-import { ICurrentUser, ISpeakingEvaluation } from "@app/types/interfaces";
+import { ICurrentUser } from "@app/types/interfaces";
 import { SkillTest, SkillTestSession, SpeakingRoom } from "@app/database";
+import { InfoSpeakingResponseDto } from "@app/types/dtos/simulated-tests";
+import { TestSessionStatusEnum } from "@app/types/enums";
 
 const PUNCTUATION = "/[.,/#!$%^&*;:{}=-_`~()]/g";
 
@@ -45,7 +47,7 @@ export class AISpeakingService {
     }
   }
 
-  async generateScore(sessionId: number, part: number, order: number, file: Express.Multer.File, user: ICurrentUser) {
+  async generateScore(sessionId: number, file: Express.Multer.File, info: InfoSpeakingResponseDto[]) {
     // Create a temporary file with automatic cleanup
     const tempFile = tmp.fileSync({ postfix: path.extname(file.originalname) });
     let geminiFileName = "";
@@ -63,38 +65,60 @@ export class AISpeakingService {
 
       // Get current evaluation
       const existedSession = await SkillTestSession.findOneOrFail({
-        where: { id: sessionId, learnerProfileId: user.profileId },
+        where: { id: sessionId },
       });
 
       const skillTest = await SkillTest.findOne({
         where: { id: existedSession.skillTestId },
         select: ["partsContent"],
       });
-      const question = skillTest?.partsContent[0][`part${part}`][order - 1]; // Order is 1-based
-      const allQuestions = skillTest?.partsContent[0][`part${part}`];
 
-      const currentEvaluation =
-        existedSession?.results && existedSession.results[0]
-          ? (existedSession.results[0] as {
-              part1: ISpeakingEvaluation;
-              part2: ISpeakingEvaluation;
-              part3: ISpeakingEvaluation;
-              overall: ISpeakingEvaluation;
-            })
-          : {
-              part1: null,
-              part2: null,
-              part3: null,
-              overall: null,
-            };
+      const { parts } = existedSession;
+
+      let questions = {};
+
+      for (const order of Object.values(parts)) {
+        questions = { ...questions, [`part${order}`]: skillTest.partsContent[0][`part${order}`] };
+      }
+      questions = { ...questions, name: skillTest.partsContent[0]["name"] };
+
+      const evaluationJson = {
+        part1: {
+          type: "string",
+        },
+        part2: {
+          type: "string",
+        },
+        part3: {
+          type: "string",
+        },
+        overall: {
+          type: "string",
+        },
+      };
+
+      const prompt = `
+      Evaluate speaking score for the following data of questions and some additional data relating to my response. 
+      The additional information includes:
+        - The part that the answer and question belong to, called "partNo".
+        - The order of the question, which is 1-based within each part, called "questionNo".
+        - The value of the timestamp showing when my response for each question ends, called "timeStamp". 
+
+      I want your evaluation for my answer to be in this format: ${JSON.stringify(evaluationJson)}. 
+      However, I may sometimes skip parts of the speaking test. Ensure you evaluate based only on the parts I completed and the evaluation data should not contain the part that I did not answer. 
+      Your evaluation should always include a score for each part and an overall evaluation. 
+      Additionally, use personal pronouns in your evaluation such that "I" refers to you and "you" refers to me.
+
+      Below is the question and response data for evaluation:
+      {
+        "questions": ${JSON.stringify(questions)},
+        "speakingData": ${JSON.stringify(info)}
+      }
+      The output should be in a valid JSON format suitable for storing in my database.`;
 
       // Generate content using the AI model
-      const singlePartEvaluation = await this.genAISpeakingScoreEvaluationModel.generateContent([
-        `Evaluate speaking score for the following question and previous evaluation: 
-        {
-          "question": "${question}",
-          "previousEvaluation": "${currentEvaluation[`part${part}`] || ""}",
-        }`,
+      const evaluation = await this.genAISpeakingScoreEvaluationModel.generateContent([
+        prompt,
         {
           fileData: {
             fileUri: uploadResult.file.uri,
@@ -103,33 +127,16 @@ export class AISpeakingService {
         },
       ]);
 
-      // Update current evaluation
-      currentEvaluation[`part${part}`] = singlePartEvaluation;
-
-      const overallEvaluation = await this.genAISpeakingScoreEvaluationModel.generateContent(
-        `Calculate the overall speaking score based on the evaluation three parts, including all questions, band score, and previous evaluation: 
-        {
-          "allQuestions": ${JSON.stringify(allQuestions)},
-          "part1": "${currentEvaluation.part1 || ""}",
-          "part2": "${currentEvaluation.part2 || ""}",
-          "part3": "${currentEvaluation.part3 || ""}",
-          "overall": "${currentEvaluation.overall || ""}",
-        }
-        Response MUST restrict to the system schema
-        `
-      );
-
-      // Update overall evaluation
-      currentEvaluation.overall = overallEvaluation;
       SkillTestSession.update(
         { id: sessionId },
         {
-          results: [currentEvaluation],
-          estimatedBandScore: currentEvaluation.overall?.score,
+          results: [evaluation],
+          estimatedBandScore: evaluation.overall.score,
+          status: TestSessionStatusEnum.FINISHED,
         }
       );
 
-      return currentEvaluation;
+      return;
     } catch (error) {
       this.logger.error(error);
       throw new BadRequestException(error);
