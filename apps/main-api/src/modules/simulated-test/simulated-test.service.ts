@@ -177,6 +177,7 @@ export class SimulatedTestService {
   async updateSession(
     sessionId: number,
     sessionData: UpdateSessionDto,
+    learner: ICurrentUser,
     additionalResource: Express.Multer.File = null
   ) {
     try {
@@ -188,12 +189,12 @@ export class SimulatedTestService {
         skillTest,
         status: sessionStatus,
       } = await SkillTestSession.findOneOrFail({
-        where: { id: sessionId },
+        where: { id: sessionId, learnerProfileId: learner.profileId },
         relations: { skillTest: true },
       });
 
       if (sessionStatus === TestSessionStatusEnum.FINISHED || sessionStatus === TestSessionStatusEnum.CANCELED) {
-        throw new BadRequestException("Session can not be updated");
+        throw new BadRequestException("Session is finished or canceled");
       }
 
       let responseInfo = null;

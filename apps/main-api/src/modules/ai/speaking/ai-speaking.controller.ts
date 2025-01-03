@@ -9,6 +9,7 @@ import {
   UploadedFile,
   UseGuards,
   UseInterceptors,
+  ValidationPipe,
 } from "@nestjs/common";
 import { AISpeakingService } from "./ai-speaking.service";
 import { FileInterceptor } from "@nestjs/platform-express";
@@ -16,6 +17,7 @@ import { FirebaseJwtAuthGuard, RoleGuard } from "apps/main-api/src/guards";
 import { CurrentUser, Roles } from "apps/main-api/src/decorators";
 import { AccountRoleEnum } from "@app/types/enums";
 import { ICurrentUser } from "@app/types/interfaces";
+import { SpeakingResponseDto } from "@app/types/dtos/simulated-tests";
 
 @UseGuards(RoleGuard)
 @UseGuards(FirebaseJwtAuthGuard)
@@ -27,13 +29,11 @@ export class AISpeakingController {
   @Post("score")
   @UseInterceptors(FileInterceptor("file"))
   async generateResponse(
+    @Body("response", new ValidationPipe()) response: SpeakingResponseDto,
     @Body("sessionId", new ParseIntPipe()) sessionId: number,
-    @Body("part", new ParseIntPipe()) part: number,
-    @Body("order", new ParseIntPipe()) order: number,
-    @UploadedFile() file: Express.Multer.File,
-    @CurrentUser() user: ICurrentUser
+    @UploadedFile() file: Express.Multer.File
   ) {
-    return this.aiSpeakingService.generateScore(sessionId, part, order, file, user);
+    return this.aiSpeakingService.generateScore(sessionId, file, response.info);
   }
 
   @Roles(AccountRoleEnum.LEARNER)
