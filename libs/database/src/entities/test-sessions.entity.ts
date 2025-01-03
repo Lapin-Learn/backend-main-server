@@ -10,7 +10,7 @@ import {
 } from "typeorm";
 import { SkillTest } from "./skill-tests.entity";
 import { LearnerProfile } from "./learner-profile.entity";
-import { TestSessionModeEnum, TestSessionStatusEnum } from "@app/types/enums";
+import { SkillEnum, TestSessionModeEnum, TestSessionStatusEnum } from "@app/types/enums";
 import { StartSessionDto } from "@app/types/dtos/simulated-tests";
 import { ITestSessionResponse } from "@app/types/interfaces";
 
@@ -114,8 +114,14 @@ export class SkillTestSession extends BaseEntity {
       .getOne();
   }
 
-  static async getSessionHistory(learnerId: string, offset: number, limit: number) {
-    return this.createQueryBuilder("session")
+  static async getSessionHistory(
+    learnerId: string,
+    offset: number,
+    limit: number,
+    simulatedTestId?: number,
+    skill?: SkillEnum
+  ) {
+    const query = this.createQueryBuilder("session")
       .select([
         "session.id",
         "session.createdAt",
@@ -130,10 +136,20 @@ export class SkillTestSession extends BaseEntity {
       .addSelect(["test.testName"])
       .where("session.learner_profile_id = :learnerId", { learnerId })
       .andWhere("session.status = :status", { status: TestSessionStatusEnum.FINISHED })
-      .skip(offset)
-      .take(limit)
-      .orderBy("session.createdAt", "DESC")
-      .getMany();
+      .orderBy("session.createdAt", "DESC");
+
+    if (simulatedTestId) {
+      query.andWhere("test.id = :simulatedTestId", { simulatedTestId });
+    }
+
+    if (skill) {
+      query.andWhere("skillTest.skill = :skill", { skill });
+    }
+
+    const total = await query.getCount();
+    const items = await query.skip(offset).take(limit).getMany();
+
+    return { items, total };
   }
 
   static async getBandScoreReport(learnerId: string) {
