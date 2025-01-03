@@ -9,10 +9,10 @@ class TestSessionResponseDto {
 }
 
 export class InfoSpeakingResponseDto {
-  @IsInt()
+  @IsNumber()
   questionNo: number;
 
-  @IsInt()
+  @IsNumber()
   partNo: number;
 
   @IsNumber()
