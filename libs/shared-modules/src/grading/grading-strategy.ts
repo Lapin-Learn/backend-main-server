@@ -92,7 +92,7 @@ export class EvaluateSpeaking implements IGradingStrategy {
     await this.queue.add(this.jobName, {
       sessionId: this.sessionId,
       userResponse: this.userResponses,
-      file: this.speakingFile,
+      speakingFile: this.speakingFile,
     });
   }
 
