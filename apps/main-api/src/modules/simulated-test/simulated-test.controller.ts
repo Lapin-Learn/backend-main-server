@@ -72,6 +72,9 @@ export class SimulatedTestController {
     return this.simulatedTestService.getSessionHistory(learner, offset, limit);
   }
 
+  @ApiQuery({ name: "offset", type: Number, required: false })
+  @ApiQuery({ name: "limit", type: Number, required: false })
+  @ApiQuery({ name: "skill", enum: SkillEnum, required: false })
   @Get("simulated-tests/:id/sessions")
   @UseInterceptors(PaginationInterceptor)
   async getSessionHistoryOfSimulatedTest(
