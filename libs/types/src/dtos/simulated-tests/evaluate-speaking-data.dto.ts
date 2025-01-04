@@ -7,7 +7,7 @@ export class EvaluateSpeakingData {
   sessionId: number;
 
   @IsNotEmpty()
-  speakingFile: Express.Multer.File;
+  speakingFiles: Array<Express.Multer.File>;
 
   @IsArray()
   @ValidateNested({ each: true })

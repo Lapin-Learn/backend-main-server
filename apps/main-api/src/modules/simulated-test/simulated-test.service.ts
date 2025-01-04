@@ -178,7 +178,7 @@ export class SimulatedTestService {
     sessionId: number,
     sessionData: UpdateSessionDto,
     learner: ICurrentUser,
-    additionalResource: Express.Multer.File = null
+    additionalResources: Array<Express.Multer.File> = null
   ) {
     try {
       const { status, response } = sessionData;
@@ -207,7 +207,7 @@ export class SimulatedTestService {
               this.evaluateSpeakingQueue,
               sessionId,
               EVALUATE_SPEAKING_QUEUE,
-              additionalResource,
+              additionalResources,
               response.info
             )
           );

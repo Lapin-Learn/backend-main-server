@@ -70,7 +70,7 @@ export class RangeGradingStrategy implements IGradingStrategy {
 
 export class EvaluateSpeaking implements IGradingStrategy {
   private sessionId: number;
-  private speakingFile: Express.Multer.File;
+  private speakingFiles: Array<Express.Multer.File>;
   private userResponses: InfoSpeakingResponseDto[];
   private jobName: string;
   private queue: Queue;
@@ -78,12 +78,12 @@ export class EvaluateSpeaking implements IGradingStrategy {
     queue: Queue,
     sessionId: number,
     jobName: string,
-    speakingFile: Express.Multer.File,
+    speakingFiles: Array<Express.Multer.File>,
     userResponses: InfoSpeakingResponseDto[]
   ) {
     this.sessionId = sessionId;
     this.jobName = jobName;
-    this.speakingFile = speakingFile;
+    this.speakingFiles = speakingFiles;
     this.userResponses = userResponses;
     this.queue = queue;
   }
@@ -92,7 +92,7 @@ export class EvaluateSpeaking implements IGradingStrategy {
     await this.queue.add(this.jobName, {
       sessionId: this.sessionId,
       userResponse: this.userResponses,
-      speakingFile: this.speakingFile,
+      speakingFiles: this.speakingFiles,
     });
   }
 
