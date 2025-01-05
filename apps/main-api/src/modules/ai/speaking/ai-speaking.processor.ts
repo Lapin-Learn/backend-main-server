@@ -6,7 +6,7 @@ import { validateOrReject } from "class-validator";
 import { plainToInstance } from "class-transformer";
 import { EvaluateSpeakingData } from "@app/types/dtos/simulated-tests";
 import * as fs from "fs";
-import * as path from "path";
+import * as tmp from "tmp";
 import ffmpeg from "fluent-ffmpeg";
 
 @Processor(EVALUATE_SPEAKING_QUEUE)
@@ -20,41 +20,41 @@ export class AISpeakingConsumer extends WorkerHost {
       const speakingData: EvaluateSpeakingData = plainToInstance(EvaluateSpeakingData, job.data);
       await validateOrReject(speakingData);
 
-      const permanentDir = path.join(__dirname, "public", "audio_files");
-      if (!fs.existsSync(permanentDir)) {
-        fs.mkdirSync(permanentDir, { recursive: true });
-      }
-
       const inputFilePaths = await Promise.all(
-        speakingData.speakingFiles.map(async (file, index) => {
-          const permanentFilePath = path.join(permanentDir, `file${index + 1}.m4a`);
-          fs.writeFileSync(permanentFilePath, Buffer.from(file.buffer)); // Save file buffer to permanent file
-          return permanentFilePath;
+        speakingData.speakingFiles.map(async (file) => {
+          const tempFile = tmp.fileSync({ postfix: ".m4a" });
+          fs.writeFileSync(tempFile.name, Buffer.from(file.buffer));
+          return tempFile;
         })
       );
 
-      const outputFilePath = path.join(permanentDir, "merged_audio.mp3");
+      const mergedTempFile = tmp.fileSync({ postfix: ".mp3" });
 
-      await this.mergeAudioFiles(inputFilePaths, outputFilePath);
+      await this.mergeAudioFiles(
+        inputFilePaths.map((file) => file.name),
+        mergedTempFile.name
+      );
+
+      inputFilePaths.forEach((tempFile) => tempFile.removeCallback());
 
       const mergedFile: Express.Multer.File = {
         fieldname: "speakingFile",
-        originalname: "merged_audio.mp3",
+        originalname: `speaking_file_${new Date().toISOString().replace(/[:.]/g, "-")}.mp3`,
         encoding: "7bit",
         mimetype: "audio/mpeg",
-        buffer: fs.readFileSync(outputFilePath),
-        size: fs.statSync(outputFilePath).size,
-        stream: fs.createReadStream(outputFilePath),
-        destination: permanentDir,
-        filename: "merged_audio.mp3",
-        path: outputFilePath,
+        buffer: fs.readFileSync(mergedTempFile.name),
+        size: fs.statSync(mergedTempFile.name).size,
+        stream: fs.createReadStream(mergedTempFile.name),
+        destination: null,
+        filename: mergedTempFile.name,
+        path: mergedTempFile.name,
       };
 
       await this.aiSpeakingService.generateScore(speakingData.sessionId, mergedFile, speakingData.userResponse);
 
       return;
     } catch (error) {
-      console.log("Error:", error);
+      console.error("Error:", error);
       return;
     }
   }
@@ -66,9 +66,7 @@ export class AISpeakingConsumer extends WorkerHost {
         instance.addInput(audioFile);
       });
 
-      console.log("outputPath: ", outputPath);
       instance
-        .audioCodec("libmp3lame")
         .on("error", (err) => {
           console.error("Error during audio merging:", err);
           reject(err);
