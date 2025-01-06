@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
@@ -16,6 +17,9 @@ import { FirebaseJwtAuthGuard, RoleGuard } from "apps/main-api/src/guards";
 import { CurrentUser, Roles } from "apps/main-api/src/decorators";
 import { AccountRoleEnum } from "@app/types/enums";
 import { ICurrentUser } from "@app/types/interfaces";
+import { SpeakingResponseDto } from "@app/types/dtos/simulated-tests";
+import { plainToInstance } from "class-transformer";
+import { validate } from "class-validator";
 
 @UseGuards(RoleGuard)
 @UseGuards(FirebaseJwtAuthGuard)
@@ -27,13 +31,16 @@ export class AISpeakingController {
   @Post("score")
   @UseInterceptors(FileInterceptor("file"))
   async generateResponse(
+    @Body("response") response: any,
     @Body("sessionId", new ParseIntPipe()) sessionId: number,
-    @Body("part", new ParseIntPipe()) part: number,
-    @Body("order", new ParseIntPipe()) order: number,
-    @UploadedFile() file: Express.Multer.File,
-    @CurrentUser() user: ICurrentUser
+    @UploadedFile("file") file: Express.Multer.File
   ) {
-    return this.aiSpeakingService.generateScore(sessionId, part, order, file, user);
+    const instance = plainToInstance(SpeakingResponseDto, JSON.parse(response));
+    const errors = await validate(instance);
+    if (errors.length > 0) {
+      throw new BadRequestException("invalid data");
+    }
+    return this.aiSpeakingService.generateScore(sessionId, file, instance.info);
   }
 
   @Roles(AccountRoleEnum.LEARNER)
