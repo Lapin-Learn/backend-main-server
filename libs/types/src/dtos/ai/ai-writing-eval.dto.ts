@@ -4,9 +4,9 @@ export class AIWritingEvaluationDto {
   @IsNumber()
   sessionId: number;
 
-  @IsNumber()
-  part: number;
+  @IsString()
+  part1: string;
 
   @IsString()
-  data: string;
+  part2: string;
 }

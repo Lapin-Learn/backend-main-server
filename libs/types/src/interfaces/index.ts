@@ -42,3 +42,4 @@ export * from "./band-score-range.interface";
 export * from "./grading-strategy.interface";
 export * from "./test-session-responses.interface";
 export * from "./speaking-evaluation.interface";
+export * from "./ai-writing-question.interface";
