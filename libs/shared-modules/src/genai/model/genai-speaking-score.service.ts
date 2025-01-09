@@ -8,30 +8,37 @@ export class GenAISpeakingScoreModel extends GenAIModelAbstract {
 
   getSchema(): ResponseSchema {
     const schema: ResponseSchema = {
-      type: SchemaType.OBJECT,
-      properties: {
-        score: {
-          type: SchemaType.NUMBER,
-          description: "The estimated band score",
+      type: SchemaType.ARRAY,
+      items: {
+        type: SchemaType.OBJECT,
+        properties: {
+          score: {
+            type: SchemaType.NUMBER,
+            description: "The estimated band score",
+          },
+          part: {
+            type: SchemaType.STRING,
+            description: `The target of the evaluation, it can be part order or overall. The format of part order should be : "Part {order}" and the overall should be "Overall"`,
+          },
+          fluencyAndCoherence: {
+            type: SchemaType.STRING,
+            description: "Fluency and Coherence feedback",
+          },
+          lexicalResource: {
+            type: SchemaType.STRING,
+            description: "Lexical Resource feedback",
+          },
+          grammaticalAndRangeAccuracy: {
+            type: SchemaType.STRING,
+            description: "Grammatical Range and Accuracy feedback",
+          },
+          pronunciation: {
+            type: SchemaType.STRING,
+            description: "Pronunciation feedback",
+          },
         },
-        fluencyAndCoherence: {
-          type: SchemaType.STRING,
-          description: "Fluency and Coherence feedback",
-        },
-        lexicalResource: {
-          type: SchemaType.STRING,
-          description: "Lexical Resource feedback",
-        },
-        grammaticalAndRangeAccuracy: {
-          type: SchemaType.STRING,
-          description: "Grammatical Range and Accuracy feedback",
-        },
-        pronunciation: {
-          type: SchemaType.STRING,
-          description: "Pronunciation feedback",
-        },
+        required: ["score", "fluencyAndCoherence", "lexicalResource", "grammaticalAndRangeAccuracy", "pronunciation"],
       },
-      required: ["score", "fluencyAndCoherence", "lexicalResource", "grammaticalAndRangeAccuracy", "pronunciation"],
     };
     return schema;
   }

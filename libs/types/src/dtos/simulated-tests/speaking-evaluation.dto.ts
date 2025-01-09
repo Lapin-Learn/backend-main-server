@@ -1,5 +1,5 @@
-export interface ISpeakingEvaluation {
-  part: string;
+export class SpeakingEvaluation {
+  part: number;
   score: number;
   pronunciation: string;
   lexicalResource: string;
