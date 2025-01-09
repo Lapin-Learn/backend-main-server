@@ -112,7 +112,7 @@ export class SimulatedTestController {
   @ApiBody({ type: UpdateSessionDto })
   @ApiResponse({ type: String })
   @UseInterceptors(FilesInterceptor("files"))
-  @Put("simulated-tests/session/:id")
+  @Put("simulated-tests/sessions/:id")
   async updateSession(
     @Param("id", ParseIntPipe) sessionId: number,
     @CurrentUser() learner: ICurrentUser,

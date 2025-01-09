@@ -8,10 +8,11 @@ import path from "path";
 import DiffMatchPatch from "diff-match-patch";
 import { GenAISpeakingModel } from "@app/shared-modules/genai/model/genai-speaking-model.service";
 import { GenAISpeakingIPAModel, GenAISpeakingScoreModel } from "@app/shared-modules/genai";
-import { ICurrentUser } from "@app/types/interfaces";
+import { ICurrentUser, ISpeakingEvaluation } from "@app/types/interfaces";
 import { SkillTest, SkillTestSession, SpeakingRoom } from "@app/database";
-import { InfoSpeakingResponseDto } from "@app/types/dtos/simulated-tests";
+import { InfoSpeakingResponseDto, SpeakingEvaluation } from "@app/types/dtos/simulated-tests";
 import { TestSessionStatusEnum } from "@app/types/enums";
+import { plainToInstance } from "class-transformer";
 
 const PUNCTUATION = "/[.,/#!$%^&*;:{}=-_`~()]/g";
 
@@ -75,27 +76,11 @@ export class AISpeakingService {
 
       const { parts } = existedSession;
 
-      let questions = {};
+      const questions = [];
 
-      for (const order of Object.values(parts)) {
-        questions = { ...questions, [`part${order}`]: skillTest.partsContent[0][`part${order}`] };
+      for (const part of parts) {
+        questions.push(skillTest.partsContent[part]);
       }
-      questions = { ...questions, name: skillTest.partsContent[0]["name"] };
-
-      const evaluationJson = {
-        part1: {
-          type: "string",
-        },
-        part2: {
-          type: "string",
-        },
-        part3: {
-          type: "string",
-        },
-        overall: {
-          type: "string",
-        },
-      };
 
       const prompt = `
       Evaluate speaking score for the following data of questions and some additional data relating to my response. 
@@ -104,20 +89,21 @@ export class AISpeakingService {
         - The order of the question, which is 1-based within each part, called "questionNo".
         - The value of the timestamp showing when my response for each question ends, called "timeStamp". 
 
-      I want your evaluation for my answer to be in this format: ${JSON.stringify(evaluationJson)}. 
-      However, I may sometimes skip parts of the speaking test. Ensure you evaluate based only on the parts I completed and the evaluation data should not contain the part that I did not answer. 
-      Your evaluation should always include a score for each part and an overall evaluation. 
+      However, I may sometimes skip parts of the speaking test. Ensure you evaluate part ${JSON.stringify(parts)} that I completed, the missing part must not in the response. 
+      After evaluation each part, you should give the overall evaluation of the speaking test. 
+      The overall evaluation should be considered base on the evaluation of all the parts in speaking test. If I skip some parts, do not contain the evaluation of the missing parts answer but give the advice to do all parts for better evaluation, but make sure to have the final band score. 
       Additionally, use personal pronouns in your evaluation such that "I" refers to you and "you" refers to me.
 
       Below is the question and response data for evaluation:
       {
         "questions": ${JSON.stringify(questions)},
         "speakingData": ${JSON.stringify(info)}
-      }
-      The output should be in a valid JSON format suitable for storing in my database.`;
+      }. 
+      
+    `;
 
       // Generate content using the AI model
-      const evaluation = await this.genAISpeakingScoreEvaluationModel.generateContent([
+      const plainEvaluations: ISpeakingEvaluation[] = await this.genAISpeakingScoreEvaluationModel.generateContent([
         prompt,
         {
           fileData: {
@@ -127,11 +113,13 @@ export class AISpeakingService {
         },
       ]);
 
-      SkillTestSession.update(
+      const evaluations = plainToInstance(SpeakingEvaluation, plainEvaluations);
+
+      await SkillTestSession.update(
         { id: sessionId },
         {
-          results: [evaluation],
-          estimatedBandScore: evaluation.overall.score,
+          results: evaluations,
+          estimatedBandScore: evaluations[evaluations.length - 1].score,
           status: TestSessionStatusEnum.FINISHED,
         }
       );

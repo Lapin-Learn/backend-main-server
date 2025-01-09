@@ -159,12 +159,15 @@ export class SimulatedTestService {
         const partsDetail = session.skillTest?.partsDetail || [];
 
         session.skillTest.partsDetail = parts
-          .filter((partIndex) => partIndex > 0 && partIndex <= partsDetail.length)
-          .map((partIndex) => partsDetail[partIndex - 1]);
+          ? parts
+              .filter((partIndex) => partIndex > 0 && partIndex <= partsDetail.length)
+              .map((partIndex) => partsDetail[partIndex - 1])
+          : [];
 
-        session.skillTest["answers"] = session.skillTest.skillTestAnswer.answers ?? [];
         session.status === TestSessionStatusEnum.FINISHED &&
-          (session.skillTest["guidances"] = session.skillTest.skillTestAnswer.guidances);
+          (session.skillTest["answers"] = session.skillTest.skillTestAnswer?.answers ?? []);
+        session.status === TestSessionStatusEnum.FINISHED &&
+          (session.skillTest["guidances"] = session.skillTest.skillTestAnswer?.guidances ?? []);
         delete session.skillTest.skillTestAnswer;
       }
       return session;
