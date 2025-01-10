@@ -52,7 +52,26 @@ export class SkillTestSession extends BaseEntity {
   @Column({ name: "status", type: "varchar", nullable: false, default: TestSessionStatusEnum.IN_PROGRESS })
   status: TestSessionStatusEnum;
 
-  @Column({ name: "parts", type: "int", array: true, nullable: true })
+  @Column({
+    name: "parts",
+    type: "int",
+    array: true,
+    nullable: true,
+    transformer: {
+      from: (value) => {
+        if (value && Array.isArray(value)) {
+          return value.sort((a, b) => a - b);
+        }
+        return [];
+      },
+      to: (value) => {
+        if (value && Array.isArray(value)) {
+          return value.sort((a, b) => a - b);
+        }
+        return [];
+      },
+    },
+  })
   parts: number[];
 
   @Column({ name: "estimated_band_score", type: "double precision", nullable: true })

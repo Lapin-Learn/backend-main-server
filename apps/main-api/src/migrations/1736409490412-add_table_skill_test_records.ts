@@ -7,13 +7,25 @@ export class AddTableSkillTestRecords1736409490412 implements MigrationInterface
         name: "skill_test_records",
         columns: [
           {
+            name: "id",
+            type: "int",
+            isPrimary: true,
+            isGenerated: true,
+            generationStrategy: "increment",
+          },
+          {
             name: "learner_id",
             type: "uuid",
-            isPrimary: true,
+            isNullable: false,
           },
           {
             name: "session_id",
             type: "int",
+            isNullable: false,
+          },
+          {
+            name: "skill",
+            type: "varchar",
             isNullable: false,
           },
           {
