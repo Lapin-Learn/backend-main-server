@@ -59,7 +59,7 @@ export class GenAISpeakingScoreModel extends GenAIModelAbstract {
               },
             },
           },
-          pronunciation: {
+          pronounciation: {
             type: SchemaType.OBJECT,
             properties: {
               evaluate: {
@@ -73,7 +73,7 @@ export class GenAISpeakingScoreModel extends GenAIModelAbstract {
             },
           },
         },
-        required: ["score", "fluencyAndCoherence", "lexicalResource", "grammaticalAndRangeAccuracy", "pronunciation"],
+        required: ["score", "fluencyAndCoherence", "lexicalResource", "grammaticalAndRangeAccuracy", "pronounciation"],
       },
     };
     return schema;

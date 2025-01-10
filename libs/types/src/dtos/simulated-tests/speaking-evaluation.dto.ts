@@ -16,7 +16,7 @@ export class SpeakingEvaluation {
   score: number;
 
   @ValidateNested()
-  pronunciation: CriterialEvaluation;
+  pronounciation: CriterialEvaluation;
 
   @ValidateNested()
   lexicalResource: CriterialEvaluation;

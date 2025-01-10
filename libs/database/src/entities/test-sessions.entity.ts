@@ -11,7 +11,7 @@ import {
 import { SkillTest } from "./skill-tests.entity";
 import { LearnerProfile } from "./learner-profile.entity";
 import { SkillEnum, TestSessionModeEnum, TestSessionStatusEnum } from "@app/types/enums";
-import { StartSessionDto } from "@app/types/dtos/simulated-tests";
+import { SpeakingEvaluation, StartSessionDto } from "@app/types/dtos/simulated-tests";
 import { ITestSessionResponse } from "@app/types/interfaces";
 
 @Entity({ name: "skill_test_sessions" })
@@ -37,7 +37,7 @@ export class SkillTestSession extends BaseEntity {
       from: (value) => (value === null ? [] : value),
     },
   })
-  results: object[] | boolean[];
+  results: boolean[] | SpeakingEvaluation[];
 
   @Column({ name: "time_limit", type: "int", nullable: false, default: 0 })
   // 0 when option is "unlimited"
