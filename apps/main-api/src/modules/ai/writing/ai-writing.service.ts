@@ -86,13 +86,26 @@ export class AIWritingService {
       await SkillTestSession.update(
         { id: dto.sessionId },
         {
-          results: response?.result || [{}, {}],
+          results: response ? response : null,
           estimatedBandScore: response?.score,
           status: TestSessionStatusEnum.FINISHED,
         }
       );
 
-      return response;
+      return;
+    } catch (error) {
+      this.logger.error(error);
+      throw new BadRequestException(error);
+    }
+  }
+
+  async getFeedback(user: ICurrentUser, sessionId: number) {
+    try {
+      const existedSession = await SkillTestSession.findOneOrFail({
+        where: { id: sessionId, learnerProfileId: user.profileId },
+      });
+
+      return (existedSession?.results as any)?.feedback || [{}, {}];
     } catch (error) {
       this.logger.error(error);
       throw new BadRequestException(error);

@@ -2,8 +2,17 @@ import { GenAIModelAbstract } from "@app/types/abstracts";
 import { GoogleGenerativeAI, ResponseSchema, SchemaType } from "@google/generative-ai";
 
 export class GenAIWritingScoreModel extends GenAIModelAbstract {
-  constructor(readonly genAIManager: GoogleGenerativeAI) {
+  constructor(protected readonly genAIManager: GoogleGenerativeAI) {
     super(genAIManager);
+    this.model = this.genAIManager.getGenerativeModel({
+      model: "learnlm-1.5-pro-experimental",
+      generationConfig: {
+        responseMimeType: "application/json",
+        responseSchema: this.getSchema(),
+        temperature: 2,
+      },
+      systemInstruction: this.getSystemInstruction(),
+    });
   }
 
   getSchema(): ResponseSchema {
@@ -21,20 +30,56 @@ export class GenAIWritingScoreModel extends GenAIModelAbstract {
                 description: "The estimated band score for this part",
               },
               fluencyAndCoherence: {
-                type: SchemaType.STRING,
-                description: "Feedback on fluency and coherence",
+                type: SchemaType.OBJECT,
+                properties: {
+                  score: {
+                    type: SchemaType.NUMBER,
+                    description: "Score for fluency and coherence (0-9)",
+                  },
+                  feedback: {
+                    type: SchemaType.STRING,
+                    description: "Detailed feedback on fluency and coherence",
+                  },
+                },
               },
               lexicalResource: {
-                type: SchemaType.STRING,
-                description: "Feedback on lexical resource",
+                type: SchemaType.OBJECT,
+                properties: {
+                  score: {
+                    type: SchemaType.NUMBER,
+                    description: "Score for lexical resource (0-9)",
+                  },
+                  feedback: {
+                    type: SchemaType.STRING,
+                    description: "Detailed feedback on lexical resource",
+                  },
+                },
               },
               grammaticalRangeAndAccuracy: {
-                type: SchemaType.STRING,
-                description: "Feedback on grammatical range and accuracy",
+                type: SchemaType.OBJECT,
+                properties: {
+                  score: {
+                    type: SchemaType.NUMBER,
+                    description: "Score for grammatical range and accuracy (0-9)",
+                  },
+                  feedback: {
+                    type: SchemaType.STRING,
+                    description: "Detailed feedback on grammatical range and accuracy",
+                  },
+                },
               },
               taskResponse: {
-                type: SchemaType.STRING,
-                description: "Feedback on task response",
+                type: SchemaType.OBJECT,
+                properties: {
+                  score: {
+                    type: SchemaType.NUMBER,
+                    description: "Score for task response (0-9)",
+                  },
+                  feedback: {
+                    type: SchemaType.STRING,
+                    description: "Detailed feedback on task response",
+                  },
+                },
               },
             },
             required: [
@@ -46,12 +91,30 @@ export class GenAIWritingScoreModel extends GenAIModelAbstract {
             ],
           },
         },
+        feedback: {
+          type: SchemaType.ARRAY,
+          description: "Feedback for each part, this part should be in Vietnamese",
+          items: {
+            type: SchemaType.OBJECT,
+            properties: {
+              error: {
+                type: SchemaType.STRING,
+                description: "The errors in the given text",
+              },
+              feedback: {
+                type: SchemaType.STRING,
+                description: "General feedback",
+              },
+            },
+            required: ["error", "feedback"],
+          },
+        },
         score: {
           type: SchemaType.NUMBER,
-          description: "The overall estimated band score, averaged across parts",
+          description: "The overall estimated band score",
         },
       },
-      required: ["result", "score"],
+      required: ["result", "feedback", "score"],
     };
     return schema;
   }
@@ -67,6 +130,8 @@ export class GenAIWritingScoreModel extends GenAIModelAbstract {
            - Grammatical Range and Accuracy: Check sentence structures and error frequency.
            - Task Response: Evaluate how well the user addresses the prompt and stays on topic.
         2. User can provide a written response for part 1 or part 2 of the IELTS Writing test, and you will evaluate it based on the user's response.
+        3. Provide the position, length, and type of errors in the user's response.
+        4. The feedback object shpuld be in Vietnamese. The remaining objects should be in English.
         `;
   }
 }
