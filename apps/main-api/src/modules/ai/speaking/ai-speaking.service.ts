@@ -120,14 +120,12 @@ export class AISpeakingService {
         }
       }
 
-      await SkillTestSession.update(
-        { id: sessionId },
-        {
-          results: evaluations,
-          estimatedBandScore: evaluations[evaluations.length - 1]?.score,
-          status: TestSessionStatusEnum.FINISHED,
-        }
-      );
+      await SkillTestSession.save({
+        id: sessionId,
+        results: evaluations,
+        estimatedBandScore: evaluations[evaluations.length - 1]?.score,
+        status: TestSessionStatusEnum.FINISHED,
+      });
 
       return;
     } catch (error) {
