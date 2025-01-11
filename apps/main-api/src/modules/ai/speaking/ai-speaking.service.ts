@@ -50,16 +50,10 @@ export class AISpeakingService {
   }
 
   async generateScore(sessionId: number, file: Express.Multer.File, info: InfoSpeakingResponseDto[]) {
-    // Create a temporary file with automatic cleanup
-    const tempFile = tmp.fileSync({ postfix: path.extname(file.originalname) });
     let geminiFileName = "";
 
     try {
-      // Write the uploaded file buffer to the temp file
-      fs.writeFileSync(tempFile.name, file.buffer);
-
-      // Upload file using the file manager
-      const uploadResult = await this.genAIFileManager.uploadFile(tempFile.name, {
+      const uploadResult = await this.genAIFileManager.uploadFile(file.filename, {
         mimeType: file.mimetype,
         displayName: file.originalname,
       });
@@ -80,7 +74,7 @@ export class AISpeakingService {
       const questions = [];
 
       for (const part of parts) {
-        questions.push(skillTest.partsContent[part]);
+        questions.push(skillTest.partsContent[part - 1]);
       }
 
       const prompt = `
@@ -132,7 +126,6 @@ export class AISpeakingService {
       this.logger.error(error);
       throw new BadRequestException(error);
     } finally {
-      tempFile.removeCallback();
       this.genAIFileManager.deleteFile(geminiFileName);
       // Delete it manually
       // Or it will automatically be adeleted after 48 hours
