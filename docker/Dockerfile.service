@@ -5,6 +5,8 @@ ARG STAGE
 RUN apk --no-cache add curl
 RUN curl -H "Authorization: token $PRIVATE_TOKEN" -o .env https://raw.githubusercontent.com/Lapin-Learn/env/main/backend/${STAGE}/.env
 
+RUN apk --no-cache add ffmpeg
+
 # Base stage
 FROM node:20-alpine AS base
 ENV PNPM_HOME="/pnpm"
