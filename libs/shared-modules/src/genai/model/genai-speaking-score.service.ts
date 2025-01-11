@@ -12,32 +12,68 @@ export class GenAISpeakingScoreModel extends GenAIModelAbstract {
       items: {
         type: SchemaType.OBJECT,
         properties: {
-          score: {
-            type: SchemaType.NUMBER,
-            description: "The estimated band score",
-          },
           part: {
             type: SchemaType.STRING,
-            description: `The target of the evaluation, it can be part order or overall. The format of part order should be : "Part {order}" and the overall should be "Overall"`,
+            description: `The name of this part evaluation, it must be "Overall" if this is the final evaluation`,
+          },
+          score: {
+            type: SchemaType.NUMBER,
+            description: "The overall estimated band score",
           },
           fluencyAndCoherence: {
-            type: SchemaType.STRING,
-            description: "Fluency and Coherence feedback",
+            type: SchemaType.OBJECT,
+            properties: {
+              evaluate: {
+                type: SchemaType.STRING,
+                description: "The overal fluency and Coherence feedback for part of all parts that user response",
+              },
+              score: {
+                type: SchemaType.NUMBER,
+                description: "Fluency and Coherence band score base on the part or parts that user response",
+              },
+            },
           },
           lexicalResource: {
-            type: SchemaType.STRING,
-            description: "Lexical Resource feedback",
+            type: SchemaType.OBJECT,
+            properties: {
+              evaluate: {
+                type: SchemaType.STRING,
+                description: "The overall lexical Resource feedback for part or all parts that user response",
+              },
+              score: {
+                type: SchemaType.NUMBER,
+                description: " lexical Resource band score on the part or parts that user response",
+              },
+            },
           },
           grammaticalAndRangeAccuracy: {
-            type: SchemaType.STRING,
-            description: "Grammatical Range and Accuracy feedback",
+            type: SchemaType.OBJECT,
+            properties: {
+              evaluate: {
+                type: SchemaType.STRING,
+                description: "Grammatical and Range Accuracy feedback for part or all parts that user response",
+              },
+              score: {
+                type: SchemaType.NUMBER,
+                description: "Grammatical and Range Accuracy band score base on part or the parts that user response",
+              },
+            },
           },
-          pronunciation: {
-            type: SchemaType.STRING,
-            description: "Pronunciation feedback",
+          pronounciation: {
+            type: SchemaType.OBJECT,
+            properties: {
+              evaluate: {
+                type: SchemaType.STRING,
+                description: "Pronunciation feedback for the part or all parts that user response",
+              },
+              score: {
+                type: SchemaType.NUMBER,
+                description: "Pronunciation band score base on part or the parts that user response",
+              },
+            },
           },
         },
-        required: ["score", "fluencyAndCoherence", "lexicalResource", "grammaticalAndRangeAccuracy", "pronunciation"],
+        required: ["score", "fluencyAndCoherence", "lexicalResource", "grammaticalAndRangeAccuracy", "pronounciation"],
       },
     };
     return schema;

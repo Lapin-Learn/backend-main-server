@@ -11,7 +11,7 @@ import {
 import { SkillTest } from "./skill-tests.entity";
 import { LearnerProfile } from "./learner-profile.entity";
 import { SkillEnum, TestSessionModeEnum, TestSessionStatusEnum } from "@app/types/enums";
-import { StartSessionDto } from "@app/types/dtos/simulated-tests";
+import { SpeakingEvaluation, StartSessionDto } from "@app/types/dtos/simulated-tests";
 import { ITestSessionResponse } from "@app/types/interfaces";
 
 @Entity({ name: "skill_test_sessions" })
@@ -37,7 +37,7 @@ export class SkillTestSession extends BaseEntity {
       from: (value) => (value === null ? [] : value),
     },
   })
-  results: object[] | boolean[];
+  results: boolean[] | SpeakingEvaluation[];
 
   @Column({ name: "time_limit", type: "int", nullable: false, default: 0 })
   // 0 when option is "unlimited"
@@ -52,7 +52,26 @@ export class SkillTestSession extends BaseEntity {
   @Column({ name: "status", type: "varchar", nullable: false, default: TestSessionStatusEnum.IN_PROGRESS })
   status: TestSessionStatusEnum;
 
-  @Column({ name: "parts", type: "int", array: true, nullable: true })
+  @Column({
+    name: "parts",
+    type: "int",
+    array: true,
+    nullable: true,
+    transformer: {
+      from: (value) => {
+        if (value && Array.isArray(value)) {
+          return value.sort((a, b) => a - b);
+        }
+        return [];
+      },
+      to: (value) => {
+        if (value && Array.isArray(value)) {
+          return value.sort((a, b) => a - b);
+        }
+        return [];
+      },
+    },
+  })
   parts: number[];
 
   @Column({ name: "estimated_band_score", type: "double precision", nullable: true })

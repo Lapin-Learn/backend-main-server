@@ -218,7 +218,7 @@ export class SimulatedTestService {
           responseInfo = response.info;
         } else if (response instanceof TextResponseDto) {
           const { info } = response;
-          responseInfo = info;
+          responseInfo = info.sort((a, b) => a.questionNo - b.questionNo);
 
           if (skillTest.skill === SkillEnum.WRITING) {
             this.gradingContext.setGradingStrategy(

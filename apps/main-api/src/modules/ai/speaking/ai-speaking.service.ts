@@ -8,11 +8,12 @@ import path from "path";
 import DiffMatchPatch from "diff-match-patch";
 import { GenAISpeakingModel } from "@app/shared-modules/genai/model/genai-speaking-model.service";
 import { GenAISpeakingIPAModel, GenAISpeakingScoreModel } from "@app/shared-modules/genai";
-import { ICurrentUser, ISpeakingEvaluation } from "@app/types/interfaces";
+import { ICurrentUser } from "@app/types/interfaces";
 import { SkillTest, SkillTestSession, SpeakingRoom } from "@app/database";
 import { InfoSpeakingResponseDto, SpeakingEvaluation } from "@app/types/dtos/simulated-tests";
 import { TestSessionStatusEnum } from "@app/types/enums";
 import { plainToInstance } from "class-transformer";
+import { validate } from "class-validator";
 
 const PUNCTUATION = "/[.,/#!$%^&*;:{}=-_`~()]/g";
 
@@ -49,16 +50,10 @@ export class AISpeakingService {
   }
 
   async generateScore(sessionId: number, file: Express.Multer.File, info: InfoSpeakingResponseDto[]) {
-    // Create a temporary file with automatic cleanup
-    const tempFile = tmp.fileSync({ postfix: path.extname(file.originalname) });
     let geminiFileName = "";
 
     try {
-      // Write the uploaded file buffer to the temp file
-      fs.writeFileSync(tempFile.name, file.buffer);
-
-      // Upload file using the file manager
-      const uploadResult = await this.genAIFileManager.uploadFile(tempFile.name, {
+      const uploadResult = await this.genAIFileManager.uploadFile(file.filename, {
         mimeType: file.mimetype,
         displayName: file.originalname,
       });
@@ -79,7 +74,7 @@ export class AISpeakingService {
       const questions = [];
 
       for (const part of parts) {
-        questions.push(skillTest.partsContent[part]);
+        questions.push(skillTest.partsContent[part - 1]);
       }
 
       const prompt = `
@@ -90,20 +85,18 @@ export class AISpeakingService {
         - The value of the timestamp showing when my response for each question ends, called "timeStamp". 
 
       However, I may sometimes skip parts of the speaking test. Ensure you evaluate part ${JSON.stringify(parts)} that I completed, the missing part must not in the response. 
-      After evaluation each part, you should give the overall evaluation of the speaking test. 
-      The overall evaluation should be considered base on the evaluation of all the parts in speaking test. If I skip some parts, do not contain the evaluation of the missing parts answer but give the advice to do all parts for better evaluation, but make sure to have the final band score. 
+      After evaluation each part, you should give the overall evaluation of the speaking test. The overall evaluation should be considered base on the evaluation of all the parts in speaking test. 
+      If I skip some parts, you must not contain the evaluation of the missing parts answer but give the advice to do all parts for better evaluation, but make sure to have the final band score. 
       Additionally, use personal pronouns in your evaluation such that "I" refers to you and "you" refers to me.
 
       Below is the question and response data for evaluation:
       {
         "questions": ${JSON.stringify(questions)},
         "speakingData": ${JSON.stringify(info)}
-      }. 
-      
-    `;
+      }. `;
 
       // Generate content using the AI model
-      const plainEvaluations: ISpeakingEvaluation[] = await this.genAISpeakingScoreEvaluationModel.generateContent([
+      const plainEvaluations: SpeakingEvaluation[] = await this.genAISpeakingScoreEvaluationModel.generateContent([
         prompt,
         {
           fileData: {
@@ -114,22 +107,25 @@ export class AISpeakingService {
       ]);
 
       const evaluations = plainToInstance(SpeakingEvaluation, plainEvaluations);
-
-      await SkillTestSession.update(
-        { id: sessionId },
-        {
-          results: evaluations,
-          estimatedBandScore: evaluations[evaluations.length - 1].score,
-          status: TestSessionStatusEnum.FINISHED,
+      for (const evaluation of evaluations) {
+        const errors = await validate(evaluation);
+        if (errors.length > 0) {
+          this.logger.error("validation fail: ", errors);
         }
-      );
+      }
+
+      await SkillTestSession.save({
+        id: sessionId,
+        results: evaluations,
+        estimatedBandScore: evaluations[evaluations.length - 1]?.score,
+        status: TestSessionStatusEnum.FINISHED,
+      });
 
       return;
     } catch (error) {
       this.logger.error(error);
       throw new BadRequestException(error);
     } finally {
-      tempFile.removeCallback();
       this.genAIFileManager.deleteFile(geminiFileName);
       // Delete it manually
       // Or it will automatically be adeleted after 48 hours
