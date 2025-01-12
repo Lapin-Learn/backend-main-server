@@ -20,7 +20,7 @@ import { ApiDefaultResponses, ApiPaginatedResponse, CurrentUser } from "../../de
 import { ApiBearerAuth, ApiBody, ApiParam, ApiQuery, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { SimulatedIeltsTestDetailDto, TestCollectionDto } from "@app/types/response-dtos";
 import { ICurrentUser } from "@app/types/interfaces";
-import { StartSessionDto, UpdateSessionDto } from "@app/types/dtos/simulated-tests";
+import { GetSessionProgressDto, StartSessionDto, UpdateSessionDto } from "@app/types/dtos/simulated-tests";
 import { SkillEnum } from "@app/types/enums";
 import { FilesInterceptor } from "@nestjs/platform-express";
 import { plainToInstance } from "class-transformer";
@@ -137,5 +137,13 @@ export class SimulatedTestController {
   @Get("skill-tests/:id")
   async getPassageContents(@Param("id", ParseIntPipe) skillTestId: number, @Query("part", ParseIntPipe) part: number) {
     return this.simulatedTestService.getSkillTestContent(skillTestId, part);
+  }
+
+  @ApiQuery({ name: "skill", enum: SkillEnum, required: true })
+  @ApiQuery({ name: "from", type: Date, required: false })
+  @ApiQuery({ name: "to", type: Date, required: false })
+  @Get("sessions/progress")
+  async getSessionProgress(@CurrentUser() learner: ICurrentUser, @Query() query: GetSessionProgressDto) {
+    return this.simulatedTestService.getSessionProgress(learner, query);
   }
 }

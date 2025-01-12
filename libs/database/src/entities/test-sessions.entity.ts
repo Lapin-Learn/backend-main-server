@@ -183,4 +183,20 @@ export class SkillTestSession extends BaseEntity {
       .groupBy("test.skill")
       .getRawMany();
   }
+
+  static async getSessionProgress(learnerId: string, skill: SkillEnum, from: Date = null, to: Date = null) {
+    const query = this.createQueryBuilder("session")
+      .select(["session.id as id", 'session.estimatedBandScore as "bandScore"', 'session.createdAt as "createdAt"'])
+      .leftJoin("session.skillTest", "test", "test.skill = :skill", { skill })
+      .where("session.learnerProfileId = :learnerId", { learnerId })
+      .andWhere("session.status = :status", { status: TestSessionStatusEnum.FINISHED })
+      .andWhere("session.estimatedBandScore IS NOT NULL")
+      .orderBy("session.id");
+
+    if (from || to) {
+      query.andWhere("DATE(session.createdAt) BETWEEN DATE(:from) AND DATE(:to)", { from, to });
+    }
+
+    return query.getRawMany();
+  }
 }

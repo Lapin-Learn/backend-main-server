@@ -1,5 +1,6 @@
 import { SimulatedIeltsTest, SkillTest, SkillTestAnswer, SkillTestSession, TestCollection } from "@app/database";
 import {
+  GetSessionProgressDto,
   SpeakingResponseDto,
   StartSessionDto,
   TextResponseDto,
@@ -196,8 +197,12 @@ export class SimulatedTestService {
         relations: { skillTest: true },
       });
 
-      if (sessionStatus === TestSessionStatusEnum.FINISHED || sessionStatus === TestSessionStatusEnum.CANCELED) {
-        throw new BadRequestException("Session is finished or canceled");
+      if (
+        sessionStatus === TestSessionStatusEnum.FINISHED ||
+        sessionStatus === TestSessionStatusEnum.CANCELED ||
+        sessionStatus === TestSessionStatusEnum.IN_EVALUATING
+      ) {
+        throw new BadRequestException(`Session is ${sessionStatus}`);
       }
 
       let responseInfo = null;
@@ -275,5 +280,14 @@ export class SimulatedTestService {
 
   async getBandScoreReport(learner: ICurrentUser) {
     return SkillTestSession.getBandScoreReport(learner.profileId);
+  }
+
+  async getSessionProgress(learner: ICurrentUser, data: GetSessionProgressDto) {
+    try {
+      return SkillTestSession.getSessionProgress(learner.profileId, data.skill, data.from, data.to);
+    } catch (error) {
+      this.logger.error(error);
+      throw new BadRequestException(error);
+    }
   }
 }
