@@ -104,7 +104,7 @@ export class SkillTestSession extends BaseEntity {
       .andWhere("session.status = :status", { status: TestSessionStatusEnum.IN_PROGRESS })
       .andWhere("session.skillTestId = :skillTestId", { skillTestId: sessionData.skillTestId })
       .andWhere("session.timeLimit = :timeLimit", { timeLimit: sessionData.timeLimit })
-      .andWhere("session.parts @> :parts", { parts: sessionData.parts })
+      .andWhere(":parts @> session.parts", { parts: sessionData.parts })
       .getOne();
   }
 
