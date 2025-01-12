@@ -44,7 +44,10 @@ export class AuthService {
       if (!dbUser) {
         const generatedPassword = otpGenerator(8, generateOTPConfig);
         await this.firebaseService.linkWithProvider(firebaseUser.idToken, firebaseUser.email, generatedPassword);
-        dbUser = await Account.createAccount({ email, providerId: firebaseUser.localId, username: email }, true);
+        dbUser = await Account.createAccount(
+          { email, providerId: firebaseUser.localId, username: email, fullName: firebaseUser.fullName },
+          true
+        );
       } else if (!dbUser.learnerProfileId) {
         await this.firebaseService.setEmailVerifed(dbUser.providerId);
         dbUser.learnerProfile = await LearnerProfile.createNewProfile();
