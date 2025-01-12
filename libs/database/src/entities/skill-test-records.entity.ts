@@ -1,8 +1,17 @@
 import { SkillEnum } from "@app/types/enums";
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, Timestamp, UpdateDateColumn } from "typeorm";
+import { Transform } from "class-transformer";
+import {
+  BaseEntity,
+  Column,
+  CreateDateColumn,
+  Entity,
+  PrimaryGeneratedColumn,
+  Timestamp,
+  UpdateDateColumn,
+} from "typeorm";
 
 @Entity({ name: "skill_test_records" })
-export class SkillTestRecord {
+export class SkillTestRecord extends BaseEntity {
   @PrimaryGeneratedColumn("increment")
   id: number;
 
@@ -18,7 +27,25 @@ export class SkillTestRecord {
   @Column({ name: "evaluation_type", type: "varchar", nullable: true })
   evaluationType: string;
 
-  @Column({ name: "accuracy", type: "double precision", nullable: true, default: "0.0" })
+  @Column({
+    name: "accuracy",
+    type: "double precision",
+    nullable: true,
+    default: "0.0",
+  })
+  @Transform(({ value }) => {
+    const decimal = value % 1;
+
+    if (decimal < 0.25) {
+      return Math.floor(value);
+    } else if (decimal >= 0.25 && decimal < 0.75) {
+      return Math.floor(value) + 0.5;
+    } else if (decimal >= 0.75) {
+      return Math.ceil(value);
+    }
+
+    return value;
+  })
   accuracy: number;
 
   @CreateDateColumn({ name: "created_at", type: "timestamp", nullable: false, default: "CURRENT_TIMESTAMP" })
@@ -32,4 +59,14 @@ export class SkillTestRecord {
     onUpdate: "CURRENT_TIMESTAMP",
   })
   updatedAt: Timestamp;
+
+  static async getAccuracy(learnerId: string, skill: SkillEnum) {
+    return this.createQueryBuilder("records")
+      .select(["records.evaluationType as evaluationType", "COALESCE(AVG(records.accuracy), 0) as accuracy"])
+      .where("records.learnerId = :learnerId", { learnerId })
+      .andWhere("records.evaluationType IS NOT NULL")
+      .andWhere("records.skill = :skill", { skill })
+      .groupBy("records.evaluationType")
+      .getRawMany();
+  }
 }

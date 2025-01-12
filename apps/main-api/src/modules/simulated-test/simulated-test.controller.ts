@@ -5,6 +5,7 @@ import {
   DefaultValuePipe,
   Get,
   Param,
+  ParseEnumPipe,
   ParseIntPipe,
   Post,
   Put,
@@ -145,5 +146,14 @@ export class SimulatedTestController {
   @Get("sessions/progress")
   async getSessionProgress(@CurrentUser() learner: ICurrentUser, @Query() query: GetSessionProgressDto) {
     return this.simulatedTestService.getSessionProgress(learner, query);
+  }
+
+  @ApiQuery({ name: "skill", enum: SkillEnum, required: true })
+  @Get("question-types/accuracy")
+  async getQuestionTypesAccuract(
+    @CurrentUser() learner: ICurrentUser,
+    @Query("skill", new ParseEnumPipe(SkillEnum)) skill: SkillEnum
+  ) {
+    return this.simulatedTestService.getQuestionTypeAccuracy(learner, skill);
   }
 }

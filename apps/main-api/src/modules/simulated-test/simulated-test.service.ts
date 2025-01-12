@@ -1,4 +1,11 @@
-import { SimulatedIeltsTest, SkillTest, SkillTestAnswer, SkillTestSession, TestCollection } from "@app/database";
+import {
+  SimulatedIeltsTest,
+  SkillTest,
+  SkillTestAnswer,
+  SkillTestRecord,
+  SkillTestSession,
+  TestCollection,
+} from "@app/database";
 import {
   GetSessionProgressDto,
   SpeakingResponseDto,
@@ -16,6 +23,7 @@ import { InjectQueue } from "@nestjs/bullmq";
 import { Queue } from "bullmq";
 import { EvaluateSpeaking, EvaluateWriting, RangeGradingStrategy } from "@app/shared-modules/grading/grading-strategy";
 import { EVALUATE_SPEAKING_QUEUE, EVALUATE_WRITING_QUEUE } from "@app/types/constants";
+import { plainToInstance } from "class-transformer";
 
 @Injectable()
 export class SimulatedTestService {
@@ -285,6 +293,16 @@ export class SimulatedTestService {
   async getSessionProgress(learner: ICurrentUser, data: GetSessionProgressDto) {
     try {
       return SkillTestSession.getSessionProgress(learner.profileId, data.skill, data.from, data.to);
+    } catch (error) {
+      this.logger.error(error);
+      throw new BadRequestException(error);
+    }
+  }
+
+  async getQuestionTypeAccuracy(learner: ICurrentUser, skill: SkillEnum) {
+    try {
+      const plainRecords = await SkillTestRecord.getAccuracy(learner.profileId, skill);
+      return plainToInstance(SkillTestRecord, plainRecords);
     } catch (error) {
       this.logger.error(error);
       throw new BadRequestException(error);
