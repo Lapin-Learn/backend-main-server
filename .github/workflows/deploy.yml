@@ -56,7 +56,7 @@ jobs:
       - name: Workflow Webhook Action
         uses: distributhor/workflow-webhook@v3.0.7
         with:
-          webhook_url: ${{secrets.WEBHOOK_URL}}
+          webhook_url: ${{secrets.WEBHOOK_URL}}?IMAGE_TAG=${{github.sha}}
           verbose: false
           max_time: 360
           verify_ssl: false
