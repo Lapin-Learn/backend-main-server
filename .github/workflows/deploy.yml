@@ -20,7 +20,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
         with:
-          version: v0.7.0
+          version: latest
 
       - name: Set up Docker Buildx cache
         uses: actions/cache@v3
@@ -50,8 +50,8 @@ jobs:
           tags: |
             ${{ secrets.DOCKER_USERNAME }}/backend-main-server:${{github.sha}}
             ${{ secrets.DOCKER_USERNAME }}/backend-main-server:latest
-          cache-from: type=local, src=/tmp/.buildx-cache
-          cache-to: type=local, src=/tmp/.buildx-cache
+          cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/backend-main-server:cache
+          cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/backend-main-server:cache,mode=max
 
       - name: Workflow Webhook Action
         uses: distributhor/workflow-webhook@v3.0.7
