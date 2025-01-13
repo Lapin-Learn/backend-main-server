@@ -27,6 +27,7 @@ RUN pnpm run build
 FROM base AS final
 
 RUN apk --no-cache add ffmpeg
+
 COPY --from=prod-deps /app/node_modules /app/node_modules
 COPY --from=build /app/dist /app/dist
 COPY --from=certificates .env /app/.env
