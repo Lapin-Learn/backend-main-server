@@ -48,8 +48,8 @@ jobs:
             STAGE=${{VARS.STAGE}}
           push: true
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/backend-main-server:${{github.sha}}
-            ${{ secrets.DOCKERHUB_USERNAME }}/backend-main-server:latest
+            ${{ secrets.DOCKER_USERNAME }}/backend-main-server:${{github.sha}}
+            ${{ secrets.DOCKER_USERNAME }}/backend-main-server:latest
           cache-from: type=local, src=/tmp/.buildx-cache
           cache-to: type=local, src=/tmp/.buildx-cache
 
