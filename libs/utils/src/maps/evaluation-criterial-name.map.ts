@@ -4,4 +4,5 @@ export const EvaluationCriteriaName = new Map<string, string>([
   ["FC", "Fluency and coherence"],
   ["GRA", "Grammatical and range accuracy"],
   ["TR", "Task response"],
+  ["CC", "Coherence and cohesion"],
 ]);

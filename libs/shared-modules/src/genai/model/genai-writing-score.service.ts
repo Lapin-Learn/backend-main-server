@@ -29,16 +29,16 @@ export class GenAIWritingScoreModel extends GenAIModelAbstract {
                 type: SchemaType.NUMBER,
                 description: "The estimated band score for this part",
               },
-              FC: {
+              CC: {
                 type: SchemaType.OBJECT,
                 properties: {
                   score: {
                     type: SchemaType.NUMBER,
-                    description: "Score for fluency and coherence (0-9)",
+                    description: "Score for Coherence and cohesion (0-9)",
                   },
                   feedback: {
                     type: SchemaType.STRING,
-                    description: "Detailed feedback on fluency and coherence",
+                    description: "Detailed feedback on Coherence and cohesion",
                   },
                 },
               },
@@ -82,7 +82,7 @@ export class GenAIWritingScoreModel extends GenAIModelAbstract {
                 },
               },
             },
-            required: ["score", "FC", "LR", "GRA", "TR"],
+            required: ["score", "CC", "LR", "GRA", "TR"],
           },
         },
         feedback: {

@@ -11,7 +11,7 @@ export class WritingCriterialEvaluation {
 
 export class WritingEachPartEvaluation {
   @ValidateNested()
-  FC: WritingCriterialEvaluation;
+  CC: WritingCriterialEvaluation;
 
   @ValidateNested()
   LR: WritingCriterialEvaluation;
