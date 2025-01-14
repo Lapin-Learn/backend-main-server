@@ -48,7 +48,7 @@ jobs:
             STAGE=${{VARS.STAGE}}
           push: true
           tags: |
-            ${{ secrets.DOCKER_USERNAME }}/backend-main-server:${{github.sha}}
+            ${{ secrets.DOCKER_USERNAME }}/backend-main-server:${{VARS.STAGE}}-${{github.sha}}
             ${{ secrets.DOCKER_USERNAME }}/backend-main-server:latest
           cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/backend-main-server:cache
           cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/backend-main-server:cache,mode=max
@@ -56,7 +56,7 @@ jobs:
       - name: Workflow Webhook Action
         uses: distributhor/workflow-webhook@v3.0.7
         with:
-          webhook_url: ${{secrets.WEBHOOK_URL}}?IMAGE_TAG=${{github.sha}}
+          webhook_url: ${{secrets.WEBHOOK_URL}}?IMAGE_TAG=${{VARS.STAGE}}-${{github.sha}}
           verbose: false
           max_time: 360
           verify_ssl: false
