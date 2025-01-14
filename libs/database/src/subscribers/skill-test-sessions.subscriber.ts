@@ -78,7 +78,7 @@ export class SkillTestSessionSubscriber implements EntitySubscriberInterface<Ski
           }
         }
 
-        await manager.getRepository(SkillTestRecord).save(records);
+        if (records.length > 0) await manager.getRepository(SkillTestRecord).save(records);
       }
     } catch (error) {
       console.error(error);
