@@ -3,3 +3,4 @@ export * from "./next-band-score.map";
 export * from "./mission-group.map";
 export * from "./day-label.map";
 export * from "./band-score-range.map";
+export * from "./evaluation-criterial-name.map";

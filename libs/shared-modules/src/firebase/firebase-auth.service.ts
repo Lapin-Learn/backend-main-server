@@ -32,7 +32,7 @@ export class FirebaseAuthService {
       return await auth.createUser({ email, password, emailVerified });
     } catch (error) {
       if (error.code === "auth/email-already-exists") {
-        throw new Error("emailExists");
+        throw new Error("EMAIL_EXISTS");
       }
       this.logger.error(error);
       throw error;

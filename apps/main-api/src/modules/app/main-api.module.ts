@@ -3,7 +3,7 @@ import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
 import { MainApiController } from "./main-api.controller";
 import { MainApiService } from "./main-api.service";
 import { AuthModule } from "../auth/auth.module";
-import { ConfigModule } from "@nestjs/config";
+import { ConfigModule, ConfigService } from "@nestjs/config";
 import { BucketModule } from "../bucket/bucket.module";
 import { UserModule } from "../user/user.module";
 import { MailModule } from "@app/shared-modules/mail";
@@ -20,7 +20,8 @@ import { join } from "path";
 import { APP_GUARD } from "@nestjs/core";
 import { LoggerMiddleware } from "../../middlewares";
 import { SimulatedTestModule } from "../simulated-test/simulated-test.module";
-
+import { AIModule } from "../ai/ai.module";
+import { BullModule } from "@nestjs/bullmq";
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -34,6 +35,16 @@ import { SimulatedTestModule } from "../simulated-test/simulated-test.module";
         limit: 120,
       },
     ]),
+    BullModule.forRootAsync({
+      useFactory: async (configService: ConfigService) => ({
+        connection: {
+          host: configService.get("REDIS_HOST"),
+          port: configService.get("REDIS_PORT"),
+        },
+      }),
+      inject: [ConfigService],
+    }),
+
     AuthModule,
     BucketModule,
     UserModule,
@@ -47,6 +58,7 @@ import { SimulatedTestModule } from "../simulated-test/simulated-test.module";
     NotificationModule,
     ItemModule,
     SimulatedTestModule,
+    AIModule,
   ],
   controllers: [MainApiController],
   providers: [

@@ -1,0 +1,2 @@
+export const GENAI_MANAGER = "GENAI_MANGER";
+export const GENAI_FILE_MANAGER = "GENAI_FILE_MANAGER";
