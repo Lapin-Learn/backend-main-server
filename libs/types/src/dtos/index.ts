@@ -6,4 +6,3 @@ export * from "./lessons";
 export * from "./notifications";
 export * from "./streaks";
 export * from "./shops";
-export * from "./ai";

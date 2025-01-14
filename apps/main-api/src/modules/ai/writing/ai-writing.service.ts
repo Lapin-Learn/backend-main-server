@@ -1,7 +1,6 @@
 import { SkillTest, SkillTestSession } from "@app/database";
 import { GenAIWritingScoreModel } from "@app/shared-modules/genai";
 import { GENAI_FILE_MANAGER, GENAI_MANAGER } from "@app/types/constants";
-import { AIWritingEvaluationDto } from "@app/types/dtos";
 import { TestSessionStatusEnum } from "@app/types/enums";
 import { IAIWritingQuestion, ICurrentUser } from "@app/types/interfaces";
 import { GoogleGenerativeAI } from "@google/generative-ai";
@@ -9,6 +8,7 @@ import { GoogleAIFileManager } from "@google/generative-ai/server";
 import { BadRequestException, Inject, Injectable, Logger } from "@nestjs/common";
 import * as tmp from "tmp";
 import * as fs from "fs";
+import { InfoTextResponseDto } from "@app/types/dtos/simulated-tests";
 
 @Injectable()
 export class AIWritingService {
@@ -22,10 +22,10 @@ export class AIWritingService {
     this.genAIWritingScoreModel = new GenAIWritingScoreModel(this.genAIManager);
   }
 
-  async generateScore(user: ICurrentUser, dto: AIWritingEvaluationDto) {
+  async generateScore(sessionId: number, info: InfoTextResponseDto[]) {
     try {
       const existedSession = await SkillTestSession.findOneOrFail({
-        where: { id: dto.sessionId, learnerProfileId: user.profileId },
+        where: { id: sessionId },
       });
 
       const skillTest = await SkillTest.findOneOrFail({
@@ -33,10 +33,10 @@ export class AIWritingService {
         select: ["partsContent"],
       });
 
-      const part1 = (skillTest?.partsContent?.[0] || {}) as IAIWritingQuestion;
-      const part2 = (skillTest?.partsContent?.[1] || {}) as IAIWritingQuestion;
+      const part1Question = (skillTest?.partsContent?.[0] || {}) as IAIWritingQuestion;
+      const part2Question = (skillTest?.partsContent?.[1] || {}) as IAIWritingQuestion;
 
-      const part1ImgRegex = part1?.content.match(/<img[^>]+src=['"]([^'"]+)['"]/);
+      const part1ImgRegex = part1Question?.content.match(/<img[^>]+src=['"]([^'"]+)['"]/);
       const part1ImgUrl = part1ImgRegex ? part1ImgRegex[1] : null;
 
       let uploadResult = null;
@@ -63,11 +63,14 @@ export class AIWritingService {
         }
       }
 
+      const part1Answer = info.find((item) => item.questionNo === 1)?.answer || "";
+      const part2Answer = info.find((item) => item.questionNo === 2)?.answer || "";
+
       const contentPayload = {
-        "part 1 question": part1?.content || "",
-        "part 1 answer": dto?.part1 || "",
-        "part 2 question": part2.content || "",
-        "part 2 answer": dto?.part2 || "",
+        part1Question: part1Question?.content || "",
+        part1Answer: part1Answer,
+        part2Question: part2Question?.content || "",
+        part2Answer: part2Answer,
         note: "the attached image belongs to part 1 question",
       };
 
@@ -84,7 +87,7 @@ export class AIWritingService {
       ]);
 
       await SkillTestSession.update(
-        { id: dto.sessionId },
+        { id: sessionId },
         {
           results: response ? response : null,
           estimatedBandScore: response?.score,

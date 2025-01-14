@@ -29,7 +29,7 @@ export class GenAIWritingScoreModel extends GenAIModelAbstract {
                 type: SchemaType.NUMBER,
                 description: "The estimated band score for this part",
               },
-              fluencyAndCoherence: {
+              FC: {
                 type: SchemaType.OBJECT,
                 properties: {
                   score: {
@@ -42,7 +42,7 @@ export class GenAIWritingScoreModel extends GenAIModelAbstract {
                   },
                 },
               },
-              lexicalResource: {
+              LR: {
                 type: SchemaType.OBJECT,
                 properties: {
                   score: {
@@ -55,7 +55,7 @@ export class GenAIWritingScoreModel extends GenAIModelAbstract {
                   },
                 },
               },
-              grammaticalRangeAndAccuracy: {
+              GRA: {
                 type: SchemaType.OBJECT,
                 properties: {
                   score: {
@@ -68,7 +68,7 @@ export class GenAIWritingScoreModel extends GenAIModelAbstract {
                   },
                 },
               },
-              taskResponse: {
+              TR: {
                 type: SchemaType.OBJECT,
                 properties: {
                   score: {
@@ -82,13 +82,7 @@ export class GenAIWritingScoreModel extends GenAIModelAbstract {
                 },
               },
             },
-            required: [
-              "score",
-              "fluencyAndCoherence",
-              "lexicalResource",
-              "grammaticalRangeAndAccuracy",
-              "taskResponse",
-            ],
+            required: ["score", "FC", "LR", "GRA", "TR"],
           },
         },
         feedback: {

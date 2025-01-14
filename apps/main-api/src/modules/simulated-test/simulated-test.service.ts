@@ -22,7 +22,7 @@ import { SkillEnum, TestSessionModeEnum, TestSessionStatusEnum } from "@app/type
 import { InjectQueue } from "@nestjs/bullmq";
 import { Queue } from "bullmq";
 import { EvaluateSpeaking, EvaluateWriting, RangeGradingStrategy } from "@app/shared-modules/grading/grading-strategy";
-import { EVALUATE_SPEAKING_QUEUE, EVALUATE_WRITING_QUEUE } from "@app/types/constants";
+import { EVALUATE_SPEAKING_QUEUE, EVALUATE_WRITING_QUEUE, OK_RESPONSE } from "@app/types/constants";
 import { plainToInstance } from "class-transformer";
 
 @Injectable()
@@ -260,7 +260,7 @@ export class SimulatedTestService {
         }
       }
       await SkillTestSession.save({ id: sessionId, ...sessionData, responses: responseInfo });
-      return "Ok";
+      return OK_RESPONSE;
     } catch (error) {
       this.logger.error(error);
       throw new BadRequestException(error);
