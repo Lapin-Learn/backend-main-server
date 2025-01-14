@@ -1,4 +1,5 @@
 import { SkillEnum } from "@app/types/enums";
+import { TransformBandScore } from "@app/utils/pipes";
 import { Transform } from "class-transformer";
 import {
   BaseEntity,
@@ -31,21 +32,13 @@ export class SkillTestRecord extends BaseEntity {
     name: "accuracy",
     type: "double precision",
     nullable: true,
-    default: "0.0",
+    default: 0.0,
+    transformer: {
+      from: (value) => TransformBandScore(value),
+      to: (value) => TransformBandScore(value),
+    },
   })
-  @Transform(({ value }) => {
-    const decimal = value % 1;
-
-    if (decimal < 0.25) {
-      return Math.floor(value);
-    } else if (decimal >= 0.25 && decimal < 0.75) {
-      return Math.floor(value) + 0.5;
-    } else if (decimal >= 0.75) {
-      return Math.ceil(value);
-    }
-
-    return value;
-  })
+  @Transform(({ value }) => TransformBandScore(value))
   accuracy: number;
 
   @CreateDateColumn({ name: "created_at", type: "timestamp", nullable: false, default: "CURRENT_TIMESTAMP" })

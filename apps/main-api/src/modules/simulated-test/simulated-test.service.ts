@@ -287,7 +287,8 @@ export class SimulatedTestService {
   }
 
   async getBandScoreReport(learner: ICurrentUser) {
-    return SkillTestSession.getBandScoreReport(learner.profileId);
+    const plainReport = await SkillTestSession.getBandScoreReport(learner.profileId);
+    return plainToInstance(SkillTestSession, plainReport);
   }
 
   async getSessionProgress(learner: ICurrentUser, data: GetSessionProgressDto) {
