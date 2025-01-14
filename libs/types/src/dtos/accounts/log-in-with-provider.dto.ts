@@ -1,5 +1,10 @@
-import { IsNotEmpty } from "class-validator";
+import { IsNotEmpty, IsOptional, IsString, ValidateNested } from "class-validator";
 import { ApiProperty } from "@nestjs/swagger";
+
+export class AdditionalInfo {
+  @IsString()
+  fullName: string;
+}
 
 export class LogInWithProviderDto {
   @ApiProperty({ example: "token" })
@@ -9,4 +14,8 @@ export class LogInWithProviderDto {
   @ApiProperty({ example: "google" })
   @IsNotEmpty({ message: "Provider is required" })
   provider: string;
+
+  @IsOptional()
+  @ValidateNested()
+  additionalInfo: AdditionalInfo;
 }

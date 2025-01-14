@@ -4,7 +4,7 @@ import { SwaggerModule, DocumentBuilder } from "@nestjs/swagger";
 import * as winston from "winston";
 import { utilities as nestWinstonModuleUtilities, WinstonModule } from "nest-winston";
 import { MainApiModule } from "./modules/app/main-api.module";
-import { ExceptionHandlerInterceptor, TransformResponseInterceptor } from "@app/utils/interceptors";
+import { ExceptionHandlerInterceptor, LoggerInterceptor, TransformResponseInterceptor } from "@app/utils/interceptors";
 import { ThrowFirstErrorValidationPipe } from "@app/utils/pipes";
 
 async function bootstrap() {
@@ -37,6 +37,8 @@ async function bootstrap() {
       { path: "health", method: RequestMethod.GET },
     ],
   });
+
+  app.useGlobalInterceptors(new LoggerInterceptor());
   app.useGlobalInterceptors(new TransformResponseInterceptor(new Reflector()));
   app.useGlobalInterceptors(new ExceptionHandlerInterceptor());
   app.useGlobalPipes(ThrowFirstErrorValidationPipe);

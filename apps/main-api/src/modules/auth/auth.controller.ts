@@ -44,7 +44,7 @@ export class AuthController {
   @ApiBody({ type: LogInWithProviderDto })
   @ApiResponse({ status: 200, description: "User signed in" })
   async signInWithProvider(@Body() data: LogInWithProviderDto) {
-    return this.authService.loginWithProvider(data.credential, data.provider);
+    return this.authService.loginWithProvider(data.credential, data.provider, data?.additionalInfo);
   }
 
   @Post("otp")
