@@ -24,7 +24,7 @@ export class Account extends BaseEntity implements IAccount {
   @Column({ name: "username", type: "varchar", length: 50, nullable: false })
   username: string;
 
-  @Column({ name: "email", type: "varchar", length: 50, nullable: false })
+  @Column({ name: "email", type: "varchar", length: 50, nullable: false, unique: true })
   email: string;
 
   @Column({ name: "role", type: "enum", enum: AccountRoleEnum, nullable: false, default: AccountRoleEnum.LEARNER })
