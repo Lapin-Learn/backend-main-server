@@ -38,7 +38,7 @@ services:
       - ll-network
 
   main-api:
-    image: duyquan/backend-main-server:${IMAGE_TAG:-stable}
+    image: ${IMAGE_NAME}:${IMAGE_TAG:-stable}
     env_file:
       - stack.env
     ports:
