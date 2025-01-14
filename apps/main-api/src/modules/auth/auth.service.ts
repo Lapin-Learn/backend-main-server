@@ -9,7 +9,8 @@ import { IAccount, ICurrentUser } from "@app/types/interfaces";
 import { EntityNotFoundError } from "typeorm";
 import { generateOTPConfig } from "../../config";
 import { NovuService } from "@app/shared-modules/novu";
-import { RESET_PASSWORD_WORKFLOW, VERIFY_EMAIL_WORKFLOW } from "@app/types/constants";
+import { APPLE_PROVIDER, RESET_PASSWORD_WORKFLOW, VERIFY_EMAIL_WORKFLOW } from "@app/types/constants";
+import { AdditionalInfo } from "@app/types/dtos";
 
 @Injectable()
 export class AuthService {
@@ -34,9 +35,13 @@ export class AuthService {
     }
   }
 
-  async loginWithProvider(credential: string, provider: string) {
+  async loginWithProvider(credential: string, provider: string, additionalInfo: AdditionalInfo) {
     try {
       const firebaseUser = await this.firebaseService.verifyOAuthCredential(credential, provider);
+      if (provider === APPLE_PROVIDER && additionalInfo) {
+        firebaseUser.fullName = additionalInfo?.fullName;
+      }
+
       const { email } = firebaseUser;
       let dbUser: IAccount = await Account.findOne({
         where: { email },
@@ -51,7 +56,7 @@ export class AuthService {
       } else if (!dbUser.learnerProfileId) {
         await this.firebaseService.setEmailVerifed(dbUser.providerId);
         dbUser.learnerProfile = await LearnerProfile.createNewProfile();
-        dbUser = await Account.save({ ...dbUser }, { reload: true });
+        dbUser = await Account.save({ ...dbUser, fullName: firebaseUser.fullName }, { reload: true });
       }
       const claims: ICurrentUser = { userId: dbUser.id, profileId: dbUser.learnerProfileId, role: dbUser.role };
       const accessToken = await this.firebaseService.generateCustomToken(dbUser.providerId, claims);
