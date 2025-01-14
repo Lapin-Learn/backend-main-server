@@ -13,6 +13,8 @@ import { LearnerProfile } from "./learner-profile.entity";
 import { SkillEnum, TestSessionModeEnum, TestSessionStatusEnum } from "@app/types/enums";
 import { SpeakingEvaluation, StartSessionDto } from "@app/types/dtos/simulated-tests";
 import { ITestSessionResponse } from "@app/types/interfaces";
+import { Transform } from "class-transformer";
+import { TransformBandScore } from "@app/utils/pipes";
 
 @Entity({ name: "skill_test_sessions" })
 export class SkillTestSession extends BaseEntity {
@@ -74,7 +76,16 @@ export class SkillTestSession extends BaseEntity {
   })
   parts: number[];
 
-  @Column({ name: "estimated_band_score", type: "double precision", nullable: true })
+  @Column({
+    name: "estimated_band_score",
+    type: "double precision",
+    nullable: true,
+    transformer: {
+      from: (value) => TransformBandScore(value),
+      to: (value) => TransformBandScore(value),
+    },
+  })
+  @Transform(({ value }) => TransformBandScore(value))
   estimatedBandScore: number;
 
   @CreateDateColumn({ name: "created_at", type: "timestamp", nullable: false, default: () => "CURRENT_TIMESTAMPT" })
@@ -173,7 +184,7 @@ export class SkillTestSession extends BaseEntity {
 
   static async getBandScoreReport(learnerId: string) {
     return await this.createQueryBuilder("session")
-      .select(['COALESCE(AVG(session.estimatedBandScore), 0) as "bandScore"'])
+      .select(['COALESCE(AVG(session.estimatedBandScore), 0) as "estimatedBandScore"'])
       .leftJoin("session.skillTest", "test")
       .addSelect(['test.skill as "skill"'])
       .leftJoin("session.learnerProfile", "learner")
@@ -182,5 +193,25 @@ export class SkillTestSession extends BaseEntity {
       .andWhere("session.estimatedBandScore IS NOT NULL")
       .groupBy("test.skill")
       .getRawMany();
+  }
+
+  static async getSessionProgress(learnerId: string, skill: SkillEnum, from: Date = null, to: Date = null) {
+    const query = this.createQueryBuilder("session")
+      .select([
+        "session.id as id",
+        'session.estimatedBandScore as "estimatedBandScore"',
+        'session.createdAt as "createdAt"',
+      ])
+      .leftJoin("session.skillTest", "test", "test.skill = :skill", { skill })
+      .where("session.learnerProfileId = :learnerId", { learnerId })
+      .andWhere("session.status = :status", { status: TestSessionStatusEnum.FINISHED })
+      .andWhere("session.estimatedBandScore IS NOT NULL")
+      .orderBy("session.id");
+
+    if (from || to) {
+      query.andWhere("DATE(session.createdAt) BETWEEN DATE(:from) AND DATE(:to)", { from, to });
+    }
+
+    return query.getRawMany();
   }
 }
