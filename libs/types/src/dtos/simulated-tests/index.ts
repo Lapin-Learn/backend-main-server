@@ -4,3 +4,4 @@ export * from "./evaluate-speaking-data.dto";
 export * from "./speaking-evaluation.dto";
 export * from "./get-session-progress.dto";
 export * from "./evaluate-writing-data.dto";
+export * from "./writing-evaluation.dto";

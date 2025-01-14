@@ -86,14 +86,12 @@ export class AIWritingService {
           : undefined,
       ]);
 
-      await SkillTestSession.update(
-        { id: sessionId },
-        {
-          results: response ? response : null,
-          estimatedBandScore: response?.score,
-          status: TestSessionStatusEnum.FINISHED,
-        }
-      );
+      await SkillTestSession.save({
+        id: sessionId,
+        results: response ? response : null,
+        estimatedBandScore: response?.score,
+        status: TestSessionStatusEnum.FINISHED,
+      });
 
       return;
     } catch (error) {
