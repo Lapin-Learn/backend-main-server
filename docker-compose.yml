@@ -38,7 +38,7 @@ services:
       - ll-network
 
   main-api:
-    image: ${IMAGE_NAME}:${IMAGE_TAG-:stable}
+    image: ${IMAGE_NAME}:${IMAGE_TAG}
     env_file:
       - stack.env
     ports:
