@@ -202,7 +202,7 @@ export class SkillTestSession extends BaseEntity {
         'session.estimatedBandScore as "estimatedBandScore"',
         'session.createdAt as "createdAt"',
       ])
-      .leftJoin("session.skillTest", "test", "test.skill = :skill", { skill })
+      .innerJoin("session.skillTest", "test", "test.skill = :skill", { skill })
       .where("session.learnerProfileId = :learnerId", { learnerId })
       .andWhere("session.status = :status", { status: TestSessionStatusEnum.FINISHED })
       .andWhere("session.estimatedBandScore IS NOT NULL")
