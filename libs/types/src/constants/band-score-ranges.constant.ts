@@ -14,7 +14,7 @@ export const listeningBandScoreRanges: IBandScoreRange[] = [
   { min: 39, max: 40, band: 9 },
 ];
 
-export const readingBndScoreRanges: IBandScoreRange[] = [
+export const readingBandScoreRanges: IBandScoreRange[] = [
   { min: 4, max: 5, band: 2.5 },
   { min: 6, max: 7, band: 3 },
   { min: 8, max: 9, band: 3.5 },

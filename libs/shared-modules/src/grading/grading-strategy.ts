@@ -43,23 +43,8 @@ export class RangeGradingStrategy implements IGradingStrategy {
   evaluateBandScore() {
     this.results = this.validateAnswers();
     const correctAnswer = this.results.filter((value) => value === true).length;
-    let left = 0;
-    let right = this.ranges.length - 1;
-
-    while (left < right) {
-      const mid = Math.floor((left + right) / 2);
-      const { min, max, band } = this.ranges[mid];
-
-      if (correctAnswer >= min && correctAnswer <= max) {
-        this.estimatedBandScore = band;
-        return;
-      } else if (correctAnswer < min) {
-        right = mid - 1;
-      } else {
-        left = mid + 1;
-      }
-    }
-    this.estimatedBandScore = this.DEFAULT_BAND_SCORE;
+    this.estimatedBandScore =
+      this.ranges.find((s) => correctAnswer >= s.min && correctAnswer <= s.max)?.band ?? this.DEFAULT_BAND_SCORE;
     return;
   }
 
