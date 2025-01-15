@@ -1,51 +1,69 @@
 import { Type } from "class-transformer";
-import { ArrayMaxSize, IsArray, IsNumber, IsString, ValidateNested } from "class-validator";
+import {
+  IsArray,
+  IsNumber,
+  IsString,
+  ValidateNested,
+  Min,
+  Max,
+  IsEnum,
+  ArrayMinSize,
+  ArrayMaxSize,
+} from "class-validator";
 
-export class WritingCriterialEvaluation {
+enum WritingPartEnum {
+  PART_1 = "1",
+  PART_2 = "2",
+  OVERALL = "overall",
+}
+
+class ScoreEvaluationDto {
   @IsNumber()
+  @Min(0)
+  @Max(9)
   score: number;
 
   @IsString()
-  feedback: string;
+  evaluate: string;
 }
 
-export class WritingEachPartEvaluation {
+class WritingCriteriaDto {
   @ValidateNested()
-  CC: WritingCriterialEvaluation;
+  @Type(() => ScoreEvaluationDto)
+  CC: ScoreEvaluationDto;
 
   @ValidateNested()
-  LR: WritingCriterialEvaluation;
+  @Type(() => ScoreEvaluationDto)
+  LR: ScoreEvaluationDto;
 
   @ValidateNested()
-  GRA: WritingCriterialEvaluation;
+  @Type(() => ScoreEvaluationDto)
+  GRA: ScoreEvaluationDto;
 
   @ValidateNested()
-  TR: WritingCriterialEvaluation;
+  @Type(() => ScoreEvaluationDto)
+  TR: ScoreEvaluationDto;
 }
 
-export class WritingCriterialFeedback {
-  @IsString()
-  feedback: string;
+export class WritingResultItemDto {
+  @IsEnum(WritingPartEnum)
+  part: WritingPartEnum;
 
-  @IsString()
-  error: string;
+  @IsNumber()
+  @Min(0)
+  @Max(9)
+  score: number;
+
+  @ValidateNested()
+  @Type(() => WritingCriteriaDto)
+  criterias: WritingCriteriaDto;
 }
 
 export class WritingEvaluation {
-  @IsNumber()
-  score: number;
-
   @IsArray()
-  @ArrayMaxSize(2)
-  @ArrayMaxSize(2)
   @ValidateNested({ each: true })
-  @Type(() => WritingEachPartEvaluation)
-  result: WritingEachPartEvaluation[];
-
-  @IsArray()
-  @ArrayMaxSize(2)
-  @ArrayMaxSize(2)
-  @ValidateNested({ each: true })
-  @Type(() => WritingCriterialFeedback)
-  feedback: WritingCriterialFeedback[];
+  @ArrayMinSize(3)
+  @ArrayMaxSize(3)
+  @Type(() => WritingResultItemDto)
+  result: WritingResultItemDto[];
 }

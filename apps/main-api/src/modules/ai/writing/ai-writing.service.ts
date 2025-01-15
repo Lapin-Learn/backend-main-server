@@ -88,8 +88,8 @@ export class AIWritingService {
 
       await SkillTestSession.save({
         id: sessionId,
-        results: response ? response : null,
-        estimatedBandScore: response?.score,
+        results: response ? response.result : null,
+        estimatedBandScore: response?.result?.find((item) => item.part === "overall")?.score,
         status: TestSessionStatusEnum.FINISHED,
       });
 
@@ -106,7 +106,7 @@ export class AIWritingService {
         where: { id: sessionId, learnerProfileId: user.profileId },
       });
 
-      return (existedSession?.results as any)?.feedback || [{}, {}];
+      return existedSession?.results || [];
     } catch (error) {
       this.logger.error(error);
       throw new BadRequestException(error);
