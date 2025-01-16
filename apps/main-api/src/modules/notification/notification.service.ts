@@ -3,7 +3,7 @@ import { FirebaseMessagingService } from "@app/shared-modules/firebase";
 import { Injectable, Logger } from "@nestjs/common";
 import { Cron } from "@nestjs/schedule";
 import { NotificationHelper } from "./notification.helper";
-import { VN_TIME_ZONE } from "@app/types/constants";
+import { OK_RESPONSE, VN_TIME_ZONE } from "@app/types/constants";
 
 @Injectable()
 export class NotificationService {
@@ -21,7 +21,7 @@ export class NotificationService {
       } else {
         await NotificationToken.save({ accountId, token });
       }
-      return "OK";
+      return OK_RESPONSE;
     } catch (e) {
       this.logger.error(e);
     }

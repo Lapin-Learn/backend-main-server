@@ -2,7 +2,7 @@ import { DeepPartial, EntitySubscriberInterface, EventSubscriber, UpdateEvent } 
 import { SkillTestRecord, SkillTestSession } from "../entities";
 import { SkillEnum, TestSessionStatusEnum } from "@app/types/enums";
 import { plainToInstance } from "class-transformer";
-import { SpeakingEvaluation } from "@app/types/dtos/simulated-tests";
+import { SpeakingEvaluation, WritingResultItemDto } from "@app/types/dtos/simulated-tests";
 import { EvaluationCriteriaName } from "@app/utils/maps";
 
 @EventSubscriber()
@@ -60,8 +60,25 @@ export class SkillTestSessionSubscriber implements EntitySubscriberInterface<Ski
               });
             }
           }
+        } else if (skillTest.skill === SkillEnum.WRITING) {
+          const evaluations = plainToInstance(WritingResultItemDto, results as object[]);
+          for (const evaluation of evaluations) {
+            for (const [key, value] of Object.entries(evaluation.criterias)) {
+              const evaluationType = EvaluationCriteriaName.get(key);
+              if (evaluationType) {
+                records.push({
+                  accuracy: value.score,
+                  sessionId: entity.id,
+                  evaluationType: EvaluationCriteriaName.get(key),
+                  learnerId: learnerProfileId,
+                  skill: skillTest.skill,
+                });
+              }
+            }
+          }
         }
-        await manager.getRepository(SkillTestRecord).save(records);
+
+        if (records.length > 0) await manager.getRepository(SkillTestRecord).save(records);
       }
     } catch (error) {
       console.error(error);

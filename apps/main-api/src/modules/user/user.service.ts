@@ -6,6 +6,7 @@ import { isNil } from "lodash";
 import { CreateUserDto, UpdateAccountByAdminDto, UpdateAccountDto } from "@app/types/dtos";
 import { EntityNotFoundError } from "typeorm";
 import { IAccount, ICurrentUser } from "@app/types/interfaces";
+import { OK_RESPONSE } from "@app/types/constants";
 
 @Injectable()
 export class UserService {
@@ -164,7 +165,7 @@ export class UserService {
       const dbUser = await Account.findOneOrFail({ where: { id: user.userId } });
       await this.firebaseService.deleteFirebaseAccount(dbUser.providerId);
       await Account.softRemove(dbUser);
-      return "OK";
+      return OK_RESPONSE;
     } catch (error) {
       this.logger.error(error);
       throw new BadRequestException(error);

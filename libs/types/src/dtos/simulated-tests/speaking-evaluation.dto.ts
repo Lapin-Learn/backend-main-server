@@ -16,14 +16,14 @@ export class SpeakingEvaluation {
   score: number;
 
   @ValidateNested()
-  pronounciation: CriterialEvaluation;
+  P: CriterialEvaluation;
 
   @ValidateNested()
-  lexicalResource: CriterialEvaluation;
+  LR: CriterialEvaluation;
 
   @ValidateNested()
-  fluencyAndCoherence: CriterialEvaluation;
+  FC: CriterialEvaluation;
 
   @ValidateNested()
-  grammaticalAndRangeAccuracy: CriterialEvaluation;
+  GRA: CriterialEvaluation;
 }
