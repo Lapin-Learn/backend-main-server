@@ -20,3 +20,4 @@ export * from "./item-name.enum";
 export * from "./test-session-mode.enum";
 export * from "./test-session-status.enum";
 export * from "./answer-type.enum";
+export * from "./genai-part.enum";

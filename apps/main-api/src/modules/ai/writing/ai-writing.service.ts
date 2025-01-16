@@ -8,7 +8,9 @@ import { GoogleAIFileManager } from "@google/generative-ai/server";
 import { BadRequestException, Inject, Injectable, Logger } from "@nestjs/common";
 import * as tmp from "tmp";
 import * as fs from "fs";
-import { InfoTextResponseDto } from "@app/types/dtos/simulated-tests";
+import { InfoTextResponseDto, WritingEvaluation } from "@app/types/dtos/simulated-tests";
+import { plainToInstance } from "class-transformer";
+import { validate } from "class-validator";
 
 @Injectable()
 export class AIWritingService {
@@ -74,7 +76,7 @@ export class AIWritingService {
         note: "the attached image belongs to part 1 question",
       };
 
-      const response = await this.genAIWritingScoreModel.generateContent([
+      const plainResponse = await this.genAIWritingScoreModel.generateContent([
         JSON.stringify(contentPayload),
         uploadResult
           ? {
@@ -86,10 +88,20 @@ export class AIWritingService {
           : undefined,
       ]);
 
+      const response = plainToInstance(WritingEvaluation, plainResponse as object[]);
+      for (const r of response) {
+        const errs = await validate(r);
+        if (errs.length > 0) {
+          this.logger.error("validation fail: ", errs);
+        }
+      }
+
+      const estimatedBandScore = response?.find((item) => item.part === "overall")?.criterias.getOverallScore();
+
       await SkillTestSession.save({
         id: sessionId,
-        results: response ? response.result : null,
-        estimatedBandScore: response?.result?.find((item) => item.part === "overall")?.score,
+        results: response ? response : null,
+        estimatedBandScore,
         status: TestSessionStatusEnum.FINISHED,
       });
 

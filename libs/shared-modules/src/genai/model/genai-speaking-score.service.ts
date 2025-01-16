@@ -14,30 +14,72 @@ export class GenAISpeakingScoreModel extends GenAIModelAbstract {
         properties: {
           part: {
             type: SchemaType.STRING,
-            description: `The name of this part evaluation, it must be "Overall" if this is the final evaluation`,
+            description: "'1', '2' or 'overall'",
           },
-          score: {
-            type: SchemaType.NUMBER,
-            description: "The overall estimated band score",
-          },
-          FC: {
-            type: SchemaType.STRING,
-            description: "Fluency and Coherence feedback",
-          },
-          LR: {
-            type: SchemaType.STRING,
-            description: "Lexical Resource feedback",
-          },
-          GRA: {
-            type: SchemaType.STRING,
-            description: "Grammatical Range and Accuracy feedback",
-          },
-          P: {
-            type: SchemaType.STRING,
-            description: "Pronunciation feedback",
+          criterias: {
+            type: SchemaType.OBJECT,
+            properties: {
+              FC: {
+                type: SchemaType.OBJECT,
+                properties: {
+                  score: {
+                    type: SchemaType.NUMBER,
+                    description: "Score for Fluency and Coherence (0-9)",
+                  },
+                  evaluate: {
+                    type: SchemaType.STRING,
+                    description: "Fluency and Coherence feedback in Vietnamese",
+                  },
+                },
+                required: ["score", "evaluate"], // Ensure FC fields are required
+              },
+              LR: {
+                type: SchemaType.OBJECT,
+                properties: {
+                  score: {
+                    type: SchemaType.NUMBER,
+                    description: "Score for Lexical Resource (0-9)",
+                  },
+                  evaluate: {
+                    type: SchemaType.STRING,
+                    description: "Lexical Resource feedback in Vietnamese",
+                  },
+                },
+                required: ["score", "evaluate"], // Ensure LR fields are required
+              },
+              GRA: {
+                type: SchemaType.OBJECT,
+                properties: {
+                  score: {
+                    type: SchemaType.NUMBER,
+                    description: "Score for Grammatical Range and Accuracy (0-9)",
+                  },
+                  evaluate: {
+                    type: SchemaType.STRING,
+                    description: "Grammatical Range and Accuracy feedback in Vietnamese",
+                  },
+                },
+                required: ["score", "evaluate"], // Ensure GRA fields are required
+              },
+              P: {
+                type: SchemaType.OBJECT,
+                properties: {
+                  score: {
+                    type: SchemaType.NUMBER,
+                    description: "Score for Pronunciation (0-9)",
+                  },
+                  evaluate: {
+                    type: SchemaType.STRING,
+                    description: "Pronunciation feedback in Vietnamese",
+                  },
+                },
+                required: ["score", "evaluate"], // Ensure P fields are required
+              },
+            },
+            required: ["FC", "LR", "GRA", "P"], // Ensure all criterias fields are required
           },
         },
-        required: ["score", "FC", "LR", "GRA", "P"],
+        required: ["part", "criterias"], // Ensure part and criterias are required
       },
     };
     return schema;
@@ -54,6 +96,7 @@ export class GenAISpeakingScoreModel extends GenAIModelAbstract {
            - Pronunciation: Determine clarity, stress, rhythm, and intonation.
         2. Feedback: Offer specific and constructive feedback for improvement in each category.
         3. Use users' previous feedback to adapt and improve your evaluation (if available).
+        4. The evaluate field should be in Vietnamese. The remaining objects should be in English.
         `;
   }
 }

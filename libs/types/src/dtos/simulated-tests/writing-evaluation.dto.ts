@@ -1,69 +1,38 @@
 import { Type } from "class-transformer";
-import {
-  IsArray,
-  IsNumber,
-  IsString,
-  ValidateNested,
-  Min,
-  Max,
-  IsEnum,
-  ArrayMinSize,
-  ArrayMaxSize,
-} from "class-validator";
+import { ValidateNested, IsEnum } from "class-validator";
+import { CriterialEvaluation } from "./genai-shared-evaluation.dto";
+import { GenAIPartEnum } from "@app/types/enums";
 
-enum WritingPartEnum {
-  PART_1 = "1",
-  PART_2 = "2",
-  OVERALL = "overall",
+export class WritingCriteriaDto {
+  @ValidateNested()
+  @Type(() => CriterialEvaluation)
+  CC: CriterialEvaluation;
+
+  @ValidateNested()
+  @Type(() => CriterialEvaluation)
+  LR: CriterialEvaluation;
+
+  @ValidateNested()
+  @Type(() => CriterialEvaluation)
+  GRA: CriterialEvaluation;
+
+  @ValidateNested()
+  @Type(() => CriterialEvaluation)
+  TR: CriterialEvaluation;
+
+  getOverallScore() {
+    const scores = [this.CC?.score || 0, this.LR?.score || 0, this.GRA?.score || 0, this.TR?.score || 0];
+
+    const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
+    return Math.round(avg * 2) / 2; // Round to nearest 0.5
+  }
 }
 
-class ScoreEvaluationDto {
-  @IsNumber()
-  @Min(0)
-  @Max(9)
-  score: number;
-
-  @IsString()
-  evaluate: string;
-}
-
-class WritingCriteriaDto {
-  @ValidateNested()
-  @Type(() => ScoreEvaluationDto)
-  CC: ScoreEvaluationDto;
-
-  @ValidateNested()
-  @Type(() => ScoreEvaluationDto)
-  LR: ScoreEvaluationDto;
-
-  @ValidateNested()
-  @Type(() => ScoreEvaluationDto)
-  GRA: ScoreEvaluationDto;
-
-  @ValidateNested()
-  @Type(() => ScoreEvaluationDto)
-  TR: ScoreEvaluationDto;
-}
-
-export class WritingResultItemDto {
-  @IsEnum(WritingPartEnum)
-  part: WritingPartEnum;
-
-  @IsNumber()
-  @Min(0)
-  @Max(9)
-  score: number;
+export class WritingEvaluation {
+  @IsEnum(GenAIPartEnum)
+  part: GenAIPartEnum;
 
   @ValidateNested()
   @Type(() => WritingCriteriaDto)
   criterias: WritingCriteriaDto;
-}
-
-export class WritingEvaluation {
-  @IsArray()
-  @ValidateNested({ each: true })
-  @ArrayMinSize(3)
-  @ArrayMaxSize(3)
-  @Type(() => WritingResultItemDto)
-  result: WritingResultItemDto[];
 }

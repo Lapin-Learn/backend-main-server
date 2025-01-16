@@ -114,10 +114,12 @@ export class AISpeakingService {
         }
       }
 
+      const estimatedBandScore = evaluations?.find((item) => item.part === "overall")?.criterias.getOverallScore();
+
       await SkillTestSession.save({
         id: sessionId,
         results: evaluations,
-        estimatedBandScore: evaluations[evaluations.length - 1]?.score,
+        estimatedBandScore,
         status: TestSessionStatusEnum.FINISHED,
       });
 

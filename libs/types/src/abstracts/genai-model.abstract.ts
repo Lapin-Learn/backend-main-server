@@ -4,7 +4,7 @@ export abstract class GenAIModelAbstract {
   protected model: GenerativeModel;
   constructor(protected readonly genAIManager: GoogleGenerativeAI) {
     this.model = this.genAIManager.getGenerativeModel({
-      model: "gemini-exp-1206",
+      model: "gemini-1.5-pro",
       generationConfig: {
         responseMimeType: "application/json",
         responseSchema: this.getSchema(),
@@ -16,7 +16,7 @@ export abstract class GenAIModelAbstract {
   abstract getSchema(): ResponseSchema;
   abstract getSystemInstruction(): string;
 
-  async generateContent(prompt: any = "Follow the system instructions") {
+  async generateContent(prompt: any = "") {
     const rawResult = await this.model.generateContent(prompt);
     return JSON.parse(rawResult.response.text());
   }
