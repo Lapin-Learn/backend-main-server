@@ -22,7 +22,7 @@ import { SkillEnum, TestSessionModeEnum, TestSessionStatusEnum } from "@app/type
 import { InjectQueue } from "@nestjs/bullmq";
 import { Queue } from "bullmq";
 import { EvaluateSpeaking, EvaluateWriting, RangeGradingStrategy } from "@app/shared-modules/grading/grading-strategy";
-import { EVALUATE_SPEAKING_QUEUE, EVALUATE_WRITING_QUEUE } from "@app/types/constants";
+import { EVALUATE_SPEAKING_QUEUE, EVALUATE_WRITING_QUEUE, OK_RESPONSE } from "@app/types/constants";
 import { plainToInstance } from "class-transformer";
 
 @Injectable()
@@ -251,7 +251,7 @@ export class SimulatedTestService {
         this.gradingContext.evaluateBandScore();
 
         sessionData["results"] = this.gradingContext.getResults();
-        if (mode === TestSessionModeEnum.FULL_TEST || parts.length === skillTest.partsDetail.length) {
+        if (mode === TestSessionModeEnum.FULL_TEST || parts.length === skillTest.partsDetail?.length) {
           sessionData["estimatedBandScore"] = this.gradingContext.getEstimatedScore();
         }
       } else if (status === TestSessionStatusEnum.IN_PROGRESS) {
@@ -260,7 +260,7 @@ export class SimulatedTestService {
         }
       }
       await SkillTestSession.save({ id: sessionId, ...sessionData, responses: responseInfo });
-      return "Ok";
+      return OK_RESPONSE;
     } catch (error) {
       this.logger.error(error);
       throw new BadRequestException(error);
