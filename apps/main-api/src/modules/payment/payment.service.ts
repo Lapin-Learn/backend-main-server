@@ -43,18 +43,35 @@ export class PaymentService {
     }
   }
 
-  async getPaymentInformation(orderId: string) {
+  async getPaymentInformation(orderId: number) {
     try {
-      return this.payOSService.getPaymentLinkInformation(orderId);
+      const transaction = await Transaction.findOne({
+        where: { id: orderId },
+      });
+      const information = await this.payOSService.getPaymentLinkInformation(orderId);
+      const { status } = information;
+      if (transaction) {
+        transaction.status = status.toLowerCase() as PaymentStatusEnum;
+        transaction.save();
+      }
+      return information;
     } catch (error) {
       this.logger.error(error);
       throw error;
     }
   }
 
-  async cancelPayment(orderId: string, { cancellationReason }: CancelPaymentLinkDto) {
+  async cancelPayment(orderId: number, { cancellationReason }: CancelPaymentLinkDto) {
     try {
-      return this.payOSService.cancelPayOSLink(orderId, { cancellationReason });
+      const information = await this.payOSService.cancelPayOSLink(orderId, { cancellationReason });
+      const transaction = await Transaction.findOne({
+        where: { id: orderId },
+      });
+      if (transaction) {
+        transaction.status = PaymentStatusEnum.CANCELLED;
+        transaction.save();
+      }
+      return information;
     } catch (error) {
       this.logger.error(error);
       throw error;

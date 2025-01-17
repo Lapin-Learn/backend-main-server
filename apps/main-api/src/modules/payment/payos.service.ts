@@ -1,4 +1,4 @@
-import { PayOSTransaction } from "@app/database";
+import { PayOSTransaction, Transaction } from "@app/database";
 import { CancelPaymentLinkDto } from "@app/types/dtos/payment/cancel-payment-link.dto";
 import { PaymentStatusEnum } from "@app/types/enums";
 import { IPayOSRequestLink } from "@app/types/interfaces";
@@ -28,7 +28,7 @@ export class PayOSService {
     }
   }
 
-  async getPaymentLinkInformation(orderId: string) {
+  async getPaymentLinkInformation(orderId: number) {
     try {
       const verifyLinkResponse = await this.payOS.getPaymentLinkInformation(orderId);
       return verifyLinkResponse;
@@ -38,7 +38,7 @@ export class PayOSService {
     }
   }
 
-  async cancelPayOSLink(orderId: string, { cancellationReason }: CancelPaymentLinkDto) {
+  async cancelPayOSLink(orderId: number, { cancellationReason }: CancelPaymentLinkDto) {
     try {
       const cancelLinkResponse = await this.payOS.cancelPaymentLink(orderId, cancellationReason);
       return cancelLinkResponse;
@@ -61,6 +61,13 @@ export class PayOSService {
         status: this.SUCCESS_CODE == code ? PaymentStatusEnum.PAID : PaymentStatusEnum.ERROR,
         metadata: verifiedData,
       });
+
+      const systemTransaction = await Transaction.findOne({ where: { id: orderCode } });
+      if (systemTransaction) {
+        systemTransaction.status = this.SUCCESS_CODE == code ? PaymentStatusEnum.PAID : PaymentStatusEnum.ERROR;
+        systemTransaction.save();
+      }
+
       this.logger.log(trans);
       return trans.save();
     } catch (error) {
