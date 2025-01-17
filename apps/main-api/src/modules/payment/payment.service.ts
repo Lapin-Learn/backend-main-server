@@ -1,42 +1,60 @@
 import { CancelPaymentLinkDto } from "@app/types/dtos/payment/cancel-payment-link.dto";
 import { IPayOSRequestLink } from "@app/types/interfaces";
 import { Injectable, Logger } from "@nestjs/common";
-import PayOS from "@payos/node";
+import { PayOSService } from "./payos.service";
+import { CreatePaymentLinkDto } from "@app/types/dtos/payment";
+import { Transaction } from "@app/database/entities/transaction.entity";
+import { PaymentStatusEnum } from "@app/types/enums";
 
 @Injectable()
 export class PaymentService {
-  private readonly payOS = new PayOS(
-    process.env.PAYOS_CLIENT_ID,
-    process.env.PAYOS_API_KEY,
-    process.env.PAYOS_CHECKSUM_KEY
-  );
+  private readonly expireTime = 1000 * 60 * 30; // 30 minutes
   private readonly logger = new Logger(this.constructor.name);
-  constructor() {}
+  private readonly PAYMENT_REDIRECT_URL = process.env.PAYMENT_REDIRECT_URL;
+  constructor(private readonly payOSService: PayOSService) {}
 
-  async createPaymentLink(request: IPayOSRequestLink) {
+  async createPaymentTransaction(data: CreatePaymentLinkDto, userId: string) {
     try {
-      const paymentLinkResponse = await this.payOS.createPaymentLink(request);
-      return paymentLinkResponse;
+      const { quantity } = data;
+      const newTransaction = await Transaction.create({
+        accountId: userId,
+        status: PaymentStatusEnum.PENDING,
+      }).save();
+
+      const request: IPayOSRequestLink = {
+        orderCode: newTransaction.id,
+        amount: data.quantity * 20,
+        description: "LAPIN - SUBSCRIPTION",
+        items: [
+          {
+            name: data.type,
+            quantity,
+            price: 20,
+          },
+        ],
+        expiredAt: Number(String(new Date(Date.now() + this.expireTime))),
+        returnUrl: `${this.PAYMENT_REDIRECT_URL}?success=true`,
+        cancelUrl: `${this.PAYMENT_REDIRECT_URL}?canceled=true`,
+      };
+      return this.payOSService.createPaymentLink(request);
     } catch (error) {
       this.logger.error(error);
       throw error;
     }
   }
 
-  async getPaymentLinkInformation(orderId: string) {
+  async getPaymentInformation(orderId: string) {
     try {
-      const verifyLinkResponse = await this.payOS.getPaymentLinkInformation(orderId);
-      return verifyLinkResponse;
+      return this.payOSService.getPaymentLinkInformation(orderId);
     } catch (error) {
       this.logger.error(error);
       throw error;
     }
   }
 
-  async cancelPayOSLink(orderId: string, { cancellationReason }: CancelPaymentLinkDto) {
+  async cancelPayment(orderId: string, { cancellationReason }: CancelPaymentLinkDto) {
     try {
-      const cancelLinkResponse = await this.payOS.cancelPaymentLink(orderId, cancellationReason);
-      return cancelLinkResponse;
+      return this.payOSService.cancelPayOSLink(orderId, { cancellationReason });
     } catch (error) {
       this.logger.error(error);
       throw error;

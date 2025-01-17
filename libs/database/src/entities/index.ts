@@ -27,3 +27,5 @@ export * from "./test-sessions.entity";
 export * from "./skill_test_answers.entity";
 export * from "./speaking-rooms.entity";
 export * from "./skill-test-records.entity";
+export * from "./transaction.entity";
+export * from "./payos-transaction.entity";

@@ -21,4 +21,5 @@ export * from "./test-session-mode.enum";
 export * from "./test-session-status.enum";
 export * from "./answer-type.enum";
 export * from "./genai-part.enum";
-export * from "./payment.enum";
+export * from "./payment-type.enum";
+export * from "./payment-status.enum";
