@@ -251,7 +251,7 @@ export class SimulatedTestService {
         this.gradingContext.evaluateBandScore();
 
         sessionData["results"] = this.gradingContext.getResults();
-        if (mode === TestSessionModeEnum.FULL_TEST || parts.length === skillTest.partsDetail?.length) {
+        if (mode === TestSessionModeEnum.FULL_TEST || parts.length === skillTest?.partsDetail?.length) {
           sessionData["estimatedBandScore"] = this.gradingContext.getEstimatedScore();
         }
       } else if (status === TestSessionStatusEnum.IN_PROGRESS) {
