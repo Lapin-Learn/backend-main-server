@@ -28,6 +28,7 @@ export class FirebaseStorageService {
     const stream = fileUpload.createWriteStream({
       metadata: {
         contentType: file.mimetype,
+        cacheControl: "public, max-age=3600",
       },
     });
 
@@ -39,7 +40,7 @@ export class FirebaseStorageService {
 
       stream.on("finish", () => {
         this.logger.log("File upload successfully");
-        resolve(fileUpload.publicUrl());
+        resolve("Upload successfully");
       });
 
       stream.end(file.buffer);
