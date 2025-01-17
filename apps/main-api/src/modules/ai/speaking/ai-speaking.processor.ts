@@ -1,7 +1,7 @@
 import { Processor, WorkerHost } from "@nestjs/bullmq";
 import { AISpeakingService } from "./ai-speaking.service";
 import { Job } from "bullmq";
-import { EVALUATE_SPEAKING_QUEUE } from "@app/types/constants";
+import { EVALUATE_SPEAKING_QUEUE, SPEAKING_AUDIO_DIR, SPEAKING_FILE_PREFIX } from "@app/types/constants";
 import { validate } from "class-validator";
 import { plainToInstance } from "class-transformer";
 import { EvaluateSpeakingData } from "@app/types/dtos/simulated-tests";
@@ -52,7 +52,7 @@ export class AISpeakingConsumer extends WorkerHost {
       );
 
       userResponse.forEach((r, index) => {
-        r["timeStamp"] = audioSegments[index].duration;
+        r["timeStamp"] = audioSegments[index].end;
       });
 
       inputFilePaths.forEach((tempFile) => tempFile.removeCallback());
@@ -70,8 +70,8 @@ export class AISpeakingConsumer extends WorkerHost {
         path: mergedTempFile.name,
       };
 
-      this.storageService.setDirectory("SPEAKING_AUDIO");
-      const fileName = `speaking-session-${sessionId}`;
+      this.storageService.setDirectory(SPEAKING_AUDIO_DIR);
+      const fileName = `${SPEAKING_FILE_PREFIX}-${sessionId}`;
       await this.storageService.upload(mergedFile, fileName);
 
       const evaluations = await this.aiSpeakingService.generateScore(sessionId, mergedFile, userResponse);
@@ -94,14 +94,17 @@ export class AISpeakingConsumer extends WorkerHost {
 
       return;
     } catch (error) {
-      console.error(error);
+      this.logger.error(error);
       return;
     }
   }
 
-  async mergeAudioFiles(audioFiles: string[], outputPath: string): Promise<{ start: number; duration: number }[]> {
+  async mergeAudioFiles(
+    audioFiles: string[],
+    outputPath: string
+  ): Promise<{ start: number; duration: number; end: number }[]> {
     try {
-      const audioTimestamps: { file: string; start: number; duration: number }[] = [];
+      const audioTimestamps: { file: string; start: number; duration: number; end: number }[] = [];
       let currentStartTime = 0;
 
       for (const audioFile of audioFiles) {
@@ -110,6 +113,7 @@ export class AISpeakingConsumer extends WorkerHost {
           file: audioFile,
           start: currentStartTime,
           duration: metadata.duration,
+          end: currentStartTime + metadata.duration,
         });
         currentStartTime += metadata.duration;
       }
@@ -122,17 +126,17 @@ export class AISpeakingConsumer extends WorkerHost {
 
         instance
           .on("error", (err) => {
-            console.error("Error during audio merging:", err);
+            this.logger.error("Error during audio merging:", err);
             reject(err);
           })
           .on("end", () => {
-            console.log("Audio files merged successfully.");
+            this.logger.log("Audio files merged successfully.");
             resolve();
           })
           .mergeToFile(outputPath, "./tmp/");
       });
 
-      return audioTimestamps.map(({ start, duration }) => ({ start, duration }));
+      return audioTimestamps.map(({ start, duration, end }) => ({ start, duration, end }));
     } catch (error) {
       console.error("Error in mergeAudioFiles:", error);
       throw error;
