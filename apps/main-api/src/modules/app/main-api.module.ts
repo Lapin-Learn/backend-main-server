@@ -22,6 +22,7 @@ import { LoggerMiddleware } from "../../middlewares";
 import { SimulatedTestModule } from "../simulated-test/simulated-test.module";
 import { AIModule } from "../ai/ai.module";
 import { BullModule } from "@nestjs/bullmq";
+import { PaymentModule } from "../payment/payment.module";
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -59,6 +60,7 @@ import { BullModule } from "@nestjs/bullmq";
     ItemModule,
     SimulatedTestModule,
     AIModule,
+    PaymentModule,
   ],
   controllers: [MainApiController],
   providers: [

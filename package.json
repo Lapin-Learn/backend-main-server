@@ -45,6 +45,7 @@
     "@nestjs/throttler": "^6.2.1",
     "@nestjs/typeorm": "^10.0.2",
     "@novu/node": "^2.0.1",
+    "@payos/node": "^1.0.10",
     "@redis/client": "^1.6.0",
     "@types/lodash": "^4.17.7",
     "@types/otp-generator": "^4.0.2",
