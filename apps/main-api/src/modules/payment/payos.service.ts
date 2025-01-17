@@ -1,8 +1,11 @@
+import { PayOSTransaction } from "@app/database";
 import { CancelPaymentLinkDto } from "@app/types/dtos/payment/cancel-payment-link.dto";
+import { PaymentStatusEnum } from "@app/types/enums";
 import { IPayOSRequestLink } from "@app/types/interfaces";
 import { IPayOSWebhook } from "@app/types/interfaces/payment/payos-webhook.interface";
 import { Injectable, Logger } from "@nestjs/common";
 import PayOS from "@payos/node";
+import { WebhookDataType } from "@payos/node/lib/type";
 import { createHmac } from "crypto";
 
 @Injectable()
@@ -12,6 +15,7 @@ export class PayOSService {
   private readonly PAY_OS_CHECKSUM_KEY = process.env.PAYOS_CHECKSUM_KEY;
   private readonly payOS = new PayOS(this.PAYOS_CLIENT_ID, this.PAYOS_API_KEY, this.PAY_OS_CHECKSUM_KEY);
   private readonly logger = new Logger(this.constructor.name);
+  private readonly SUCCESS_CODE = "00";
   constructor() {}
 
   async createPaymentLink(request: IPayOSRequestLink) {
@@ -48,8 +52,17 @@ export class PayOSService {
   async handlePayOSWebhook(webhookData: IPayOSWebhook) {
     // Handle webhook data here
     try {
-      const verifiedData = await this.payOS.verifyPaymentWebhookData(webhookData);
-      return verifiedData;
+      const verifiedData: WebhookDataType = this.payOS.verifyPaymentWebhookData(webhookData);
+      const { orderCode, amount, paymentLinkId, code } = verifiedData;
+      const trans = PayOSTransaction.create({
+        id: paymentLinkId,
+        transactionId: orderCode,
+        amount,
+        status: this.SUCCESS_CODE == code ? PaymentStatusEnum.PAID : PaymentStatusEnum.ERROR,
+        metadata: verifiedData,
+      });
+      this.logger.log(trans);
+      return trans.save();
     } catch (error) {
       this.logger.error(error);
       throw error;

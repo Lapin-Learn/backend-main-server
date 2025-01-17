@@ -52,7 +52,7 @@ export class AddTransactionsPayosTransactionsTable1737091114419 implements Migra
         columns: [
           {
             name: "id",
-            type: "int",
+            type: "varchar",
             isPrimary: true,
             isGenerated: false,
           },

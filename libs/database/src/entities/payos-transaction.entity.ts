@@ -3,21 +3,23 @@ import { IPayOSTransaction } from "@app/types/interfaces/payment";
 import {
   Entity,
   BaseEntity,
-  PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
   UpdateDateColumn,
   OneToOne,
   JoinColumn,
+  PrimaryColumn,
 } from "typeorm";
 import { Transaction } from "./transaction.entity";
 
 @Entity("payos_transactions")
 export class PayOSTransaction extends BaseEntity implements IPayOSTransaction {
-  @PrimaryGeneratedColumn()
+  @PrimaryColumn()
   id: string; // id webhook
 
-  @Column()
+  @Column({
+    name: "transaction_id",
+  })
   // Foreign key to Transaction table
   // also the order code sent to PayOS
   transactionId: number;
@@ -46,6 +48,6 @@ export class PayOSTransaction extends BaseEntity implements IPayOSTransaction {
   updatedAt: Date;
 
   @OneToOne(() => Transaction, (transaction) => transaction.id)
-  @JoinColumn({ name: "account_id", referencedColumnName: "id" })
+  @JoinColumn({ name: "transaction_id", referencedColumnName: "id" })
   readonly transaction: Transaction;
 }
