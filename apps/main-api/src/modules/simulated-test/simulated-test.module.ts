@@ -5,7 +5,6 @@ import { BucketModule } from "../bucket/bucket.module";
 import { GradingModule } from "@app/shared-modules/grading";
 import { BullModule } from "@nestjs/bullmq";
 import { EVALUATE_SPEAKING_QUEUE, EVALUATE_WRITING_QUEUE } from "@app/types/constants";
-import { FirebaseModule } from "@app/shared-modules/firebase";
 import { RedisModule } from "@app/shared-modules/redis";
 
 @Module({
@@ -20,7 +19,7 @@ import { RedisModule } from "@app/shared-modules/redis";
         name: EVALUATE_WRITING_QUEUE,
       }
     ),
-    FirebaseModule,
+    BucketModule,
     RedisModule,
   ],
   providers: [SimulatedTestService],

@@ -1,7 +1,7 @@
 import { Processor, WorkerHost } from "@nestjs/bullmq";
 import { AISpeakingService } from "./ai-speaking.service";
 import { Job } from "bullmq";
-import { EVALUATE_SPEAKING_QUEUE, SPEAKING_AUDIO_DIR, SPEAKING_FILE_PREFIX } from "@app/types/constants";
+import { EVALUATE_SPEAKING_QUEUE, SPEAKING_FILE_PREFIX } from "@app/types/constants";
 import { validate } from "class-validator";
 import { plainToInstance } from "class-transformer";
 import { EvaluateSpeakingData } from "@app/types/dtos/simulated-tests";
@@ -9,19 +9,24 @@ import * as fs from "fs";
 import * as tmp from "tmp";
 import ffmpeg from "fluent-ffmpeg";
 import { getConstraints } from "@app/utils/pipes";
-import { FirebaseStorageService } from "@app/shared-modules/firebase";
-import { Logger } from "@nestjs/common";
+import { HttpStatus, Logger } from "@nestjs/common";
 import { SkillTestSession } from "@app/database";
-import { TestSessionStatusEnum } from "@app/types/enums";
+import { BucketPermissionsEnum, TestSessionStatusEnum } from "@app/types/enums";
+import { BucketService } from "../../bucket/bucket.service";
+import { UploadFileDto } from "@app/types/dtos";
+import { genericHttpConsumer } from "@app/utils/axios";
+import { AxiosInstance } from "axios";
 
 @Processor(EVALUATE_SPEAKING_QUEUE)
 export class AISpeakingConsumer extends WorkerHost {
   private readonly logger: Logger = new Logger(this.constructor.name);
+  private readonly httpService: AxiosInstance;
   constructor(
     private readonly aiSpeakingService: AISpeakingService,
-    private readonly storageService: FirebaseStorageService
+    private readonly bucketService: BucketService
   ) {
     super();
+    this.httpService = genericHttpConsumer();
   }
 
   async process(job: Job): Promise<any> {
@@ -34,7 +39,7 @@ export class AISpeakingConsumer extends WorkerHost {
         throw new Error(Object.keys(error)[0]);
       }
 
-      const { speakingFiles, userResponse, sessionId } = speakingData;
+      const { speakingFiles, userResponse, sessionId, learner } = speakingData;
 
       const inputFilePaths = await Promise.all(
         speakingFiles.map(async (file) => {
@@ -70,9 +75,21 @@ export class AISpeakingConsumer extends WorkerHost {
         path: mergedTempFile.name,
       };
 
-      this.storageService.setDirectory(SPEAKING_AUDIO_DIR);
       const fileName = `${SPEAKING_FILE_PREFIX}-${sessionId}`;
-      await this.storageService.upload(mergedFile, fileName);
+      const file: UploadFileDto = {
+        name: fileName,
+        permission: BucketPermissionsEnum.PUBLIC,
+      };
+      const presignedUrl = await this.bucketService.getPresignedUploadUrl(learner, file);
+      const response = await this.httpService.put(presignedUrl.url, mergedFile.buffer, {
+        headers: {
+          "Content-Type": mergedFile.mimetype,
+        },
+      });
+
+      if (response.status === HttpStatus.OK) {
+        await this.bucketService.uploadConfirmation(learner, { id: presignedUrl.id });
+      }
 
       const evaluations = await this.aiSpeakingService.generateScore(sessionId, mergedFile, userResponse);
       for (const evaluation of evaluations) {
