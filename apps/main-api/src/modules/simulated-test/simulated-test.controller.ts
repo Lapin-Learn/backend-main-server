@@ -120,6 +120,7 @@ export class SimulatedTestController {
     @Body() sessionData: any,
     @UploadedFiles() files?: Array<Express.Multer.File>
   ) {
+    console.log("sessionData: ", sessionData);
     sessionData.response = JSON.parse(sessionData.response);
     const data: UpdateSessionDto = plainToInstance(UpdateSessionDto, sessionData);
 
