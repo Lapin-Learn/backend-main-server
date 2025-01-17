@@ -1,29 +1,27 @@
+import { FIREBASE_APP_PROVIDER } from "@app/types/constants";
 import { genericHttpConsumer } from "@app/utils/axios";
 import { Inject, Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { AxiosInstance } from "axios";
-import { AppOptions } from "firebase-admin";
-import { App, initializeApp } from "firebase-admin/app";
+import { App } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
 
 @Injectable()
 export class FirebaseAuthService {
   private readonly logger = new Logger(this.constructor.name);
-  private readonly app: App;
   private readonly apiKey: string;
   private readonly firebaseUrl: string;
   private readonly requestUri: string;
   private readonly httpService: AxiosInstance;
 
   constructor(
-    @Inject("FIREBASE_ADMIN_OPTIONS_TOKEN") readonly options: AppOptions,
+    @Inject(FIREBASE_APP_PROVIDER) private readonly app: App,
     private readonly configService: ConfigService
   ) {
     this.apiKey = this.configService.get("FIREBASE_API_KEY");
     this.firebaseUrl = this.configService.get("FIREBASE_URL");
     this.requestUri = this.configService.get("REQUEST_URI");
     this.httpService = genericHttpConsumer();
-    this.app = initializeApp(options);
   }
 
   async createUserByEmailAndPassword(email: string, password: string, emailVerified: boolean) {

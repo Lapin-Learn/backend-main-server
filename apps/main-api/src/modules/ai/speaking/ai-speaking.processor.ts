@@ -9,10 +9,18 @@ import * as fs from "fs";
 import * as tmp from "tmp";
 import ffmpeg from "fluent-ffmpeg";
 import { getConstraints } from "@app/utils/pipes";
+import { FirebaseStorageService } from "@app/shared-modules/firebase";
+import { Logger } from "@nestjs/common";
+import { SkillTestSession } from "@app/database";
+import { TestSessionStatusEnum } from "@app/types/enums";
 
 @Processor(EVALUATE_SPEAKING_QUEUE)
 export class AISpeakingConsumer extends WorkerHost {
-  constructor(private readonly aiSpeakingService: AISpeakingService) {
+  private readonly logger: Logger = new Logger(this.constructor.name);
+  constructor(
+    private readonly aiSpeakingService: AISpeakingService,
+    private readonly storageService: FirebaseStorageService
+  ) {
     super();
   }
 
@@ -62,7 +70,26 @@ export class AISpeakingConsumer extends WorkerHost {
         path: mergedTempFile.name,
       };
 
-      await this.aiSpeakingService.generateScore(sessionId, mergedFile, userResponse);
+      this.storageService.setDirectory("SPEAKING_AUDIO");
+      const fileName = `speaking-session-${sessionId}`;
+      await this.storageService.upload(mergedFile, fileName);
+
+      const evaluations = await this.aiSpeakingService.generateScore(sessionId, mergedFile, userResponse);
+      for (const evaluation of evaluations) {
+        const errors = await validate(evaluation);
+        if (errors.length > 0) {
+          this.logger.error("validation fail: ", errors);
+        }
+      }
+
+      await SkillTestSession.save({
+        id: sessionId,
+        results: evaluations,
+        responses: userResponse,
+        estimatedBandScore: evaluations[evaluations.length - 1].criterias.getOverallScore(),
+        status: TestSessionStatusEnum.FINISHED,
+      });
+
       mergedTempFile.removeCallback();
 
       return;
