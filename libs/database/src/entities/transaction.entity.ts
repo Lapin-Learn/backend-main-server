@@ -45,17 +45,18 @@ export class Transaction extends BaseEntity implements ITransaction {
   readonly account: Account;
 
   @OneToOne(() => PayOSTransaction, (payosTransaction) => payosTransaction.transaction)
-  payosTransactions: PayOSTransaction[];
+  @JoinColumn({ name: "id", referencedColumnName: "transactionId" })
+  payosTransaction: PayOSTransaction;
 
   static async getTransactionHistory(accountId: string, offset: number, limit: number) {
     const queryBuilder = Transaction.createQueryBuilder("transaction")
-      .leftJoin("transaction.payosTransactions", "payos_transactions")
+      .leftJoin("transaction.payosTransaction", "payos_transaction")
       .addSelect([
-        "payos_transactions.amount",
-        "payos_transactions.status",
-        "payos_transactions.id",
-        "payos_transactions.createdAt",
-        "payos_transactions.updatedAt",
+        "payos_transaction.amount",
+        "payos_transaction.status",
+        "payos_transaction.id",
+        "payos_transaction.createdAt",
+        "payos_transaction.updatedAt",
       ])
       .where("transaction.accountId = :accountId", { accountId })
       .orderBy("transaction.updatedAt", "DESC")
