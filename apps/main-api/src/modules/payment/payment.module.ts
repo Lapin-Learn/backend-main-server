@@ -18,8 +18,6 @@ import PayOS from "@payos/node";
         const payOSClientId = configService.get("PAYOS_CLIENT_ID");
         const payOSAPIKey = configService.get("PAYOS_API_KEY");
         const payOSChecksumKey = configService.get("PAYOS_CHECKSUM_KEY");
-
-        console.table([payOSClientId, payOSAPIKey, payOSChecksumKey]);
         const payOS = new PayOS(payOSClientId, payOSAPIKey, payOSChecksumKey);
         return payOS;
       },
