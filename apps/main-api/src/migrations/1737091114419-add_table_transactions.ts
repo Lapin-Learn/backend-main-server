@@ -102,7 +102,8 @@ export class AddTransactionsPayosTransactionsTable1737091114419 implements Migra
     );
   }
 
-  public async down(): Promise<void> {
-    throw new Error("Method is not implemented");
+  public async down(queryRunner: QueryRunner): Promise<void> {
+    queryRunner.dropTable("payos_transactions");
+    queryRunner.dropTable("transactions");
   }
 }

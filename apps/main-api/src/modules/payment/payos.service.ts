@@ -1,22 +1,27 @@
 import { PayOSTransaction, Transaction } from "@app/database";
+import { PAYOS_OPTIONS } from "@app/types/constants";
 import { CancelPaymentLinkDto } from "@app/types/dtos/payment/cancel-payment-link.dto";
 import { PaymentStatusEnum } from "@app/types/enums";
 import { IPayOSRequestLink } from "@app/types/interfaces";
 import { IPayOSWebhook } from "@app/types/interfaces/payment/payos-webhook.interface";
-import { Injectable, Logger } from "@nestjs/common";
+import { Inject, Injectable, Logger } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import PayOS from "@payos/node";
 import { WebhookDataType } from "@payos/node/lib/type";
 import { createHmac } from "crypto";
 
 @Injectable()
 export class PayOSService {
-  private readonly PAYOS_CLIENT_ID = process.env.PAYOS_CLIENT_ID;
-  private readonly PAYOS_API_KEY = process.env.PAYOS_API_KEY;
-  private readonly PAY_OS_CHECKSUM_KEY = process.env.PAYOS_CHECKSUM_KEY;
-  private readonly payOS = new PayOS(this.PAYOS_CLIENT_ID, this.PAYOS_API_KEY, this.PAY_OS_CHECKSUM_KEY);
   private readonly logger = new Logger(this.constructor.name);
   private readonly SUCCESS_CODE = "00";
-  constructor() {}
+  private readonly checksumKey: string;
+  constructor(
+    @Inject(PAYOS_OPTIONS)
+    private readonly payOS: PayOS,
+    private readonly configService: ConfigService
+  ) {
+    this.checksumKey = this.configService.get("PAYOS_CHECKSUM_KEY");
+  }
 
   async createPaymentLink(request: IPayOSRequestLink) {
     try {
@@ -48,7 +53,6 @@ export class PayOSService {
     }
   }
 
-  // TODO: update database
   async handlePayOSWebhook(webhookData: IPayOSWebhook) {
     // Handle webhook data here
     try {
@@ -68,8 +72,11 @@ export class PayOSService {
         systemTransaction.save();
       }
 
-      this.logger.log(trans);
-      return trans.save();
+      const currentTrans = await PayOSTransaction.findOne({ where: { id: paymentLinkId } });
+      if (!currentTrans) {
+        await trans.save();
+      }
+      return trans;
     } catch (error) {
       this.logger.error(error);
       throw error;
@@ -89,7 +96,7 @@ export class PayOSService {
   async createMockSignature(data: IPayOSWebhook["data"]) {
     const sortedDataByKey = this.sortObjDataByKey(data);
     const dataQueryStr = this.convertObjToQueryStr(sortedDataByKey);
-    const dataToSignature = createHmac("sha256", this.PAY_OS_CHECKSUM_KEY).update(dataQueryStr).digest("hex");
+    const dataToSignature = createHmac("sha256", this.checksumKey).update(dataQueryStr).digest("hex");
     return {
       signature: dataToSignature,
     };

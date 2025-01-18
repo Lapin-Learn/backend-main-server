@@ -5,13 +5,19 @@ import { PayOSService } from "./payos.service";
 import { CreatePaymentLinkDto } from "@app/types/dtos/payment";
 import { Transaction } from "@app/database/entities/transaction.entity";
 import { PaymentStatusEnum } from "@app/types/enums";
+import { ConfigService } from "@nestjs/config";
 
 @Injectable()
 export class PaymentService {
   private readonly expireTime = 1000 * 60 * 30; // 30 minutes
   private readonly logger = new Logger(this.constructor.name);
-  private readonly PAYMENT_REDIRECT_URL = process.env.PAYMENT_REDIRECT_URL;
-  constructor(private readonly payOSService: PayOSService) {}
+  private readonly paymentRedirectUrl: string;
+  constructor(
+    private readonly payOSService: PayOSService,
+    private readonly configService: ConfigService
+  ) {
+    this.paymentRedirectUrl = this.configService.get("PAYMENT_REDIRECT_URL");
+  }
 
   async createPaymentTransaction(data: CreatePaymentLinkDto, userId: string) {
     try {
@@ -33,8 +39,8 @@ export class PaymentService {
           },
         ],
         expiredAt: Number(String(new Date(Date.now() + this.expireTime))),
-        returnUrl: `${this.PAYMENT_REDIRECT_URL}?success=true`,
-        cancelUrl: `${this.PAYMENT_REDIRECT_URL}?canceled=true`,
+        returnUrl: `${this.paymentRedirectUrl}?success=true`,
+        cancelUrl: `${this.paymentRedirectUrl}?canceled=true`,
       };
       return this.payOSService.createPaymentLink(request);
     } catch (error) {
@@ -77,6 +83,4 @@ export class PaymentService {
       throw error;
     }
   }
-
-  // TODO: Add webhook endpoint to handle payment verification and update database
 }
