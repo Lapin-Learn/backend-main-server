@@ -1,5 +1,6 @@
 import {
   Bucket,
+  LearnerProfile,
   SimulatedIeltsTest,
   SkillTest,
   SkillTestAnswer,
@@ -231,6 +232,21 @@ export class SimulatedTestService {
 
       let responseInfo = null;
       if (status === TestSessionStatusEnum.FINISHED) {
+        const learnerProfile = await LearnerProfile.findOneOrFail({ where: { id: learner.profileId } });
+
+        if (
+          learnerProfile.carrots < 100 &&
+          (sessionData.response.skill === SkillEnum.WRITING || sessionData.response.skill === SkillEnum.SPEAKING)
+        ) {
+          throw new BadRequestException("Not enough carrots to submit the test");
+        } else {
+          // Use carrots to eval Writing and Speaking
+          await LearnerProfile.save({
+            ...learnerProfile,
+            carrots: learnerProfile.carrots - 100,
+          });
+        }
+
         const { response } = sessionData;
 
         if (response instanceof SpeakingResponseDto) {

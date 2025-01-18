@@ -111,13 +111,10 @@ export class LessonRecord extends BaseEntity implements ILessonRecord {
     let bonusCarrot = 0;
     switch (true) {
       case this.duration < 3 * 60:
-        bonusCarrot = 20;
-        break;
-      case this.duration < 5 * 60:
-        bonusCarrot = 10;
+        bonusCarrot = 2;
         break;
       default:
-        bonusCarrot = 5;
+        bonusCarrot = 1;
         break;
     }
 

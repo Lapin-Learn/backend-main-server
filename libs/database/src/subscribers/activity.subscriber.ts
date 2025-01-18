@@ -15,7 +15,7 @@ export class ActivitySubscriber implements EntitySubscriberInterface<Activity> {
     const learner = await manager.getRepository(LearnerProfile).findOneBy({ id: profileId });
     switch (activityActions.name) {
       case ActionNameEnum.DAILY_LOGIN:
-        learner.carrots += 10;
+        learner.carrots += 1;
         learner.xp += 10;
         await learner.save();
         break;
