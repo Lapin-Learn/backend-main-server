@@ -106,7 +106,7 @@ export class SimulatedTestController {
   @ApiParam({ name: "id", type: Number, required: true })
   @Get("simulated-tests/sessions/:id")
   async getSessionDetail(@CurrentUser() learner: ICurrentUser, @Param("id", ParseIntPipe) sessionId: number) {
-    return this.simulatedTestService.getSessionDetail(sessionId, learner.profileId);
+    return this.simulatedTestService.getSessionDetail(sessionId, learner);
   }
 
   @ApiParam({ name: "id", type: Number, required: true })

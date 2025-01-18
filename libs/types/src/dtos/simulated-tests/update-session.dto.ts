@@ -14,6 +14,10 @@ export class InfoSpeakingResponseDto {
 
   @IsNumber()
   partNo: number;
+
+  @IsOptional()
+  @IsNumber()
+  timeStamp: number;
 }
 
 export class InfoTextResponseDto {

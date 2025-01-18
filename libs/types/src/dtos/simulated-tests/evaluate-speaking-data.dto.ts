@@ -1,6 +1,7 @@
 import { IsArray, IsInt, IsNotEmpty, ValidateNested } from "class-validator";
 import { Type } from "class-transformer";
 import { InfoSpeakingResponseDto } from "./update-session.dto";
+import { ICurrentUser } from "@app/types/interfaces";
 
 export class EvaluateSpeakingData {
   @IsInt()
@@ -13,4 +14,7 @@ export class EvaluateSpeakingData {
   @ValidateNested({ each: true })
   @Type(() => InfoSpeakingResponseDto)
   userResponse: InfoSpeakingResponseDto[];
+
+  @IsNotEmpty()
+  learner: ICurrentUser;
 }

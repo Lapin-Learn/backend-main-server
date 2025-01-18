@@ -11,9 +11,7 @@ import { GenAISpeakingIPAModel, GenAISpeakingScoreModel } from "@app/shared-modu
 import { ICurrentUser } from "@app/types/interfaces";
 import { SkillTest, SkillTestSession } from "@app/database";
 import { InfoSpeakingResponseDto, SpeakingEvaluation } from "@app/types/dtos/simulated-tests";
-import { TestSessionStatusEnum } from "@app/types/enums";
 import { plainToInstance } from "class-transformer";
-import { validate } from "class-validator";
 import { CreateSkillTestDto } from "@app/types/dtos";
 
 const PUNCTUATION = "/[.,/#!$%^&*;:{}=-_`~()]/g";
@@ -61,7 +59,11 @@ export class AISpeakingService {
     }
   }
 
-  async generateScore(sessionId: number, file: Express.Multer.File, info: InfoSpeakingResponseDto[]) {
+  async generateScore(
+    sessionId: number,
+    file: Express.Multer.File,
+    info: InfoSpeakingResponseDto[]
+  ): Promise<SpeakingEvaluation[]> {
     let geminiFileName = "";
 
     try {
@@ -118,24 +120,7 @@ export class AISpeakingService {
         },
       ]);
 
-      const evaluations = plainToInstance(SpeakingEvaluation, plainEvaluations);
-      for (const evaluation of evaluations) {
-        const errors = await validate(evaluation);
-        if (errors.length > 0) {
-          this.logger.error("validation fail: ", errors);
-        }
-      }
-
-      const estimatedBandScore = evaluations?.find((item) => item.part === "overall")?.criterias.getOverallScore();
-
-      await SkillTestSession.save({
-        id: sessionId,
-        results: evaluations,
-        estimatedBandScore,
-        status: TestSessionStatusEnum.FINISHED,
-      });
-
-      return;
+      return plainToInstance(SpeakingEvaluation, plainEvaluations);
     } catch (error) {
       this.logger.error(error);
       throw new BadRequestException(error);

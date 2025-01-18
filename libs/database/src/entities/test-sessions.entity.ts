@@ -11,8 +11,13 @@ import {
 import { SkillTest } from "./skill-tests.entity";
 import { LearnerProfile } from "./learner-profile.entity";
 import { SkillEnum, TestSessionModeEnum, TestSessionStatusEnum } from "@app/types/enums";
-import { SpeakingEvaluation, StartSessionDto, WritingEvaluation } from "@app/types/dtos/simulated-tests";
-import { ITestSessionResponse } from "@app/types/interfaces";
+import {
+  InfoSpeakingResponseDto,
+  InfoTextResponseDto,
+  SpeakingEvaluation,
+  StartSessionDto,
+  WritingEvaluation,
+} from "@app/types/dtos/simulated-tests";
 import { Transform } from "class-transformer";
 import { TransformBandScore } from "@app/utils/pipes";
 
@@ -28,7 +33,7 @@ export class SkillTestSession extends BaseEntity {
   learnerProfileId: string;
 
   @Column({ name: "responses", type: "jsonb", nullable: true })
-  responses: ITestSessionResponse[];
+  responses: InfoTextResponseDto[] | InfoSpeakingResponseDto;
 
   @Column({
     name: "results",

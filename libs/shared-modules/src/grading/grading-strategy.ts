@@ -1,5 +1,5 @@
 import { SkillEnum } from "@app/types/enums";
-import { IBandScoreRange, IGradingStrategy, TestAnswer } from "@app/types/interfaces";
+import { IBandScoreRange, ICurrentUser, IGradingStrategy, TestAnswer } from "@app/types/interfaces";
 import { bandScoreRangeMap } from "@app/utils/maps";
 import { InfoSpeakingResponseDto, InfoTextResponseDto } from "@app/types/dtos/simulated-tests";
 import { Queue } from "bullmq";
@@ -59,18 +59,21 @@ export class EvaluateSpeaking implements IGradingStrategy {
   private userResponses: InfoSpeakingResponseDto[];
   private jobName: string;
   private queue: Queue;
+  private learner: ICurrentUser;
   constructor(
     queue: Queue,
     sessionId: number,
     jobName: string,
     speakingFiles: Array<Express.Multer.File>,
-    userResponses: InfoSpeakingResponseDto[]
+    userResponses: InfoSpeakingResponseDto[],
+    learner: ICurrentUser
   ) {
     this.sessionId = sessionId;
     this.jobName = jobName;
     this.speakingFiles = speakingFiles;
     this.userResponses = userResponses;
     this.queue = queue;
+    this.learner = learner;
   }
 
   async evaluateBandScore() {
@@ -78,6 +81,7 @@ export class EvaluateSpeaking implements IGradingStrategy {
       sessionId: this.sessionId,
       userResponse: this.userResponses,
       speakingFiles: this.speakingFiles,
+      learner: this.learner,
     });
   }
 
