@@ -14,6 +14,10 @@ export class GenAISpeakingModel extends GenAIModelAbstract {
         type: SchemaType.OBJECT,
         description: "Details of a specific part of the IELTS speaking test.",
         properties: {
+          heading: {
+            type: SchemaType.STRING,
+            description: "The heading or topic of the IELTS speaking test part 2 only.",
+          },
           part: {
             type: SchemaType.NUMBER,
             description: `The part number of the IELTS speaking test (1, 2, or 3). 
@@ -57,9 +61,13 @@ export class GenAISpeakingModel extends GenAIModelAbstract {
           ]
         },
         {
-          "part": 2,
-          "content": [
-            "<div class='flex flex-col gap-3'><h5 class='text-center text-heading-5 font-semibold'>Describe a skill you learned as a child that has been useful to you throughout your life.</h5><ul class='list-inside list-disc'><p>You should say:</p><li>What the skill is</li><li>How you learned it</li><li>Who taught you</li><p>and explain why this skill has been useful to you.</p></ul></div>"
+        "part": 2,
+        "heading": "Describe a skill you learned as a child that has been useful to your throughout your life.",
+        "content": [
+          "What the skill is",
+          "How you learned it",
+          "Who taught you",
+          "and explain why this skill has been useful to you."
           ]
         },
         {
