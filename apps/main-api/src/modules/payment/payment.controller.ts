@@ -13,8 +13,6 @@ import { ICurrentUser } from "@app/types/interfaces";
 @UseGuards(FirebaseJwtAuthGuard)
 @Controller("payment")
 export class PaymentController {
-  private readonly expireTime = 1000 * 60 * 30; // 30 minutes
-  private readonly PAYMENT_REDIRECT_URL = process.env.PAYMENT_REDIRECT_URL;
   constructor(private readonly paymentService: PaymentService) {}
 
   @ApiOperation({ summary: "Create payment link" })

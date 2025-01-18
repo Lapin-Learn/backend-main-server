@@ -1,5 +1,5 @@
-import { PayOSTransaction, Transaction } from "@app/database";
-import { PAYOS_OPTIONS } from "@app/types/constants";
+import { OK_RESPONSE, PAYOS_INSTANCE } from "@app/types/constants";
+import { PayOSTransaction, Transaction, UnitOfWorkService } from "@app/database";
 import { CancelPaymentLinkDto } from "@app/types/dtos/payment/cancel-payment-link.dto";
 import { PaymentStatusEnum } from "@app/types/enums";
 import { IPayOSRequestLink } from "@app/types/interfaces";
@@ -9,6 +9,7 @@ import { ConfigService } from "@nestjs/config";
 import PayOS from "@payos/node";
 import { WebhookDataType } from "@payos/node/lib/type";
 import { createHmac } from "crypto";
+import { EntityManager } from "typeorm";
 
 @Injectable()
 export class PayOSService {
@@ -16,9 +17,10 @@ export class PayOSService {
   private readonly SUCCESS_CODE = "00";
   private readonly checksumKey: string;
   constructor(
-    @Inject(PAYOS_OPTIONS)
+    @Inject(PAYOS_INSTANCE)
     private readonly payOS: PayOS,
-    private readonly configService: ConfigService
+    private readonly configService: ConfigService,
+    private readonly unitOfWork: UnitOfWorkService
   ) {
     this.checksumKey = this.configService.get("PAYOS_CHECKSUM_KEY");
   }
@@ -54,38 +56,40 @@ export class PayOSService {
   }
 
   async handlePayOSWebhook(webhookData: IPayOSWebhook) {
-    // Handle webhook data here
-    try {
-      const verifiedData: WebhookDataType = this.payOS.verifyPaymentWebhookData(webhookData);
-      const { orderCode, amount, paymentLinkId, code } = verifiedData;
-      const trans = PayOSTransaction.create({
-        id: paymentLinkId,
-        transactionId: orderCode,
-        amount,
-        status: this.SUCCESS_CODE == code ? PaymentStatusEnum.PAID : PaymentStatusEnum.ERROR,
-        metadata: verifiedData,
-      });
+    return this.unitOfWork.doTransactional(async (manager: EntityManager) => {
+      try {
+        const verifiedData: WebhookDataType = this.payOS.verifyPaymentWebhookData(webhookData);
+        const { orderCode, amount, paymentLinkId, code } = verifiedData;
+        const trans = PayOSTransaction.create({
+          id: paymentLinkId,
+          transactionId: orderCode,
+          amount,
+          status: this.SUCCESS_CODE == code ? PaymentStatusEnum.PAID : PaymentStatusEnum.ERROR,
+          metadata: verifiedData,
+        });
 
-      const systemTransaction = await Transaction.findOne({ where: { id: orderCode } });
-      if (systemTransaction) {
-        systemTransaction.status = this.SUCCESS_CODE == code ? PaymentStatusEnum.PAID : PaymentStatusEnum.ERROR;
-        systemTransaction.save();
-      }
+        const systemTransaction = await Transaction.findOne({ where: { id: orderCode } });
+        if (systemTransaction) {
+          systemTransaction.status = this.SUCCESS_CODE == code ? PaymentStatusEnum.PAID : PaymentStatusEnum.ERROR;
+          await manager.save(systemTransaction);
+        }
 
-      const currentTrans = await PayOSTransaction.findOne({ where: { id: paymentLinkId } });
-      if (!currentTrans) {
-        await trans.save();
+        this.logger.log(trans);
+        const currentTrans = await PayOSTransaction.findOne({ where: { id: paymentLinkId } });
+        if (!currentTrans) {
+          await manager.save(trans);
+        }
+        return OK_RESPONSE;
+      } catch (error) {
+        this.logger.error(error);
+        throw error;
       }
-      return trans;
-    } catch (error) {
-      this.logger.error(error);
-      throw error;
-    }
+    });
   }
 
-  async verifyWebhook() {
+  async verifyWebhook(url: string) {
     try {
-      return this.payOS.confirmWebhook("http://staging.lapinlearn.edu.vn/api/payment/webhook");
+      return this.payOS.confirmWebhook(url);
     } catch (error) {
       this.logger.error(error);
       throw error;

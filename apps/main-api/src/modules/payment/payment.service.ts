@@ -6,6 +6,8 @@ import { CreatePaymentLinkDto } from "@app/types/dtos/payment";
 import { Transaction } from "@app/database/entities/transaction.entity";
 import { PaymentStatusEnum } from "@app/types/enums";
 import { ConfigService } from "@nestjs/config";
+import { UnitOfWorkService } from "@app/database";
+import { EntityManager } from "typeorm";
 
 @Injectable()
 export class PaymentService {
@@ -14,73 +16,83 @@ export class PaymentService {
   private readonly paymentRedirectUrl: string;
   constructor(
     private readonly payOSService: PayOSService,
-    private readonly configService: ConfigService
+    private readonly configService: ConfigService,
+    private readonly unitOfWork: UnitOfWorkService
   ) {
     this.paymentRedirectUrl = this.configService.get("PAYMENT_REDIRECT_URL");
   }
 
   async createPaymentTransaction(data: CreatePaymentLinkDto, userId: string) {
-    try {
-      const { quantity } = data;
-      const newTransaction = await Transaction.create({
-        accountId: userId,
-        status: PaymentStatusEnum.PENDING,
-      }).save();
+    return this.unitOfWork.doTransactional(async (manager: EntityManager) => {
+      try {
+        const { quantity } = data;
+        const newTransaction = await manager.save(
+          Transaction.create({
+            accountId: userId,
+            status: PaymentStatusEnum.PENDING,
+          })
+        );
 
-      const request: IPayOSRequestLink = {
-        orderCode: newTransaction.id,
-        amount: data.quantity * 20,
-        description: "LAPIN - SUBSCRIPTION",
-        items: [
-          {
-            name: data.type,
-            quantity,
-            price: 20,
-          },
-        ],
-        expiredAt: Number(String(new Date(Date.now() + this.expireTime))),
-        returnUrl: `${this.paymentRedirectUrl}?success=true`,
-        cancelUrl: `${this.paymentRedirectUrl}?canceled=true`,
-      };
-      return this.payOSService.createPaymentLink(request);
-    } catch (error) {
-      this.logger.error(error);
-      throw error;
-    }
+        const request: IPayOSRequestLink = {
+          orderCode: newTransaction.id,
+          amount: data.quantity * 20,
+          description: "LAPIN - SUBSCRIPTION",
+          items: [
+            {
+              name: data.type,
+              quantity,
+              price: 20,
+            },
+          ],
+          expiredAt: Number(String(new Date(Date.now() + this.expireTime))),
+          returnUrl: `${this.paymentRedirectUrl}?success=true`,
+          cancelUrl: `${this.paymentRedirectUrl}?canceled=true`,
+        };
+
+        return this.payOSService.createPaymentLink(request);
+      } catch (error) {
+        this.logger.error(error);
+        throw error;
+      }
+    });
   }
 
   async getPaymentInformation(orderId: number) {
-    try {
-      const transaction = await Transaction.findOne({
-        where: { id: orderId },
-      });
-      const information = await this.payOSService.getPaymentLinkInformation(orderId);
-      const { status } = information;
-      if (transaction) {
-        transaction.status = status.toLowerCase() as PaymentStatusEnum;
-        transaction.save();
+    return this.unitOfWork.doTransactional(async (manager: EntityManager) => {
+      try {
+        const transaction = await Transaction.findOne({
+          where: { id: orderId },
+        });
+        const information = await this.payOSService.getPaymentLinkInformation(orderId);
+        const { status } = information;
+        if (transaction) {
+          transaction.status = status.toLowerCase() as PaymentStatusEnum;
+          await manager.save(transaction);
+        }
+        return information;
+      } catch (error) {
+        this.logger.error(error);
+        throw error;
       }
-      return information;
-    } catch (error) {
-      this.logger.error(error);
-      throw error;
-    }
+    });
   }
 
   async cancelPayment(orderId: number, { cancellationReason }: CancelPaymentLinkDto) {
-    try {
-      const information = await this.payOSService.cancelPayOSLink(orderId, { cancellationReason });
-      const transaction = await Transaction.findOne({
-        where: { id: orderId },
-      });
-      if (transaction) {
-        transaction.status = PaymentStatusEnum.CANCELLED;
-        transaction.save();
+    return this.unitOfWork.doTransactional(async (manager: EntityManager) => {
+      try {
+        const information = await this.payOSService.cancelPayOSLink(orderId, { cancellationReason });
+        const transaction = await Transaction.findOne({
+          where: { id: orderId },
+        });
+        if (transaction) {
+          transaction.status = PaymentStatusEnum.CANCELLED;
+          await manager.save(transaction);
+        }
+        return information;
+      } catch (error) {
+        this.logger.error(error);
+        throw error;
       }
-      return information;
-    } catch (error) {
-      this.logger.error(error);
-      throw error;
-    }
+    });
   }
 }

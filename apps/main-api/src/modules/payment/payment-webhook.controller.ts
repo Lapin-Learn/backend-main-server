@@ -16,8 +16,8 @@ export class PaymentWebhookController {
 
   @ApiOperation({ summary: "Verify PayOS webhook" })
   @Get("payos-webhook")
-  async verifyWebhook() {
-    return this.payOSService.verifyWebhook();
+  async verifyWebhook(@Body() url: string) {
+    return this.payOSService.verifyWebhook(url);
   }
 
   @ApiOperation({ summary: "Generate signature" })
