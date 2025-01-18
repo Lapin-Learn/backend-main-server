@@ -52,36 +52,40 @@ export class SkillTestSessionSubscriber implements EntitySubscriberInterface<Ski
           }
         } else if (skillTest.skill === SkillEnum.SPEAKING) {
           const evaluations = plainToInstance(SpeakingEvaluation, results as object[]);
-          const overallEvaluation: SpeakingCriteriaDto = evaluations.find(
-            (e) => e.part === GenAIPartEnum.OVERALL
-          ).criterias;
-          for (const [key, value] of Object.entries(overallEvaluation)) {
-            const evaluationType = EvaluationCriteriaName.get(key);
-            if (evaluationType) {
-              records.push({
-                accuracy: value.score,
-                sessionId: entity.id,
-                evaluationType: EvaluationCriteriaName.get(key),
-                learnerId: learnerProfileId,
-                skill: skillTest.skill,
-              });
+          if (evaluations) {
+            const overallEvaluation: SpeakingCriteriaDto = evaluations.find(
+              (e) => e.part === GenAIPartEnum.OVERALL
+            ).criterias;
+            for (const [key, value] of Object.entries(overallEvaluation)) {
+              const evaluationType = EvaluationCriteriaName.get(key);
+              if (evaluationType) {
+                records.push({
+                  accuracy: value.score,
+                  sessionId: entity.id,
+                  evaluationType: EvaluationCriteriaName.get(key),
+                  learnerId: learnerProfileId,
+                  skill: skillTest.skill,
+                });
+              }
             }
           }
         } else if (skillTest.skill === SkillEnum.WRITING) {
           const evaluations = plainToInstance(WritingEvaluation, results as object[]);
-          const overallEvaluation: WritingCriteriaDto = evaluations.find(
-            (e) => e.part === GenAIPartEnum.OVERALL
-          ).criterias;
-          for (const [key, value] of Object.entries(overallEvaluation)) {
-            const evaluationType = EvaluationCriteriaName.get(key);
-            if (evaluationType) {
-              records.push({
-                accuracy: value.score,
-                sessionId: entity.id,
-                evaluationType: EvaluationCriteriaName.get(key),
-                learnerId: learnerProfileId,
-                skill: skillTest.skill,
-              });
+          if (evaluations) {
+            const overallEvaluation: WritingCriteriaDto = evaluations.find(
+              (e) => e.part === GenAIPartEnum.OVERALL
+            ).criterias;
+            for (const [key, value] of Object.entries(overallEvaluation)) {
+              const evaluationType = EvaluationCriteriaName.get(key);
+              if (evaluationType) {
+                records.push({
+                  accuracy: value.score,
+                  sessionId: entity.id,
+                  evaluationType: EvaluationCriteriaName.get(key),
+                  learnerId: learnerProfileId,
+                  skill: skillTest.skill,
+                });
+              }
             }
           }
         }
