@@ -1,11 +1,24 @@
-import { ApiBearerAuth, ApiOperation, ApiParam, ApiTags } from "@nestjs/swagger";
+import { ApiBearerAuth, ApiOperation, ApiParam, ApiQuery, ApiTags } from "@nestjs/swagger";
 import { ApiDefaultResponses, CurrentUser } from "../../decorators";
-import { Body, Controller, Get, Param, Post, Put, UseGuards } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  DefaultValuePipe,
+  Get,
+  Param,
+  ParseIntPipe,
+  Post,
+  Put,
+  Query,
+  UseGuards,
+  UseInterceptors,
+} from "@nestjs/common";
 import { FirebaseJwtAuthGuard } from "../../guards";
 import { PaymentService } from "./payment.service";
 import { CreatePaymentLinkDto } from "@app/types/dtos/payment";
 import { CancelPaymentLinkDto } from "@app/types/dtos/payment/cancel-payment-link.dto";
 import { ICurrentUser } from "@app/types/interfaces";
+import { PaginationInterceptor } from "@app/utils/interceptors";
 
 @ApiTags("Payment")
 @ApiDefaultResponses()
@@ -35,5 +48,18 @@ export class PaymentController {
     return this.paymentService.cancelPayment(orderId, data);
   }
 
-  // TODO: Transaction list endpoint, they will start with /payment/transactions
+  @ApiOperation({
+    summary: "Get all transactions belong to current user",
+  })
+  @ApiQuery({ name: "offset", type: Number, required: false })
+  @ApiQuery({ name: "limit", type: Number, required: false })
+  @Get("/transactions")
+  @UseInterceptors(PaginationInterceptor)
+  async getTransactionHistory(
+    @CurrentUser() user: ICurrentUser,
+    @Query("offset", new DefaultValuePipe(0), ParseIntPipe) offset: number,
+    @Query("limit", new DefaultValuePipe(10), ParseIntPipe) limit: number
+  ) {
+    return this.paymentService.getTransactionHistory(user.userId, offset, limit);
+  }
 }

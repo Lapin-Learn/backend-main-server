@@ -1,6 +1,6 @@
 import { CancelPaymentLinkDto } from "@app/types/dtos/payment/cancel-payment-link.dto";
 import { IPayOSRequestLink } from "@app/types/interfaces";
-import { Injectable, Logger } from "@nestjs/common";
+import { BadRequestException, Injectable, Logger } from "@nestjs/common";
 import { PayOSService } from "./payos.service";
 import { CreatePaymentLinkDto } from "@app/types/dtos/payment";
 import { Transaction } from "@app/database/entities/transaction.entity";
@@ -94,5 +94,15 @@ export class PaymentService {
         throw error;
       }
     });
+  }
+
+  async getTransactionHistory(accountId: string, offset: number, limit: number) {
+    try {
+      const { transactions, total } = await Transaction.getTransactionHistory(accountId, offset, limit);
+      return { items: transactions, total };
+    } catch (error) {
+      this.logger.error(error);
+      throw new BadRequestException(error);
+    }
   }
 }
