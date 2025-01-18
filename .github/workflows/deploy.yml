@@ -46,6 +46,7 @@ jobs:
           build-args: |
             PRIVATE_TOKEN=${{secrets.PRIVATE_TOKEN}}
             STAGE=${{VARS.STAGE}}
+            BUILD_TIME=${{ github.run_id }}-${{ github.run_number }}
           push: true
           tags: |
             ${{ secrets.DOCKER_USERNAME }}/backend-main-server:${{VARS.STAGE}}-${{github.sha}}
