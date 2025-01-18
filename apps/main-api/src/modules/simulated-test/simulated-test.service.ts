@@ -10,6 +10,8 @@ import {
 } from "@app/database";
 import {
   GetSessionProgressDto,
+  InfoSpeakingResponseDto,
+  InfoTextResponseDto,
   SpeakingResponseDto,
   StartSessionDto,
   TextResponseDto,
@@ -70,18 +72,45 @@ export class SimulatedTestService {
       const formattedItems = _.map(groupedItems, (group) => {
         const collectionId = group[0].id || null;
         const order = group[0].order || null;
-        const testName = group[0].testname || "";
+        const testName = group[0].testName || "";
         let totalTimeSpent = 0;
 
-        const skillTests = _.map(group, (item) => {
-          totalTimeSpent += item.elapsedtime;
+        const validGroup = group.filter(
+          (item: any) => item.skill !== null || item.status === TestSessionStatusEnum.CANCELED
+        );
+        const skillTests = _.groupBy(validGroup, "skill");
+
+        const essentialData = _.map(skillTests, (st: any) => {
+          const { status, skill, estimatedBandScore, results, responses, elapsedTime, skillTestId, sessionId } = st[0];
+          totalTimeSpent += elapsedTime;
+
+          let accuracy = 0;
+          let progress = 0;
+          let total = 0;
+
+          if (skill === null) {
+            return;
+          }
+
+          if (skill === SkillEnum.READING || skill === SkillEnum.LISTENING) {
+            if (status === TestSessionStatusEnum.FINISHED) {
+              accuracy = results ? results.filter((t: boolean) => t === true).length : 0;
+            }
+          }
+          progress = responses
+            ? responses.filter((r: InfoTextResponseDto | InfoSpeakingResponseDto) => r !== null).length
+            : 0;
+          total = responses ? responses.length : 0;
+
           return {
-            id: item.skilltestid,
-            skill: item.skill,
-            partsDetail: item.partsdetail || [],
-            status: item.status || null,
-            estimatedBandScore: item.estimatedbandscore || null,
-            sessionId: item.sessionid,
+            skillTestId,
+            sessionId,
+            status,
+            estimatedBandScore,
+            progress,
+            total,
+            accuracy,
+            skill,
           };
         });
 
@@ -90,7 +119,7 @@ export class SimulatedTestService {
           order,
           testName,
           totalTimeSpent,
-          skillTests,
+          skillTests: essentialData,
         };
       });
 

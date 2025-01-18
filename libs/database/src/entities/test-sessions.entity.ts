@@ -33,7 +33,7 @@ export class SkillTestSession extends BaseEntity {
   learnerProfileId: string;
 
   @Column({ name: "responses", type: "jsonb", nullable: true })
-  responses: InfoTextResponseDto[] | InfoSpeakingResponseDto;
+  responses: InfoTextResponseDto[] | InfoSpeakingResponseDto[];
 
   @Column({
     name: "results",
