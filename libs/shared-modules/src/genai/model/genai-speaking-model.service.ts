@@ -8,40 +8,31 @@ export class GenAISpeakingModel extends GenAIModelAbstract {
 
   getSchema(): ResponseSchema {
     const schema: ResponseSchema = {
-      type: SchemaType.OBJECT,
-      properties: {
-        content: {
-          type: SchemaType.OBJECT,
-          description: "Generated question for the IELTS speaking test",
-          properties: {
-            name: {
+      type: SchemaType.ARRAY,
+      description: "A generated IELTS speaking test for three parts.",
+      items: {
+        type: SchemaType.OBJECT,
+        description: "Details of a specific part of the IELTS speaking test.",
+        properties: {
+          heading: {
+            type: SchemaType.STRING,
+            description: "The heading or topic of the IELTS speaking test part 2 only.",
+          },
+          part: {
+            type: SchemaType.NUMBER,
+            description: `The part number of the IELTS speaking test (1, 2, or 3). 
+              Part 2 should be returned as a few-shot example.
+              Part 1 and Part 3 should be returned as a list of questions about 3-4 questions.`,
+          },
+          content: {
+            type: SchemaType.ARRAY,
+            description: "A string array containing the questions or content generated for this part.",
+            items: {
               type: SchemaType.STRING,
-              description: "The name after summarizing parts 2 and 3 of the generated questions.",
-            },
-            part1: {
-              type: SchemaType.ARRAY,
-              description: "A string array of 3 questions generated for speaking part 1",
-              items: {
-                type: SchemaType.STRING,
-              },
-            },
-            part2: {
-              type: SchemaType.ARRAY,
-              description: "A string array of a question only generated for speaking part 2",
-              items: {
-                type: SchemaType.STRING,
-              },
-            },
-            part3: {
-              type: SchemaType.ARRAY,
-              description: "A string array of 3 questions generated for speaking part 3",
-              items: {
-                type: SchemaType.STRING,
-              },
             },
           },
-          required: ["name", "part1", "part2", "part3"],
         },
+        required: ["part", "content"],
       },
     };
     return schema;
@@ -58,6 +49,36 @@ export class GenAISpeakingModel extends GenAIModelAbstract {
         - Part 3: Two-Way Discussion: Ask more abstract questions related to the topic discussed in Part 2. This part focuses on expressing and justifying opinions, analyzing, discussing, and speculating about issues.
         4. You MUST generate all three parts of the IELTS speaking test. The user will respond to each question in sequence.
         5. The name should be a summary of the generated questions in part 2 and part 3.
+
+        Fewshot examples:
+        [
+        {
+          "part": 1,
+          "content": [
+            "Can you tell me a little about where you grew up?",
+            "What is your favorite childhood memory?",
+            "Do you keep in touch with your childhood friends?"
+          ]
+        },
+        {
+        "part": 2,
+        "heading": "Describe a skill you learned as a child that has been useful to your throughout your life.",
+        "content": [
+          "What the skill is",
+          "How you learned it",
+          "Who taught you",
+          "and explain why this skill has been useful to you."
+          ]
+        },
+        {
+          "part": 3,
+          "content": [
+            "In your opinion, what are the most important skills for children to learn these days?",
+            "How have the ways children learn new skills changed compared to when you were a child?",
+            "Do you think parents should decide which skills their children should learn, or should children have the freedom to choose for themselves? Why?"
+          ]
+        }
+      ]
       `;
   }
 }
