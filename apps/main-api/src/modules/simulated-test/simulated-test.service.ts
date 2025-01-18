@@ -188,9 +188,11 @@ export class SimulatedTestService {
           if (session.skillTest.skill === SkillEnum.SPEAKING) {
             const fileName = `${SPEAKING_FILE_PREFIX}-${sessionId}`;
             const bucket = await Bucket.findOne({ where: { name: fileName, owner: learner.userId } });
-            session["resource"] = await this.bucketService.getPresignedDownloadUrl(learner, bucket.id, {
-              ResponseCacheControl: "pulic, max-age=31536000",
-            });
+            if (bucket) {
+              session["resource"] = await this.bucketService.getPresignedDownloadUrl(learner, bucket.id, {
+                ResponseCacheControl: "pulic, max-age=31536000",
+              });
+            }
           }
           delete session.skillTest.skillTestAnswer;
         }
