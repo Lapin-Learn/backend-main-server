@@ -164,6 +164,7 @@ export class UserService {
     try {
       const dbUser = await Account.findOneOrFail({ where: { id: user.userId } });
       await this.firebaseService.deleteFirebaseAccount(dbUser.providerId);
+      await Account.save({ ...dbUser, email: dbUser.email + dbUser.providerId });
       await Account.softRemove(dbUser);
       return OK_RESPONSE;
     } catch (error) {
