@@ -9,11 +9,12 @@ import DiffMatchPatch from "diff-match-patch";
 import { GenAISpeakingModel } from "@app/shared-modules/genai/model/genai-speaking-model.service";
 import { GenAISpeakingIPAModel, GenAISpeakingScoreModel } from "@app/shared-modules/genai";
 import { ICurrentUser } from "@app/types/interfaces";
-import { SkillTest, SkillTestSession, SpeakingRoom } from "@app/database";
+import { SkillTest, SkillTestSession } from "@app/database";
 import { InfoSpeakingResponseDto, SpeakingEvaluation } from "@app/types/dtos/simulated-tests";
 import { TestSessionStatusEnum } from "@app/types/enums";
 import { plainToInstance } from "class-transformer";
 import { validate } from "class-validator";
+import { CreateSkillTestDto } from "@app/types/dtos";
 
 const PUNCTUATION = "/[.,/#!$%^&*;:{}=-_`~()]/g";
 
@@ -33,20 +34,27 @@ export class AISpeakingService {
     this.genAISpeechToIPAModel = new GenAISpeakingIPAModel(this.genAIManager);
   }
 
-  async generateQuestion() {
+  async generateQuestion(dto: CreateSkillTestDto) {
     try {
       const result = await this.genAISpeakingModel.generateContent();
-
       if (!result || result.length === 0) throw new Error("Invalid generated format.");
+      const totalQuestions = result?.reduce(
+        (
+          sum: number,
+          part: {
+            part: string;
+            content: string[];
+          }
+        ) => sum + part.content.length,
+        0
+      );
 
-      const speakingRoom = await SpeakingRoom.save({
-        content: result,
+      return SkillTest.save({
+        testId: dto.testId,
+        skill: dto.skill,
+        totalQuestions,
+        partsContent: result,
       });
-
-      return {
-        id: speakingRoom.id,
-        content: result,
-      };
     } catch (error) {
       this.logger.error(error);
       throw new BadRequestException(error);
@@ -135,24 +143,6 @@ export class AISpeakingService {
       this.genAIFileManager.deleteFile(geminiFileName);
       // Delete it manually
       // Or it will automatically be adeleted after 48 hours
-    }
-  }
-
-  async getQuestions() {
-    try {
-      return SpeakingRoom.find();
-    } catch (error) {
-      this.logger.error(error);
-      throw new BadRequestException(error);
-    }
-  }
-
-  async getQuestionById(id: string) {
-    try {
-      return SpeakingRoom.findOneOrFail({ where: { id } });
-    } catch (error) {
-      this.logger.error(error);
-      throw new BadRequestException(error);
     }
   }
 

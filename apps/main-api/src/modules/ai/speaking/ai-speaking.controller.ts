@@ -5,7 +5,6 @@ import {
   Get,
   Param,
   ParseIntPipe,
-  ParseUUIDPipe,
   Post,
   UploadedFile,
   UseGuards,
@@ -20,6 +19,7 @@ import { ICurrentUser } from "@app/types/interfaces";
 import { SpeakingResponseDto } from "@app/types/dtos/simulated-tests";
 import { plainToInstance } from "class-transformer";
 import { validate } from "class-validator";
+import { CreateSkillTestDto } from "@app/types/dtos";
 
 @UseGuards(RoleGuard)
 @UseGuards(FirebaseJwtAuthGuard)
@@ -50,22 +50,10 @@ export class AISpeakingController {
     return this.aiSpeakingService.generateIpaEvaluation(file, original);
   }
 
-  @Roles(AccountRoleEnum.LEARNER)
+  @Roles(AccountRoleEnum.ADMIN)
   @Post("questions/generate")
-  async generateQuestion() {
-    return this.aiSpeakingService.generateQuestion();
-  }
-
-  @Roles(AccountRoleEnum.ADMIN, AccountRoleEnum.LEARNER)
-  @Get("questions")
-  async getQuestions() {
-    return this.aiSpeakingService.getQuestions();
-  }
-
-  @Roles(AccountRoleEnum.LEARNER)
-  @Get("questions/:id")
-  async generateQuestionById(@Param("id", new ParseUUIDPipe()) id: string) {
-    return this.aiSpeakingService.getQuestionById(id);
+  async generateQuestion(@Body() dto: CreateSkillTestDto) {
+    return this.aiSpeakingService.generateQuestion(dto);
   }
 
   @Roles(AccountRoleEnum.LEARNER)
