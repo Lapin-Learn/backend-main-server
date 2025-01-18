@@ -36,12 +36,16 @@ export class AISpeakingService {
   async generateQuestion() {
     try {
       const result = await this.genAISpeakingModel.generateContent();
+
+      if (!result || result.length === 0) throw new Error("Invalid generated format.");
+
       const speakingRoom = await SpeakingRoom.save({
-        content: result?.content,
+        content: result,
       });
+
       return {
         id: speakingRoom.id,
-        content: result?.content,
+        content: result,
       };
     } catch (error) {
       this.logger.error(error);

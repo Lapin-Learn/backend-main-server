@@ -50,7 +50,7 @@ export class AISpeakingController {
     return this.aiSpeakingService.generateIpaEvaluation(file, original);
   }
 
-  @Roles(AccountRoleEnum.ADMIN)
+  @Roles(AccountRoleEnum.LEARNER)
   @Post("questions/generate")
   async generateQuestion() {
     return this.aiSpeakingService.generateQuestion();
