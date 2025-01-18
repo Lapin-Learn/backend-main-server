@@ -1,5 +1,6 @@
 import {
   Bucket,
+  LearnerProfile,
   SimulatedIeltsTest,
   SkillTest,
   SkillTestAnswer,
@@ -233,30 +234,47 @@ export class SimulatedTestService {
 
       let responseInfo = null;
       if (status === TestSessionStatusEnum.FINISHED) {
+        const learnerProfile = await LearnerProfile.findOneOrFail({ where: { id: learner.profileId } });
+
+        const hasEnoughCarrotsForSkill = !(
+          learnerProfile.carrots < 100 &&
+          (sessionData.response.skill === SkillEnum.WRITING || sessionData.response.skill === SkillEnum.SPEAKING)
+        );
+
         const { response } = sessionData;
 
         if (response instanceof SpeakingResponseDto) {
-          this.gradingContext.setGradingStrategy(
-            new EvaluateSpeaking(
-              this.evaluateSpeakingQueue,
-              sessionId,
-              EVALUATE_SPEAKING_QUEUE,
-              additionalResources,
-              response.info,
-              learner
-            )
-          );
-          sessionData.status = TestSessionStatusEnum.IN_EVALUATING;
+          if (hasEnoughCarrotsForSkill) {
+            this.gradingContext.setGradingStrategy(
+              new EvaluateSpeaking(
+                this.evaluateSpeakingQueue,
+                sessionId,
+                EVALUATE_SPEAKING_QUEUE,
+                additionalResources,
+                response.info,
+                learner
+              )
+            );
+            sessionData.status = TestSessionStatusEnum.IN_EVALUATING;
+            await LearnerProfile.save({ ...learnerProfile, carrots: learnerProfile.carrots - 100 });
+          } else {
+            sessionData.status = TestSessionStatusEnum.FINISHED;
+          }
           responseInfo = response.info;
         } else if (response instanceof TextResponseDto) {
           const { info } = response;
           responseInfo = info.sort((a, b) => a.questionNo - b.questionNo);
 
           if (skillTest.skill === SkillEnum.WRITING) {
-            this.gradingContext.setGradingStrategy(
-              new EvaluateWriting(this.evaluateWritingQueue, sessionId, EVALUATE_WRITING_QUEUE, info)
-            );
-            sessionData.status = TestSessionStatusEnum.IN_EVALUATING;
+            if (hasEnoughCarrotsForSkill) {
+              this.gradingContext.setGradingStrategy(
+                new EvaluateWriting(this.evaluateWritingQueue, sessionId, EVALUATE_WRITING_QUEUE, info)
+              );
+              sessionData.status = TestSessionStatusEnum.IN_EVALUATING;
+              await LearnerProfile.save({ ...learnerProfile, carrots: learnerProfile.carrots - 100 });
+            } else {
+              sessionData.status = TestSessionStatusEnum.FINISHED;
+            }
           } else {
             const { answers } = await SkillTestAnswer.findOneOrFail({
               where: { skillTestId },
