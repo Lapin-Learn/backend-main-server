@@ -1,6 +1,7 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import { FirebaseAuthService } from "../firebase-auth.service";
 import { ConfigService } from "@nestjs/config";
+import { FIREBASE_APP_PROVIDER } from "@app/types/constants";
 
 describe("FirebaseAuthService", function () {
   let service: FirebaseAuthService;
@@ -11,7 +12,7 @@ describe("FirebaseAuthService", function () {
         FirebaseAuthService,
         ConfigService,
         {
-          provide: "FIREBASE_ADMIN_OPTIONS_TOKEN",
+          provide: FIREBASE_APP_PROVIDER,
           useValue: {},
         },
       ],

@@ -1,8 +1,13 @@
 import { DeepPartial, EntitySubscriberInterface, EventSubscriber, UpdateEvent } from "typeorm";
 import { SkillTestRecord, SkillTestSession } from "../entities";
-import { SkillEnum, TestSessionStatusEnum } from "@app/types/enums";
+import { GenAIPartEnum, SkillEnum, TestSessionStatusEnum } from "@app/types/enums";
 import { plainToInstance } from "class-transformer";
-import { SpeakingEvaluation } from "@app/types/dtos/simulated-tests";
+import {
+  SpeakingCriteriaDto,
+  SpeakingEvaluation,
+  WritingCriteriaDto,
+  WritingEvaluation,
+} from "@app/types/dtos/simulated-tests";
 import { EvaluationCriteriaName } from "@app/utils/maps";
 
 @EventSubscriber()
@@ -47,7 +52,26 @@ export class SkillTestSessionSubscriber implements EntitySubscriberInterface<Ski
           }
         } else if (skillTest.skill === SkillEnum.SPEAKING) {
           const evaluations = plainToInstance(SpeakingEvaluation, results as object[]);
-          const overallEvaluation: SpeakingEvaluation = evaluations.find((e) => e.part === "Overall");
+          const overallEvaluation: SpeakingCriteriaDto = evaluations.find(
+            (e) => e.part === GenAIPartEnum.OVERALL
+          ).criterias;
+          for (const [key, value] of Object.entries(overallEvaluation)) {
+            const evaluationType = EvaluationCriteriaName.get(key);
+            if (evaluationType) {
+              records.push({
+                accuracy: value.score,
+                sessionId: entity.id,
+                evaluationType: EvaluationCriteriaName.get(key),
+                learnerId: learnerProfileId,
+                skill: skillTest.skill,
+              });
+            }
+          }
+        } else if (skillTest.skill === SkillEnum.WRITING) {
+          const evaluations = plainToInstance(WritingEvaluation, results as object[]);
+          const overallEvaluation: WritingCriteriaDto = evaluations.find(
+            (e) => e.part === GenAIPartEnum.OVERALL
+          ).criterias;
           for (const [key, value] of Object.entries(overallEvaluation)) {
             const evaluationType = EvaluationCriteriaName.get(key);
             if (evaluationType) {
@@ -61,7 +85,8 @@ export class SkillTestSessionSubscriber implements EntitySubscriberInterface<Ski
             }
           }
         }
-        await manager.getRepository(SkillTestRecord).save(records);
+
+        if (records.length > 0) await manager.getRepository(SkillTestRecord).save(records);
       }
     } catch (error) {
       console.error(error);

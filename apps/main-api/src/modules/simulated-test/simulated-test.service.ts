@@ -1,4 +1,5 @@
 import {
+  Bucket,
   SimulatedIeltsTest,
   SkillTest,
   SkillTestAnswer,
@@ -22,8 +23,14 @@ import { SkillEnum, TestSessionModeEnum, TestSessionStatusEnum } from "@app/type
 import { InjectQueue } from "@nestjs/bullmq";
 import { Queue } from "bullmq";
 import { EvaluateSpeaking, EvaluateWriting, RangeGradingStrategy } from "@app/shared-modules/grading/grading-strategy";
-import { EVALUATE_SPEAKING_QUEUE, EVALUATE_WRITING_QUEUE } from "@app/types/constants";
+import {
+  EVALUATE_SPEAKING_QUEUE,
+  EVALUATE_WRITING_QUEUE,
+  SPEAKING_FILE_PREFIX,
+  OK_RESPONSE,
+} from "@app/types/constants";
 import { plainToInstance } from "class-transformer";
+import { RedisService } from "@app/shared-modules/redis";
 
 @Injectable()
 export class SimulatedTestService {
@@ -31,6 +38,7 @@ export class SimulatedTestService {
   constructor(
     private readonly bucketService: BucketService,
     private readonly gradingContext: GradingContext,
+    private readonly redisService: RedisService,
     @InjectQueue(EVALUATE_SPEAKING_QUEUE) private evaluateSpeakingQueue: Queue,
     @InjectQueue(EVALUATE_WRITING_QUEUE) private evaluateWritingQueue: Queue
   ) {}
@@ -160,9 +168,9 @@ export class SimulatedTestService {
     }
   }
 
-  async getSessionDetail(sessionId: number, profileId: string) {
+  async getSessionDetail(sessionId: number, learner: ICurrentUser) {
     try {
-      const session = await SkillTestSession.getSessionDetail(sessionId, profileId);
+      const session = await SkillTestSession.getSessionDetail(sessionId, learner.profileId);
       if (session) {
         const parts = session.parts;
         const partsDetail = session.skillTest?.partsDetail || [];
@@ -173,11 +181,21 @@ export class SimulatedTestService {
               .map((partIndex) => partsDetail[partIndex - 1])
           : [];
 
-        session.status === TestSessionStatusEnum.FINISHED &&
-          (session.skillTest["answers"] = session.skillTest.skillTestAnswer?.answers ?? []);
-        session.status === TestSessionStatusEnum.FINISHED &&
-          (session.skillTest["guidances"] = session.skillTest.skillTestAnswer?.guidances ?? []);
-        delete session.skillTest.skillTestAnswer;
+        if (session.status === TestSessionStatusEnum.FINISHED) {
+          session.skillTest["answers"] = session.skillTest.skillTestAnswer?.answers ?? [];
+          session.skillTest["guidances"] = session.skillTest.skillTestAnswer?.guidances ?? [];
+
+          if (session.skillTest.skill === SkillEnum.SPEAKING) {
+            const fileName = `${SPEAKING_FILE_PREFIX}-${sessionId}`;
+            const bucket = await Bucket.findOne({ where: { name: fileName, owner: learner.userId } });
+            if (bucket) {
+              session["resource"] = await this.bucketService.getPresignedDownloadUrl(learner, bucket.id, {
+                ResponseCacheControl: "pulic, max-age=31536000",
+              });
+            }
+          }
+          delete session.skillTest.skillTestAnswer;
+        }
       }
       return session;
     } catch (error) {
@@ -224,7 +242,8 @@ export class SimulatedTestService {
               sessionId,
               EVALUATE_SPEAKING_QUEUE,
               additionalResources,
-              response.info
+              response.info,
+              learner
             )
           );
           sessionData.status = TestSessionStatusEnum.IN_EVALUATING;
@@ -251,7 +270,7 @@ export class SimulatedTestService {
         this.gradingContext.evaluateBandScore();
 
         sessionData["results"] = this.gradingContext.getResults();
-        if (mode === TestSessionModeEnum.FULL_TEST || parts.length === skillTest.partsDetail.length) {
+        if (mode === TestSessionModeEnum.FULL_TEST || parts.length === skillTest?.partsDetail?.length) {
           sessionData["estimatedBandScore"] = this.gradingContext.getEstimatedScore();
         }
       } else if (status === TestSessionStatusEnum.IN_PROGRESS) {
@@ -260,7 +279,7 @@ export class SimulatedTestService {
         }
       }
       await SkillTestSession.save({ id: sessionId, ...sessionData, responses: responseInfo });
-      return "Ok";
+      return OK_RESPONSE;
     } catch (error) {
       this.logger.error(error);
       throw new BadRequestException(error);

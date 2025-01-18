@@ -11,8 +11,13 @@ import {
 import { SkillTest } from "./skill-tests.entity";
 import { LearnerProfile } from "./learner-profile.entity";
 import { SkillEnum, TestSessionModeEnum, TestSessionStatusEnum } from "@app/types/enums";
-import { SpeakingEvaluation, StartSessionDto } from "@app/types/dtos/simulated-tests";
-import { ITestSessionResponse } from "@app/types/interfaces";
+import {
+  InfoSpeakingResponseDto,
+  InfoTextResponseDto,
+  SpeakingEvaluation,
+  StartSessionDto,
+  WritingEvaluation,
+} from "@app/types/dtos/simulated-tests";
 import { Transform } from "class-transformer";
 import { TransformBandScore } from "@app/utils/pipes";
 
@@ -28,7 +33,7 @@ export class SkillTestSession extends BaseEntity {
   learnerProfileId: string;
 
   @Column({ name: "responses", type: "jsonb", nullable: true })
-  responses: ITestSessionResponse[];
+  responses: InfoTextResponseDto[] | InfoSpeakingResponseDto;
 
   @Column({
     name: "results",
@@ -39,7 +44,7 @@ export class SkillTestSession extends BaseEntity {
       from: (value) => (value === null ? [] : value),
     },
   })
-  results: boolean[] | SpeakingEvaluation[];
+  results: boolean[] | SpeakingEvaluation[] | WritingEvaluation[];
 
   @Column({ name: "time_limit", type: "int", nullable: false, default: 0 })
   // 0 when option is "unlimited"
@@ -202,7 +207,7 @@ export class SkillTestSession extends BaseEntity {
         'session.estimatedBandScore as "estimatedBandScore"',
         'session.createdAt as "createdAt"',
       ])
-      .leftJoin("session.skillTest", "test", "test.skill = :skill", { skill })
+      .innerJoin("session.skillTest", "test", "test.skill = :skill", { skill })
       .where("session.learnerProfileId = :learnerId", { learnerId })
       .andWhere("session.status = :status", { status: TestSessionStatusEnum.FINISHED })
       .andWhere("session.estimatedBandScore IS NOT NULL")

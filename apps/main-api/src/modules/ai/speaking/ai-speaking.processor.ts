@@ -1,7 +1,7 @@
 import { Processor, WorkerHost } from "@nestjs/bullmq";
 import { AISpeakingService } from "./ai-speaking.service";
 import { Job } from "bullmq";
-import { EVALUATE_SPEAKING_QUEUE } from "@app/types/constants";
+import { EVALUATE_SPEAKING_QUEUE, SPEAKING_FILE_PREFIX } from "@app/types/constants";
 import { validate } from "class-validator";
 import { plainToInstance } from "class-transformer";
 import { EvaluateSpeakingData } from "@app/types/dtos/simulated-tests";
@@ -9,11 +9,24 @@ import * as fs from "fs";
 import * as tmp from "tmp";
 import ffmpeg from "fluent-ffmpeg";
 import { getConstraints } from "@app/utils/pipes";
+import { HttpStatus, Logger } from "@nestjs/common";
+import { SkillTestSession } from "@app/database";
+import { BucketPermissionsEnum, TestSessionStatusEnum } from "@app/types/enums";
+import { BucketService } from "../../bucket/bucket.service";
+import { UploadFileDto } from "@app/types/dtos";
+import { genericHttpConsumer } from "@app/utils/axios";
+import { AxiosInstance } from "axios";
 
 @Processor(EVALUATE_SPEAKING_QUEUE)
 export class AISpeakingConsumer extends WorkerHost {
-  constructor(private readonly aiSpeakingService: AISpeakingService) {
+  private readonly logger: Logger = new Logger(this.constructor.name);
+  private readonly httpService: AxiosInstance;
+  constructor(
+    private readonly aiSpeakingService: AISpeakingService,
+    private readonly bucketService: BucketService
+  ) {
     super();
+    this.httpService = genericHttpConsumer();
   }
 
   async process(job: Job): Promise<any> {
@@ -26,7 +39,7 @@ export class AISpeakingConsumer extends WorkerHost {
         throw new Error(Object.keys(error)[0]);
       }
 
-      const { speakingFiles, userResponse, sessionId } = speakingData;
+      const { speakingFiles, userResponse, sessionId, learner } = speakingData;
 
       const inputFilePaths = await Promise.all(
         speakingFiles.map(async (file) => {
@@ -44,7 +57,7 @@ export class AISpeakingConsumer extends WorkerHost {
       );
 
       userResponse.forEach((r, index) => {
-        r["timeStamp"] = audioSegments[index].duration;
+        r["timeStamp"] = audioSegments[index].end;
       });
 
       inputFilePaths.forEach((tempFile) => tempFile.removeCallback());
@@ -62,19 +75,53 @@ export class AISpeakingConsumer extends WorkerHost {
         path: mergedTempFile.name,
       };
 
-      await this.aiSpeakingService.generateScore(sessionId, mergedFile, userResponse);
+      const fileName = `${SPEAKING_FILE_PREFIX}-${sessionId}`;
+      const file: UploadFileDto = {
+        name: fileName,
+        permission: BucketPermissionsEnum.PUBLIC,
+      };
+      const presignedUrl = await this.bucketService.getPresignedUploadUrl(learner, file);
+      const response = await this.httpService.put(presignedUrl.url, mergedFile.buffer, {
+        headers: {
+          "Content-Type": mergedFile.mimetype,
+        },
+      });
+
+      if (response.status === HttpStatus.OK) {
+        await this.bucketService.uploadConfirmation(learner, { id: presignedUrl.id });
+      }
+
+      const evaluations = await this.aiSpeakingService.generateScore(sessionId, mergedFile, userResponse);
+      for (const evaluation of evaluations) {
+        const errors = await validate(evaluation);
+        if (errors.length > 0) {
+          this.logger.error("validation fail: ", errors);
+        }
+      }
+
+      await SkillTestSession.save({
+        id: sessionId,
+        results: evaluations,
+        responses: userResponse,
+        estimatedBandScore: evaluations[evaluations.length - 1].criterias.getOverallScore(),
+        status: TestSessionStatusEnum.FINISHED,
+      });
+
       mergedTempFile.removeCallback();
 
       return;
     } catch (error) {
-      console.error(error);
+      this.logger.error(error);
       return;
     }
   }
 
-  async mergeAudioFiles(audioFiles: string[], outputPath: string): Promise<{ start: number; duration: number }[]> {
+  async mergeAudioFiles(
+    audioFiles: string[],
+    outputPath: string
+  ): Promise<{ start: number; duration: number; end: number }[]> {
     try {
-      const audioTimestamps: { file: string; start: number; duration: number }[] = [];
+      const audioTimestamps: { file: string; start: number; duration: number; end: number }[] = [];
       let currentStartTime = 0;
 
       for (const audioFile of audioFiles) {
@@ -83,6 +130,7 @@ export class AISpeakingConsumer extends WorkerHost {
           file: audioFile,
           start: currentStartTime,
           duration: metadata.duration,
+          end: currentStartTime + metadata.duration,
         });
         currentStartTime += metadata.duration;
       }
@@ -95,17 +143,17 @@ export class AISpeakingConsumer extends WorkerHost {
 
         instance
           .on("error", (err) => {
-            console.error("Error during audio merging:", err);
+            this.logger.error("Error during audio merging:", err);
             reject(err);
           })
           .on("end", () => {
-            console.log("Audio files merged successfully.");
+            this.logger.log("Audio files merged successfully.");
             resolve();
           })
           .mergeToFile(outputPath, "./tmp/");
       });
 
-      return audioTimestamps.map(({ start, duration }) => ({ start, duration }));
+      return audioTimestamps.map(({ start, duration, end }) => ({ start, duration, end }));
     } catch (error) {
       console.error("Error in mergeAudioFiles:", error);
       throw error;

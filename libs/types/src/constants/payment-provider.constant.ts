@@ -1,0 +1,2 @@
+export const PAYOS_OPTIONS = "PAYOS_OPTIONS";
+export const PAYOS_INSTANCE = "PAYOS_INSTANCE";

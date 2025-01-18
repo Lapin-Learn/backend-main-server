@@ -106,7 +106,7 @@ export class SimulatedTestController {
   @ApiParam({ name: "id", type: Number, required: true })
   @Get("simulated-tests/sessions/:id")
   async getSessionDetail(@CurrentUser() learner: ICurrentUser, @Param("id", ParseIntPipe) sessionId: number) {
-    return this.simulatedTestService.getSessionDetail(sessionId, learner.profileId);
+    return this.simulatedTestService.getSessionDetail(sessionId, learner);
   }
 
   @ApiParam({ name: "id", type: Number, required: true })
@@ -120,7 +120,7 @@ export class SimulatedTestController {
     @Body() sessionData: any,
     @UploadedFiles() files?: Array<Express.Multer.File>
   ) {
-    sessionData.response = JSON.parse(sessionData.response);
+    sessionData.response = sessionData.response && JSON.parse(sessionData.response);
     const data: UpdateSessionDto = plainToInstance(UpdateSessionDto, sessionData);
 
     return this.simulatedTestService.updateSession(sessionId, data, learner, files);

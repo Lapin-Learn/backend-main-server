@@ -6,6 +6,7 @@ import * as dbEntities from "./entities";
 import * as dbSubscribers from "./subscribers";
 import { BucketSubscriber } from "./subscribers/bucket.subscriber";
 import { BucketService } from "apps/main-api/src/modules/bucket/bucket.service";
+import { UnitOfWorkService } from "./unit-of-work.service";
 
 const entities = (Object.keys(dbEntities) as Array<keyof typeof dbEntities>).map((key) => dbEntities[key]);
 const subscribers = (Object.keys(dbSubscribers) as Array<keyof typeof dbSubscribers>).map((key) => dbSubscribers[key]);
@@ -27,6 +28,7 @@ const subscribers = (Object.keys(dbSubscribers) as Array<keyof typeof dbSubscrib
       inject: [ConfigService],
     }),
   ],
-  providers: [BucketSubscriber, BucketService],
+  providers: [BucketSubscriber, BucketService, UnitOfWorkService],
+  exports: [UnitOfWorkService],
 })
 export class DatabaseModule {}

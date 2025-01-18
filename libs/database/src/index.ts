@@ -1,3 +1,3 @@
 export * from "./database.module";
-export * from "./database.service";
+export * from "./unit-of-work.service";
 export * from "./entities";

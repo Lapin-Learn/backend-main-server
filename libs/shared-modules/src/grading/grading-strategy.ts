@@ -1,5 +1,5 @@
 import { SkillEnum } from "@app/types/enums";
-import { IBandScoreRange, IGradingStrategy, TestAnswer } from "@app/types/interfaces";
+import { IBandScoreRange, ICurrentUser, IGradingStrategy, TestAnswer } from "@app/types/interfaces";
 import { bandScoreRangeMap } from "@app/utils/maps";
 import { InfoSpeakingResponseDto, InfoTextResponseDto } from "@app/types/dtos/simulated-tests";
 import { Queue } from "bullmq";
@@ -43,23 +43,8 @@ export class RangeGradingStrategy implements IGradingStrategy {
   evaluateBandScore() {
     this.results = this.validateAnswers();
     const correctAnswer = this.results.filter((value) => value === true).length;
-    let left = 0;
-    let right = this.ranges.length - 1;
-
-    while (left < right) {
-      const mid = Math.floor((left + right) / 2);
-      const { min, max, band } = this.ranges[mid];
-
-      if (correctAnswer >= min && correctAnswer <= max) {
-        this.estimatedBandScore = band;
-        return;
-      } else if (correctAnswer < min) {
-        right = mid - 1;
-      } else {
-        left = mid + 1;
-      }
-    }
-    this.estimatedBandScore = this.DEFAULT_BAND_SCORE;
+    this.estimatedBandScore =
+      this.ranges.find((s) => correctAnswer >= s.min && correctAnswer <= s.max)?.band ?? this.DEFAULT_BAND_SCORE;
     return;
   }
 
@@ -74,18 +59,21 @@ export class EvaluateSpeaking implements IGradingStrategy {
   private userResponses: InfoSpeakingResponseDto[];
   private jobName: string;
   private queue: Queue;
+  private learner: ICurrentUser;
   constructor(
     queue: Queue,
     sessionId: number,
     jobName: string,
     speakingFiles: Array<Express.Multer.File>,
-    userResponses: InfoSpeakingResponseDto[]
+    userResponses: InfoSpeakingResponseDto[],
+    learner: ICurrentUser
   ) {
     this.sessionId = sessionId;
     this.jobName = jobName;
     this.speakingFiles = speakingFiles;
     this.userResponses = userResponses;
     this.queue = queue;
+    this.learner = learner;
   }
 
   async evaluateBandScore() {
@@ -93,6 +81,7 @@ export class EvaluateSpeaking implements IGradingStrategy {
       sessionId: this.sessionId,
       userResponse: this.userResponses,
       speakingFiles: this.speakingFiles,
+      learner: this.learner,
     });
   }
 
