@@ -6,6 +6,8 @@ import { GradingModule } from "@app/shared-modules/grading";
 import { BullModule } from "@nestjs/bullmq";
 import { EVALUATE_SPEAKING_QUEUE, EVALUATE_WRITING_QUEUE } from "@app/types/constants";
 import { RedisModule } from "@app/shared-modules/redis";
+import { SimulatedTestReportController } from "./simulated-test-report.controller";
+import { SessionController } from "./session.controller";
 
 @Module({
   imports: [
@@ -23,6 +25,6 @@ import { RedisModule } from "@app/shared-modules/redis";
     RedisModule,
   ],
   providers: [SimulatedTestService],
-  controllers: [SimulatedTestController],
+  controllers: [SimulatedTestController, SimulatedTestReportController, SessionController],
 })
 export class SimulatedTestModule {}

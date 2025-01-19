@@ -53,7 +53,11 @@ export class SimulatedIeltsTest extends BaseEntity implements ISimulatedIeltsTes
     return this.createQueryBuilder("simulatedTests")
       .select(["simulatedTests.id as id", 'simulatedTests.testName as "testName"', "simulatedTests.order as order"])
       .leftJoin("simulatedTests.skillTests", "skillTest")
-      .addSelect(['skillTest.id as "skillTestId"', "skillTest.skill as skill"])
+      .addSelect([
+        'skillTest.id as "skillTestId"',
+        "skillTest.skill as skill",
+        'skillTest.partsDetail as "partsDetail"',
+      ])
       .leftJoin(
         (subQuery) => {
           return subQuery
@@ -64,16 +68,11 @@ export class SimulatedIeltsTest extends BaseEntity implements ISimulatedIeltsTes
               "session.status as status",
               "session.responses as responses",
               "session.results as results",
-              'COALESCE(session.elapsedTime, 0) as "elapsedTime"',
+              'session.elapsedTime as "elapsedTime"',
+              'session.updated_at as "updated_at"',
             ])
             .from(SkillTestSession, "session")
-            .where("session.learnerProfileId = :profileId", { profileId })
-            .andWhere(
-              `session.createdAt = (
-                SELECT MAX(subsession.created_at) 
-                FROM skill_test_sessions subsession 
-                WHERE subsession.skill_test_id = session.skill_test_id)`
-            );
+            .where("session.learnerProfileId = :profileId", { profileId });
         },
         "latestSession",
         '"latestSession"."sessionSkillTestId" = skillTest.id',
@@ -86,10 +85,12 @@ export class SimulatedIeltsTest extends BaseEntity implements ISimulatedIeltsTes
         '"latestSession"."elapsedTime" as "elapsedTime"',
         '"latestSession".responses as responses',
         '"latestSession".results as results',
+        '"latestSession"."updated_at" as "updated_at"',
       ])
       .where("simulatedTests.collectionId = :collectionId", { collectionId })
       .orderBy("simulatedTests.order")
       .addOrderBy("skillTest.skill")
+      .orderBy("updated_at", "DESC")
       .skip(offset)
       .take(limit)
       .getRawMany();
