@@ -70,9 +70,9 @@ export class SimulatedTestService {
       const groupedItems = _.groupBy(items, "id");
 
       const formattedItems = _.map(groupedItems, (group) => {
-        const collectionId = group[0].id || null;
-        const order = group[0].order || null;
-        const testName = group[0].testName || "";
+        const collectionId = group[0].id ?? null;
+        const order = group[0].order ?? null;
+        const testName = group[0].testName ?? "";
         let totalTimeSpent = 0;
 
         const validGroup = group.filter(
@@ -81,36 +81,42 @@ export class SimulatedTestService {
         const skillTests = _.groupBy(validGroup, "skill");
 
         const essentialData = _.map(skillTests, (st: any) => {
-          const { status, skill, estimatedBandScore, results, responses, elapsedTime, skillTestId, sessionId } = st[0];
+          const {
+            status,
+            skill,
+            estimatedBandScore,
+            results,
+            responses,
+            elapsedTime,
+            skillTestId,
+            sessionId,
+            partsDetail = [],
+          } = st[0];
           totalTimeSpent += elapsedTime;
 
-          let accuracy = 0;
-          let progress = 0;
-          let total = 0;
+          let correctAnswers = 0;
 
-          if (skill === null) {
-            return;
+          if (
+            (skill === SkillEnum.READING || skill === SkillEnum.LISTENING) &&
+            status === TestSessionStatusEnum.FINISHED &&
+            results
+          ) {
+            correctAnswers = results.filter((t: boolean) => Boolean(t)).length;
           }
 
-          if (skill === SkillEnum.READING || skill === SkillEnum.LISTENING) {
-            if (status === TestSessionStatusEnum.FINISHED) {
-              accuracy = results ? results.filter((t: boolean) => t === true).length : 0;
-            }
-          }
-          progress = responses
+          const submittedAnswers = responses
             ? responses.filter((r: InfoTextResponseDto | InfoSpeakingResponseDto) => r !== null).length
             : 0;
-          total = responses ? responses.length : 0;
 
           return {
             skillTestId,
             sessionId,
-            status,
+            status: status ?? TestSessionStatusEnum.NOT_STARTED,
             estimatedBandScore,
-            progress,
-            total,
-            accuracy,
+            submittedAnswers,
+            correctAnswers,
             skill,
+            partsDetail,
           };
         });
 

@@ -49,7 +49,7 @@ export class Transaction extends BaseEntity implements ITransaction {
   payosTransaction: PayOSTransaction;
 
   static async getTransactionHistory(accountId: string, offset: number, limit: number) {
-    const queryBuilder = Transaction.createQueryBuilder("transaction")
+    const queryBuilder = this.createQueryBuilder("transaction")
       .leftJoin("transaction.payosTransaction", "payos_transaction")
       .addSelect([
         "payos_transaction.amount",
