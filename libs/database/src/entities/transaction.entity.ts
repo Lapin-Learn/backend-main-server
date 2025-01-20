@@ -94,7 +94,7 @@ export class Transaction extends BaseEntity implements ITransaction {
     return this.createQueryBuilder("transaction")
       .where("transaction.accountId = :accountId", { accountId })
       .andWhere("transaction.status = :status", { status: PaymentStatusEnum.PENDING })
-      .andWhere("transaction.items @> :items", { items: JSON.stringify(items) })
+      .andWhere(":items @> transaction.items", { items: JSON.stringify(items) })
       .getMany();
   }
 }

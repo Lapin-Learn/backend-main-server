@@ -18,7 +18,7 @@ import { PaymentService } from "./payment.service";
 import { CreatePaymentLinkDto } from "@app/types/dtos/payment";
 import { CancelPaymentLinkDto } from "@app/types/dtos/payment/cancel-payment-link.dto";
 import { ICurrentUser } from "@app/types/interfaces";
-import { PaginationInterceptor } from "@app/utils/interceptors";
+import { PaginationInterceptor, Transactional } from "@app/utils/interceptors";
 
 @ApiTags("Payment")
 @ApiDefaultResponses()
@@ -30,6 +30,7 @@ export class PaymentController {
 
   @ApiOperation({ summary: "Create payment link" })
   @Post("payment-link")
+  @UseInterceptors(Transactional)
   async createPaymentLink(@CurrentUser() user: ICurrentUser, @Body() data: CreatePaymentLinkDto) {
     return this.paymentService.createPaymentTransaction(data, user.userId);
   }
@@ -37,6 +38,7 @@ export class PaymentController {
   @ApiOperation({ summary: "Get payment link information" })
   @ApiParam({ name: "orderId", type: Number })
   @Get("payment-link/:orderId")
+  @UseInterceptors(Transactional)
   async getPaymentLinkInformation(@Param("orderId") orderId: number) {
     return this.paymentService.getPaymentInformation(orderId);
   }
@@ -44,6 +46,7 @@ export class PaymentController {
   @ApiOperation({ summary: "Cancel payment link" })
   @ApiParam({ name: "orderId", type: Number })
   @Put("payment-link/:orderId")
+  @UseInterceptors(Transactional)
   async cancelPaymentLink(@Param("orderId") orderId: number, @Body() data: CancelPaymentLinkDto) {
     return this.paymentService.cancelPayment(orderId, data);
   }

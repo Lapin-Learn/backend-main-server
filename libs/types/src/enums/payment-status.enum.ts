@@ -11,6 +11,6 @@ export enum PaymentTypeEnum {
 }
 
 export enum PaymentCancellationReasonEnum {
-  DUPLICATE = "DUPLICATE",
+  DUPLICATED = "DUPLICATED",
   EXPIRED = "EXPIRED",
 }
