@@ -5,3 +5,12 @@ export enum PaymentStatusEnum {
   ERROR = "error",
   UNDERPAID = "underpaid",
 }
+
+export enum PaymentTypeEnum {
+  CARROTS = "carrots",
+}
+
+export enum PaymentCancellationReasonEnum {
+  DUPLICATE = "DUPLICATE",
+  EXPIRED = "EXPIRED",
+}
