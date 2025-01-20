@@ -25,9 +25,26 @@ export class PayOSService {
     this.checksumKey = this.configService.get("PAYOS_CHECKSUM_KEY");
   }
 
-  async createPaymentLink(request: IPayOSRequestLink) {
+  async createPaymentLink(request: IPayOSRequestLink, manager: EntityManager) {
     try {
       const paymentLinkResponse = await this.payOS.createPaymentLink(request);
+
+      // Check if the transactionId exists in the transactions table
+      const existingTransaction = await manager.findOne(Transaction, { where: { id: request.orderCode } });
+      if (!existingTransaction) {
+        throw new Error(`Transaction with ID ${request.orderCode} does not exist`);
+      }
+
+      // Save new payos transaction
+      const newTransaction = PayOSTransaction.create({
+        id: paymentLinkResponse.paymentLinkId,
+        transactionId: request.orderCode,
+        amount: request.amount,
+        status: PaymentStatusEnum.PENDING,
+        metadata: paymentLinkResponse,
+      });
+      await manager.save(newTransaction);
+
       return paymentLinkResponse;
     } catch (error) {
       this.logger.error(error);
@@ -38,7 +55,11 @@ export class PayOSService {
   async getPaymentLinkInformation(orderId: number) {
     try {
       const verifyLinkResponse = await this.payOS.getPaymentLinkInformation(orderId);
-      return verifyLinkResponse;
+      const currentTransaction = await PayOSTransaction.findOne({ where: { transactionId: orderId } });
+      return {
+        ...verifyLinkResponse,
+        ...currentTransaction.metadata,
+      };
     } catch (error) {
       this.logger.error(error);
       throw error;
@@ -46,13 +67,33 @@ export class PayOSService {
   }
 
   async cancelPayOSLink(orderId: number, { cancellationReason }: CancelPaymentLinkDto) {
-    try {
-      const cancelLinkResponse = await this.payOS.cancelPaymentLink(orderId, cancellationReason);
-      return cancelLinkResponse;
-    } catch (error) {
-      this.logger.error(error);
-      throw error;
-    }
+    return this.unitOfWork.doTransactional(async (manager: EntityManager) => {
+      try {
+        const cancelLinkResponse = await this.payOS.cancelPaymentLink(orderId, cancellationReason);
+        const transaction = await PayOSTransaction.findOne({ where: { transactionId: orderId } });
+
+        // Upsert payos transaction's metadata
+        if (transaction) {
+          transaction.status = PaymentStatusEnum.CANCELLED;
+          transaction.metadata = cancelLinkResponse;
+          await manager.save(transaction);
+        } else {
+          const newPayOSTransaction = PayOSTransaction.create({
+            id: cancelLinkResponse.id,
+            transactionId: cancelLinkResponse.orderCode,
+            amount: cancelLinkResponse.amount,
+            status: PaymentStatusEnum.CANCELLED,
+            metadata: cancelLinkResponse,
+          });
+          await manager.save(newPayOSTransaction);
+        }
+
+        return cancelLinkResponse;
+      } catch (error) {
+        this.logger.error(error);
+        throw error;
+      }
+    });
   }
 
   async handlePayOSWebhook(webhookData: IPayOSWebhook) {
@@ -60,25 +101,33 @@ export class PayOSService {
       try {
         const verifiedData: WebhookDataType = this.payOS.verifyPaymentWebhookData(webhookData);
         const { orderCode, amount, paymentLinkId, code } = verifiedData;
-        const trans = PayOSTransaction.create({
-          id: paymentLinkId,
-          transactionId: orderCode,
-          amount,
-          status: this.SUCCESS_CODE == code ? PaymentStatusEnum.PAID : PaymentStatusEnum.ERROR,
-          metadata: verifiedData,
-        });
 
+        // Upsert payos transaction's metadata
+        const currentTrans = await PayOSTransaction.findOne({ where: { id: paymentLinkId } });
+        if (!currentTrans) {
+          const trans = PayOSTransaction.create({
+            id: paymentLinkId,
+            transactionId: orderCode,
+            amount,
+            status: this.SUCCESS_CODE == code ? PaymentStatusEnum.PAID : PaymentStatusEnum.ERROR,
+            metadata: verifiedData,
+          });
+
+          await manager.save(trans);
+        } else {
+          currentTrans.status = this.SUCCESS_CODE == code ? PaymentStatusEnum.PAID : PaymentStatusEnum.ERROR;
+          currentTrans.metadata = verifiedData;
+
+          await manager.save(currentTrans);
+        }
+
+        // Update system transaction status
         const systemTransaction = await Transaction.findOne({ where: { id: orderCode } });
         if (systemTransaction) {
           systemTransaction.status = this.SUCCESS_CODE == code ? PaymentStatusEnum.PAID : PaymentStatusEnum.ERROR;
           await manager.save(systemTransaction);
         }
 
-        this.logger.log(trans);
-        const currentTrans = await PayOSTransaction.findOne({ where: { id: paymentLinkId } });
-        if (!currentTrans) {
-          await manager.save(trans);
-        }
         return OK_RESPONSE;
       } catch (error) {
         this.logger.error(error);

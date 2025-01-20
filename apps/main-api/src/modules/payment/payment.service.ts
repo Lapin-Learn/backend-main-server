@@ -26,30 +26,34 @@ export class PaymentService {
     return this.unitOfWork.doTransactional(async (manager: EntityManager) => {
       try {
         const { quantity } = data;
+        const amount = quantity * 20;
+        const items = [
+          {
+            name: data.type,
+            quantity,
+            price: 20,
+          },
+        ];
         const newTransaction = await manager.save(
           Transaction.create({
             accountId: userId,
             status: PaymentStatusEnum.PENDING,
+            amount,
+            items,
           })
         );
 
         const request: IPayOSRequestLink = {
           orderCode: newTransaction.id,
-          amount: data.quantity * 20,
+          amount,
           description: "LAPIN - SUBSCRIPTION",
-          items: [
-            {
-              name: data.type,
-              quantity,
-              price: 20,
-            },
-          ],
+          items,
           expiredAt: Number(String(new Date(Date.now() + this.expireTime))),
           returnUrl: `${this.paymentRedirectUrl}?success=true`,
           cancelUrl: `${this.paymentRedirectUrl}?canceled=true`,
         };
 
-        return this.payOSService.createPaymentLink(request);
+        return this.payOSService.createPaymentLink(request, manager);
       } catch (error) {
         this.logger.error(error);
         throw error;

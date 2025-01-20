@@ -13,6 +13,7 @@ import {
 } from "typeorm";
 import { Account } from "./account.entity";
 import { PayOSTransaction } from "./payos-transaction.entity";
+import { IItemTransaction } from "@app/types/interfaces/payment/item-transaction.interface";
 
 @Entity("transactions")
 export class Transaction extends BaseEntity implements ITransaction {
@@ -28,6 +29,17 @@ export class Transaction extends BaseEntity implements ITransaction {
     default: PaymentStatusEnum.PENDING,
   })
   status: PaymentStatusEnum; // e.g., paid, canceled, pending
+
+  @Column({
+    type: "decimal",
+    precision: 10,
+    scale: 2,
+    default: 0,
+  })
+  amount: number;
+
+  @Column({ type: "jsonb", nullable: false, default: [] }) // If null, it's a subscription, donate, or testing
+  items: IItemTransaction[]; // Items in the transaction
 
   @CreateDateColumn({
     name: "created_at",
