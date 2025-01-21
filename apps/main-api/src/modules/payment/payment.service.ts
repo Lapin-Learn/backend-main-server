@@ -4,7 +4,6 @@ import { BadRequestException, Injectable, Logger } from "@nestjs/common";
 import { PayOSService } from "./payos.service";
 import { CreatePaymentLinkDto } from "@app/types/dtos/payment";
 import { PaymentCancellationReasonEnum, PaymentStatusEnum } from "@app/types/enums";
-import { ConfigService } from "@nestjs/config";
 import { Transaction, UnitOfWorkService } from "@app/database";
 import { EXPIRED_TIME, VN_TIME_ZONE } from "@app/types/constants";
 import { Cron } from "@nestjs/schedule";
@@ -13,18 +12,14 @@ import moment from "moment-timezone";
 @Injectable()
 export class PaymentService {
   private readonly logger = new Logger(this.constructor.name);
-  private readonly paymentRedirectUrl: string;
   constructor(
     private readonly payOSService: PayOSService,
-    private readonly configService: ConfigService,
     private readonly unitOfWork: UnitOfWorkService
-  ) {
-    this.paymentRedirectUrl = this.configService.get("PAYMENT_REDIRECT_URL");
-  }
+  ) {}
 
   async createPaymentTransaction(data: CreatePaymentLinkDto, userId: string) {
     try {
-      const { quantity } = data;
+      const { quantity, redirectUrl } = data;
       const amount = quantity * 20;
       const items = [
         {
@@ -54,8 +49,8 @@ export class PaymentService {
         description: "LAPIN - SUBSCRIPTION",
         items,
         expiredAt: Number(String(new Date(Date.now() + EXPIRED_TIME))),
-        returnUrl: `${this.paymentRedirectUrl}?success=true`,
-        cancelUrl: `${this.paymentRedirectUrl}?canceled=true`,
+        returnUrl: `${redirectUrl}?success=true`,
+        cancelUrl: `${redirectUrl}?canceled=true`,
       };
 
       return this.payOSService.createPaymentLink(request);
