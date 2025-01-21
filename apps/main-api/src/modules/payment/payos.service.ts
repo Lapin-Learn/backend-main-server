@@ -1,7 +1,7 @@
 import { OK_RESPONSE, PAYOS_INSTANCE } from "@app/types/constants";
-import { PayOSTransaction, Transaction, UnitOfWorkService } from "@app/database";
+import { LearnerProfile, PayOSTransaction, Transaction, UnitOfWorkService } from "@app/database";
 import { CancelPaymentLinkDto } from "@app/types/dtos/payment/cancel-payment-link.dto";
-import { PaymentStatusEnum } from "@app/types/enums";
+import { PaymentStatusEnum, PaymentTypeEnum } from "@app/types/enums";
 import { IPayOSRequestLink } from "@app/types/interfaces";
 import { IPayOSWebhook } from "@app/types/interfaces/payment/payos-webhook.interface";
 import { Inject, Injectable, Logger } from "@nestjs/common";
@@ -9,7 +9,6 @@ import { ConfigService } from "@nestjs/config";
 import PayOS from "@payos/node";
 import { WebhookDataType } from "@payos/node/lib/type";
 import { createHmac } from "crypto";
-import { EntityManager } from "typeorm";
 
 @Injectable()
 export class PayOSService {
@@ -27,7 +26,25 @@ export class PayOSService {
 
   async createPaymentLink(request: IPayOSRequestLink) {
     try {
+      const manager = this.unitOfWork.getManager();
       const paymentLinkResponse = await this.payOS.createPaymentLink(request);
+
+      // Check if the transactionId exists in the transactions table
+      const existingTransaction = await manager.findOne(Transaction, { where: { id: request.orderCode } });
+      if (!existingTransaction) {
+        throw new Error(`Transaction with ID ${request.orderCode} does not exist`);
+      }
+
+      // Save new payos transaction
+      const newTransaction = PayOSTransaction.create({
+        id: paymentLinkResponse.paymentLinkId,
+        transactionId: request.orderCode,
+        amount: request.amount,
+        status: PaymentStatusEnum.PENDING,
+        metadata: paymentLinkResponse,
+      });
+      await manager.save(newTransaction);
+
       return paymentLinkResponse;
     } catch (error) {
       this.logger.error(error);
@@ -37,8 +54,13 @@ export class PayOSService {
 
   async getPaymentLinkInformation(orderId: number) {
     try {
+      const manager = this.unitOfWork.getManager();
       const verifyLinkResponse = await this.payOS.getPaymentLinkInformation(orderId);
-      return verifyLinkResponse;
+      const currentTransaction = await manager.findOne(PayOSTransaction, { where: { transactionId: orderId } });
+      return {
+        ...verifyLinkResponse,
+        ...currentTransaction.metadata,
+      };
     } catch (error) {
       this.logger.error(error);
       throw error;
@@ -47,7 +69,26 @@ export class PayOSService {
 
   async cancelPayOSLink(orderId: number, { cancellationReason }: CancelPaymentLinkDto) {
     try {
+      const manager = this.unitOfWork.getManager();
       const cancelLinkResponse = await this.payOS.cancelPaymentLink(orderId, cancellationReason);
+      const transaction = await manager.findOne(PayOSTransaction, { where: { transactionId: orderId } });
+
+      // Upsert payos transaction's metadata
+      if (transaction) {
+        transaction.status = PaymentStatusEnum.CANCELLED;
+        transaction.metadata = cancelLinkResponse;
+        await manager.save(transaction);
+      } else {
+        const newPayOSTransaction = PayOSTransaction.create({
+          id: cancelLinkResponse.id,
+          transactionId: cancelLinkResponse.orderCode,
+          amount: cancelLinkResponse.amount,
+          status: PaymentStatusEnum.CANCELLED,
+          metadata: cancelLinkResponse,
+        });
+        await manager.save(newPayOSTransaction);
+      }
+
       return cancelLinkResponse;
     } catch (error) {
       this.logger.error(error);
@@ -56,10 +97,14 @@ export class PayOSService {
   }
 
   async handlePayOSWebhook(webhookData: IPayOSWebhook) {
-    return this.unitOfWork.doTransactional(async (manager: EntityManager) => {
-      try {
-        const verifiedData: WebhookDataType = this.payOS.verifyPaymentWebhookData(webhookData);
-        const { orderCode, amount, paymentLinkId, code } = verifiedData;
+    try {
+      const manager = this.unitOfWork.getManager();
+      const verifiedData: WebhookDataType = this.payOS.verifyPaymentWebhookData(webhookData);
+      const { orderCode, amount, paymentLinkId, code } = verifiedData;
+
+      // Upsert payos transaction's metadata
+      const currentTrans = await manager.findOne(PayOSTransaction, { where: { id: paymentLinkId } });
+      if (!currentTrans) {
         const trans = PayOSTransaction.create({
           id: paymentLinkId,
           transactionId: orderCode,
@@ -68,23 +113,42 @@ export class PayOSService {
           metadata: verifiedData,
         });
 
-        const systemTransaction = await Transaction.findOne({ where: { id: orderCode } });
-        if (systemTransaction) {
-          systemTransaction.status = this.SUCCESS_CODE == code ? PaymentStatusEnum.PAID : PaymentStatusEnum.ERROR;
-          await manager.save(systemTransaction);
-        }
+        await manager.save(trans);
+      } else {
+        currentTrans.status = this.SUCCESS_CODE == code ? PaymentStatusEnum.PAID : PaymentStatusEnum.ERROR;
+        currentTrans.metadata = verifiedData;
 
-        this.logger.log(trans);
-        const currentTrans = await PayOSTransaction.findOne({ where: { id: paymentLinkId } });
-        if (!currentTrans) {
-          await manager.save(trans);
-        }
-        return OK_RESPONSE;
-      } catch (error) {
-        this.logger.error(error);
-        throw error;
+        await manager.save(currentTrans);
       }
-    });
+
+      // Update system transaction status
+      const systemTransaction = await manager.findOne(Transaction, {
+        where: { id: orderCode },
+        relations: {
+          account: true,
+        },
+      });
+      if (systemTransaction) {
+        systemTransaction.status = this.SUCCESS_CODE == code ? PaymentStatusEnum.PAID : PaymentStatusEnum.ERROR;
+        await manager.save(systemTransaction);
+
+        if (systemTransaction.status === PaymentStatusEnum.PAID) {
+          const learnerProfile = await manager.findOneOrFail(LearnerProfile, {
+            where: { id: systemTransaction.account.learnerProfileId },
+          });
+
+          for (const item of systemTransaction.items) {
+            if (item.name === PaymentTypeEnum.CARROTS) learnerProfile.carrots += item.quantity;
+          }
+          await manager.save(learnerProfile);
+        }
+      }
+
+      return OK_RESPONSE;
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
   }
 
   async verifyWebhook(url: string) {

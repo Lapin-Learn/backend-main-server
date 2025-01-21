@@ -1,5 +1,5 @@
 import { PaymentStatusEnum } from "@app/types/enums";
-import { IPayOSTransaction } from "@app/types/interfaces/payment";
+import { IPayOSTransaction } from "@app/types/interfaces";
 import {
   Entity,
   BaseEntity,
