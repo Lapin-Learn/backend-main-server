@@ -69,6 +69,12 @@ export class SimulatedTestController {
     return this.simulatedTestService.getSessionHistory(learner, offset, limit);
   }
 
+  @ApiOperation({ summary: "Get average band scores of 4 skills all time" })
+  @Get("simulated-tests/report")
+  async getBandScoreReport(@CurrentUser() learner: ICurrentUser) {
+    return this.simulatedTestService.getBandScoreReport(learner);
+  }
+
   @ApiQuery({ name: "offset", type: Number, required: false })
   @ApiQuery({ name: "limit", type: Number, required: false })
   @ApiQuery({ name: "skill", enum: SkillEnum, required: false })

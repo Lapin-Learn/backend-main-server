@@ -15,12 +15,6 @@ import { SkillEnum } from "@app/types/enums";
 export class SimulatedTestReportController {
   constructor(private readonly simulatedTestService: SimulatedTestService) {}
 
-  @ApiOperation({ summary: "Get average band scores of 4 skills all time" })
-  @Get("simulated-tests/report")
-  async getBandScoreReport(@CurrentUser() learner: ICurrentUser) {
-    return this.simulatedTestService.getBandScoreReport(learner);
-  }
-
   @ApiOperation({ summary: "Get all sessions by skill and specific time range" })
   @ApiQuery({ name: "skill", enum: SkillEnum, required: true })
   @ApiQuery({ name: "from", type: Date, required: false })
