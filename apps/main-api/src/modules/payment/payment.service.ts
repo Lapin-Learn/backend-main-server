@@ -85,7 +85,7 @@ export class PaymentService {
         transaction.status = status.toLowerCase() as PaymentStatusEnum;
         await manager.save(transaction);
       }
-      return information;
+      return { ...information, ...transaction };
     } catch (error) {
       this.logger.error(error);
       throw error;
