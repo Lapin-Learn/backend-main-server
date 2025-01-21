@@ -8,6 +8,7 @@ import { ConfigService } from "@nestjs/config";
 import { Transaction, UnitOfWorkService } from "@app/database";
 import { EXPIRED_TIME, VN_TIME_ZONE } from "@app/types/constants";
 import { Cron } from "@nestjs/schedule";
+import moment from "moment-timezone";
 
 @Injectable()
 export class PaymentService {
@@ -70,6 +71,14 @@ export class PaymentService {
       const transaction = await manager.findOne(Transaction, {
         where: { id: orderId },
       });
+      if (transaction.status === PaymentStatusEnum.PENDING) {
+        const diff = moment().diff(moment(transaction.createdAt), "minutes");
+        if (diff > 30)
+          await this.payOSService.cancelPayOSLink(orderId, {
+            cancellationReason: PaymentCancellationReasonEnum.EXPIRED,
+          });
+      }
+
       const information = await this.payOSService.getPaymentLinkInformation(orderId);
       const { status } = information;
       if (transaction) {

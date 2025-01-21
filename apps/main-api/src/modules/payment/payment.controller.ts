@@ -65,4 +65,11 @@ export class PaymentController {
   ) {
     return this.paymentService.getTransactionHistory(user.userId, offset, limit);
   }
+
+  @ApiParam({ name: "id", type: Number, required: true })
+  @Get("/transactions/:id")
+  @UseInterceptors(Transactional)
+  async getTransactionDetail(@Param("id", ParseIntPipe) id: number) {
+    return this.paymentService.getPaymentInformation(id);
+  }
 }
