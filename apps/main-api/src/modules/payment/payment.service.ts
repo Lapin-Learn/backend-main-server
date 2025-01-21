@@ -72,8 +72,8 @@ export class PaymentService {
         where: { id: orderId },
       });
       if (transaction.status === PaymentStatusEnum.PENDING) {
-        const diff = moment().diff(moment(transaction.createdAt), "minutes");
-        if (diff > 30)
+        const diff = moment().diff(moment(transaction.createdAt), "milliseconds");
+        if (diff > EXPIRED_TIME)
           await this.payOSService.cancelPayOSLink(orderId, {
             cancellationReason: PaymentCancellationReasonEnum.EXPIRED,
           });
