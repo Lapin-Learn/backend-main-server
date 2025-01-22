@@ -17,23 +17,29 @@ import {
   TextResponseDto,
   UpdateSessionDto,
 } from "@app/types/dtos/simulated-tests";
-import { ICurrentUser, ITestCollection } from "@app/types/interfaces";
-import { BadRequestException, Injectable, Logger } from "@nestjs/common";
+import { ICurrentUser, IGradingStrategy, ITestCollection } from "@app/types/interfaces";
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from "@nestjs/common";
 import _ from "lodash";
 import { BucketService } from "../bucket/bucket.service";
 import { GradingContext } from "@app/shared-modules/grading";
 import { SkillEnum, TestSessionModeEnum, TestSessionStatusEnum } from "@app/types/enums";
-import { InjectQueue } from "@nestjs/bullmq";
-import { Queue } from "bullmq";
-import { EvaluateSpeaking, EvaluateWriting, RangeGradingStrategy } from "@app/shared-modules/grading/grading-strategy";
+import { EvaluateSpeaking, EvaluateWriting, RangeGradingStrategy } from "@app/shared-modules/grading";
 import {
-  EVALUATE_SPEAKING_QUEUE,
-  EVALUATE_WRITING_QUEUE,
   SPEAKING_FILE_PREFIX,
   OK_RESPONSE,
+  REQUIRED_CREDENTIAL,
+  EVALUATE_SPEAKING_QUEUE,
+  EVALUATE_WRITING_QUEUE,
 } from "@app/types/constants";
 import { plainToInstance } from "class-transformer";
-import { RedisService } from "@app/shared-modules/redis";
+import { InjectQueue } from "@nestjs/bullmq";
+import { Queue } from "bullmq";
 
 @Injectable()
 export class SimulatedTestService {
@@ -41,9 +47,8 @@ export class SimulatedTestService {
   constructor(
     private readonly bucketService: BucketService,
     private readonly gradingContext: GradingContext,
-    private readonly redisService: RedisService,
-    @InjectQueue(EVALUATE_SPEAKING_QUEUE) private evaluateSpeakingQueue: Queue,
-    @InjectQueue(EVALUATE_WRITING_QUEUE) private evaluateWritingQueue: Queue
+    @InjectQueue(EVALUATE_SPEAKING_QUEUE) private speakingQueue: Queue,
+    @InjectQueue(EVALUATE_WRITING_QUEUE) private writingQueue: Queue
   ) {}
   async getCollectionsWithSimulatedTest(offset: number, limit: number, keyword: string, profileId: string) {
     try {
@@ -225,7 +230,7 @@ export class SimulatedTestService {
             const fileName = `${SPEAKING_FILE_PREFIX}-${sessionId}`;
             const bucket = await Bucket.findOne({ where: { name: fileName, owner: learner.userId } });
             if (bucket) {
-              session["resource"] = await this.bucketService.getPresignedDownloadUrl(learner, bucket.id, {
+              session["resource"] = await this.bucketService.getPresignedDownloadUrl(bucket.id, {
                 ResponseCacheControl: "pulic, max-age=31536000",
               });
             }
@@ -269,60 +274,40 @@ export class SimulatedTestService {
 
       let responseInfo = null;
       if (status === TestSessionStatusEnum.FINISHED) {
-        const learnerProfile = await LearnerProfile.findOneOrFail({ where: { id: learner.profileId } });
-
-        const hasEnoughCarrotsForSkill = !(
-          learnerProfile.carrots < 100 &&
-          (sessionData.response.skill === SkillEnum.WRITING || sessionData.response.skill === SkillEnum.SPEAKING)
+        const { response } = sessionData;
+        responseInfo = response.info.sort(
+          (a: InfoSpeakingResponseDto | InfoTextResponseDto, b: InfoSpeakingResponseDto | InfoTextResponseDto) =>
+            a.questionNo - b.questionNo
         );
 
-        const { response } = sessionData;
-
         if (response instanceof SpeakingResponseDto) {
-          if (hasEnoughCarrotsForSkill) {
-            this.gradingContext.setGradingStrategy(
-              new EvaluateSpeaking(
-                this.evaluateSpeakingQueue,
-                sessionId,
-                EVALUATE_SPEAKING_QUEUE,
-                additionalResources,
-                response.info,
-                learner
-              )
-            );
-            sessionData.status = TestSessionStatusEnum.IN_EVALUATING;
-            await LearnerProfile.save({ ...learnerProfile, carrots: learnerProfile.carrots - 100 });
-          } else {
-            sessionData.status = TestSessionStatusEnum.FINISHED;
-          }
-          responseInfo = response.info;
-        } else if (response instanceof TextResponseDto) {
-          const { info } = response;
-          responseInfo = info.sort((a, b) => a.questionNo - b.questionNo);
+          const speakingStrategy = new EvaluateSpeaking(sessionId, responseInfo);
+          const { userResponses, speakingAudio } =
+            await speakingStrategy.getResponseWithTimeStampAudio(additionalResources);
+          responseInfo = userResponses;
 
+          const fileName = `${SPEAKING_FILE_PREFIX}-${sessionId}`;
+          const uploaded = await this.bucketService.uploadFile(fileName, speakingAudio, learner);
+          if (uploaded !== true) {
+            throw new InternalServerErrorException("Error uploading speaking file");
+          }
+          this.gradingContext.setGradingStrategy(speakingStrategy);
+        } else if (response instanceof TextResponseDto) {
           if (skillTest.skill === SkillEnum.WRITING) {
-            if (hasEnoughCarrotsForSkill) {
-              this.gradingContext.setGradingStrategy(
-                new EvaluateWriting(this.evaluateWritingQueue, sessionId, EVALUATE_WRITING_QUEUE, info)
-              );
-              sessionData.status = TestSessionStatusEnum.IN_EVALUATING;
-              await LearnerProfile.save({ ...learnerProfile, carrots: learnerProfile.carrots - 100 });
-            } else {
-              sessionData.status = TestSessionStatusEnum.FINISHED;
-            }
+            this.gradingContext.setGradingStrategy(new EvaluateWriting(sessionId, responseInfo));
           } else {
             const { answers } = await SkillTestAnswer.findOneOrFail({
               where: { skillTestId },
               relations: { skillTest: true },
             });
 
-            this.gradingContext.setGradingStrategy(new RangeGradingStrategy(answers, info, skillTest.skill));
+            const rangeStrategy = new RangeGradingStrategy(answers, responseInfo, skillTest.skill);
+            rangeStrategy.evaluateBandScore();
+            sessionData["results"] = rangeStrategy.getResults();
+            this.gradingContext.setGradingStrategy(rangeStrategy);
           }
         }
 
-        this.gradingContext.evaluateBandScore();
-
-        sessionData["results"] = this.gradingContext.getResults();
         if (mode === TestSessionModeEnum.FULL_TEST || parts.length === skillTest?.partsDetail?.length) {
           sessionData["estimatedBandScore"] = this.gradingContext.getEstimatedScore();
         }
@@ -332,6 +317,52 @@ export class SimulatedTestService {
         }
       }
       await SkillTestSession.save({ id: sessionId, ...sessionData, responses: responseInfo });
+      return OK_RESPONSE;
+    } catch (error) {
+      this.logger.error(error);
+      throw new BadRequestException(error);
+    }
+  }
+
+  async evaluateSkillTest(sessionId: number, learner: ICurrentUser) {
+    try {
+      const session = await SkillTestSession.findOneOrFail({
+        where: { id: sessionId, learnerProfileId: learner.profileId },
+        relations: {
+          skillTest: true,
+          learnerProfile: true,
+        },
+      });
+
+      if (session.learnerProfile.carrots < REQUIRED_CREDENTIAL) {
+        throw new ForbiddenException("You don't have enough carrots");
+      }
+
+      let strategy: IGradingStrategy;
+      if (session.skillTest.skill === SkillEnum.SPEAKING) {
+        const speakingResponses = plainToInstance(InfoSpeakingResponseDto, session.responses as Array<any>);
+        const speakingStrategy = new EvaluateSpeaking(sessionId, speakingResponses);
+        speakingStrategy.setQueue(this.speakingQueue);
+        strategy = speakingStrategy;
+      } else if (session.skillTest.skill === SkillEnum.WRITING) {
+        const writingResponses = plainToInstance(InfoTextResponseDto, session.responses as Array<any>);
+        const writingStategy = new EvaluateWriting(sessionId, writingResponses);
+        writingStategy.setQueue(this.writingQueue);
+        strategy = writingStategy;
+      } else {
+        throw new BadRequestException("This skill test is not supported with AI evaluation");
+      }
+      this.gradingContext.setGradingStrategy(strategy);
+      await this.gradingContext.evaluateBandScore();
+      await SkillTestSession.save({
+        ...session,
+        status: TestSessionStatusEnum.IN_EVALUATING,
+      });
+
+      await LearnerProfile.save({
+        ...session.learnerProfile,
+        carrots: session.learnerProfile.carrots - REQUIRED_CREDENTIAL,
+      });
       return OK_RESPONSE;
     } catch (error) {
       this.logger.error(error);

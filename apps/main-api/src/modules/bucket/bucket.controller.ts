@@ -30,8 +30,8 @@ export class BucketController {
   @ApiResponse({ status: 200, description: "Presigned URL generated" })
   @ApiResponse({ status: 400, description: "File not found" })
   @ApiResponse({ status: 401, description: "Unauthorized" })
-  async getPresignedDownloadUrl(@CurrentUser() user: ICurrentUser, @Param("id") fileId: string) {
-    return { url: await this.bucketService.getPresignedDownloadUrl(user, fileId) };
+  async getPresignedDownloadUrl(@Param("id") fileId: string) {
+    return { url: await this.bucketService.getPresignedDownloadUrl(fileId) };
   }
 
   @Delete(":id")

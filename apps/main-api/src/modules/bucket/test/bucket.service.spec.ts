@@ -8,7 +8,7 @@ import { S3_PROVIDER_NAME } from "./constants/s3-provider.const";
 import { PutObjectCommand, GetObjectCommand, S3, DeleteObjectCommand, HeadObjectCommand } from "@aws-sdk/client-s3";
 import { admin, createMockBucket, expert, learner } from "./mocks";
 import { BadRequestException } from "@nestjs/common";
-import { BucketPermissionsEnum, BucketUploadStatusEnum } from "@app/types/enums";
+import { BucketUploadStatusEnum } from "@app/types/enums";
 import { mockDeletedValue } from "./mocks/deleted-value.mock";
 
 describe("BucketService", () => {
@@ -84,11 +84,6 @@ describe("BucketService", () => {
   describe("Test getPresignedDownloadUrl", () => {
     const bucket = createMockBucket({ uploadStatus: BucketUploadStatusEnum.UPLOADED });
     const pendingBucket = createMockBucket({ id: bucket.id });
-    const privateBucket = createMockBucket({
-      id: bucket.id,
-      permission: BucketPermissionsEnum.PRIVATE,
-      uploadStatus: BucketUploadStatusEnum.UPLOADED,
-    });
 
     beforeEach(() => {
       jest.resetAllMocks();
@@ -102,47 +97,37 @@ describe("BucketService", () => {
     });
 
     it("should return a presigned URL", async () => {
-      const response = bucketService.getPresignedDownloadUrl(learner, bucket.id);
+      const response = bucketService.getPresignedDownloadUrl(bucket.id);
       await expect(response).resolves.toEqual(mockPresignedUrl);
     });
 
     it("should throw an error because of Bucket.findOne", async () => {
       jest.spyOn(Bucket, "findOne").mockRejectedValue(new Error());
-      const response = bucketService.getPresignedDownloadUrl(learner, bucket.id);
+      const response = bucketService.getPresignedDownloadUrl(bucket.id);
       await expect(response).rejects.toThrow(BadRequestException);
     });
 
     it("should throw an error because file not found", async () => {
       jest.spyOn(Bucket, "findOne").mockResolvedValue(null);
-      const response = bucketService.getPresignedDownloadUrl(learner, bucket.id);
+      const response = bucketService.getPresignedDownloadUrl(bucket.id);
       await expect(response).rejects.toThrow(BadRequestException);
 
       jest.spyOn(Bucket, "findOne").mockResolvedValue(pendingBucket);
-      const response2 = bucketService.getPresignedDownloadUrl(learner, bucket.id);
+      const response2 = bucketService.getPresignedDownloadUrl(bucket.id);
       await expect(response2).rejects.toThrow(BadRequestException);
-    });
-
-    it("validate authorized access", async () => {
-      jest.spyOn(Bucket, "findOne").mockResolvedValue(privateBucket);
-
-      const response = bucketService.getPresignedDownloadUrl(expert, bucket.id);
-      await expect(response).rejects.toThrow(BadRequestException);
-
-      const response2 = bucketService.getPresignedDownloadUrl(admin, bucket.id);
-      await expect(response2).resolves.toEqual(mockPresignedUrl);
     });
 
     it("should throw an error because of GetObjectCommand", async () => {
       (GetObjectCommand as unknown as jest.Mock).mockImplementation(() => {
         throw new Error();
       });
-      const response = bucketService.getPresignedDownloadUrl(learner, bucket.id);
+      const response = bucketService.getPresignedDownloadUrl(bucket.id);
       await expect(response).rejects.toThrow(BadRequestException);
     });
 
     it("should throw an error because of getSignedUrl", async () => {
       (getSignedUrl as jest.Mock).mockRejectedValue(new Error());
-      const response = bucketService.getPresignedDownloadUrl(learner, bucket.id);
+      const response = bucketService.getPresignedDownloadUrl(bucket.id);
       await expect(response).rejects.toThrow(BadRequestException);
     });
   });

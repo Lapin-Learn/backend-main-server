@@ -1,5 +1,5 @@
 import { ConfirmUploadDto, UpdateFileDto, UploadFileDto } from "@app/types/dtos";
-import { BadRequestException, Injectable, Logger, UnauthorizedException } from "@nestjs/common";
+import { BadRequestException, HttpStatus, Injectable, Logger, UnauthorizedException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { InjectS3, S3 } from "nestjs-s3";
 import { Bucket } from "@app/database/entities";
@@ -14,17 +14,21 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { IBucket, ICurrentUser } from "@app/types/interfaces";
 import { AccountRoleEnum, BucketPermissionsEnum, BucketUploadStatusEnum } from "@app/types/enums";
 import _ from "lodash";
+import { AxiosInstance } from "axios";
+import { genericHttpConsumer } from "@app/utils/axios";
 
 @Injectable()
 export class BucketService {
   private logger = new Logger(this.constructor.name);
   private bucketName: string = "";
+  private readonly httpService: AxiosInstance;
 
   constructor(
     @InjectS3() private readonly s3: S3,
     private readonly configService: ConfigService
   ) {
     this.bucketName = this.configService.get("BUCKET_NAME");
+    this.httpService = genericHttpConsumer();
   }
 
   async getPresignedUploadUrl(user: ICurrentUser, body: UploadFileDto) {
@@ -46,20 +50,12 @@ export class BucketService {
     }
   }
 
-  async getPresignedDownloadUrl(user: ICurrentUser, fileId: string, objRequest: Partial<GetObjectRequest> = null) {
+  async getPresignedDownloadUrl(fileId: string, objRequest: Partial<GetObjectRequest> = null) {
     try {
       const data = await Bucket.findOne({ where: { id: fileId } });
 
       if (!data || data.uploadStatus === BucketUploadStatusEnum.PENDING) {
         throw new BadRequestException("File not found");
-      }
-
-      if (
-        data.permission === BucketPermissionsEnum.PRIVATE &&
-        data.owner !== user.userId &&
-        user.role !== AccountRoleEnum.ADMIN
-      ) {
-        throw new UnauthorizedException("Unauthorized access");
       }
 
       const command = new GetObjectCommand({
@@ -173,5 +169,25 @@ export class BucketService {
       this.logger.error(error);
       throw new BadRequestException(error);
     }
+  }
+
+  async uploadFile(fileName: string, file: Express.Multer.File, user: ICurrentUser) {
+    const uploadedFile: UploadFileDto = {
+      name: fileName,
+      permission: BucketPermissionsEnum.PUBLIC,
+    };
+    const presignedUrl = await this.getPresignedUploadUrl(user, uploadedFile);
+    const res = await this.httpService.put(presignedUrl.url, file.buffer, {
+      headers: {
+        "Content-Type": file.mimetype,
+      },
+    });
+
+    if (res.status !== HttpStatus.OK) {
+      this.logger.error("Error upload file: ", res.data);
+      return false;
+    }
+    await this.uploadConfirmation(user, { id: presignedUrl.id });
+    return true;
   }
 }
