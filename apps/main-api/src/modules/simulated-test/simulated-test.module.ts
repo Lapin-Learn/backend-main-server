@@ -8,6 +8,7 @@ import { EVALUATE_SPEAKING_QUEUE, EVALUATE_WRITING_QUEUE } from "@app/types/cons
 import { RedisModule } from "@app/shared-modules/redis";
 import { SimulatedTestReportController } from "./simulated-test-report.controller";
 import { SessionController } from "./session.controller";
+import { SessionService } from "./session.service";
 
 @Module({
   imports: [
@@ -24,7 +25,7 @@ import { SessionController } from "./session.controller";
     BucketModule,
     RedisModule,
   ],
-  providers: [SimulatedTestService],
+  providers: [SimulatedTestService, SessionService],
   controllers: [SimulatedTestController, SimulatedTestReportController, SessionController],
 })
 export class SimulatedTestModule {}

@@ -219,4 +219,23 @@ export class SkillTestSession extends BaseEntity {
 
     return query.getRawMany();
   }
+
+  static async getLatestInprogressSessionWithFilter(learnerId: string, skill?: SkillEnum, collectionId?: number) {
+    const query = this.createQueryBuilder("session")
+      .select(["session.id", "session.responses", "session.mode", "session.status", "session.parts"])
+      .leftJoin("session.skillTest", "skillTest")
+      .addSelect(["skillTest.id", "skillTest.skill", "skillTest.testId"])
+      .leftJoin("skillTest.simulatedIeltsTest", "simulatedIeltsTest")
+      .where("session.learnerProfileId = :learnerId", { learnerId })
+      .andWhere("session.status = :status", { status: TestSessionStatusEnum.IN_PROGRESS });
+    if (skill) {
+      query.andWhere("skillTest.skill = :skill", { skill });
+    }
+    if (collectionId) {
+      query.andWhere("simulatedIeltsTest.collectionId = :collectionId", { collectionId });
+    }
+    query.orderBy("session.id", "DESC");
+
+    return query.getOne();
+  }
 }

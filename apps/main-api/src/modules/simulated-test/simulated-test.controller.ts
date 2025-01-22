@@ -42,6 +42,7 @@ export class SimulatedTestController {
     return this.simulatedTestService.getCollectionsWithSimulatedTest(offset, limit, keyword, user.profileId);
   }
 
+  @ApiOperation({ summary: "Get all STs in a collection" })
   @ApiParam({ name: "id", type: Number, required: true })
   @ApiQuery({ name: "offset", type: Number, required: false })
   @ApiQuery({ name: "limit", type: Number, required: false })
@@ -57,6 +58,16 @@ export class SimulatedTestController {
     return this.simulatedTestService.getSimulatedTestsInCollections(collectionId, offset, limit, user.profileId);
   }
 
+  @ApiOperation({
+    summary: "Get information of a ST collection, to render collection detail page",
+  })
+  @ApiParam({ name: "id", type: Number, required: true })
+  @Get("collections/:id")
+  async getCollectionInfo(@Param("id", ParseIntPipe) collectionId: number) {
+    return this.simulatedTestService.getCollectionInformation(collectionId);
+  }
+
+  @ApiOperation({ summary: "Get session history (all)" })
   @ApiQuery({ name: "offset", type: Number, required: false })
   @ApiQuery({ name: "limit", type: Number, required: false })
   @Get("simulated-tests/sessions")
@@ -69,12 +80,7 @@ export class SimulatedTestController {
     return this.simulatedTestService.getSessionHistory(learner, offset, limit);
   }
 
-  @ApiOperation({ summary: "Get average band scores of 4 skills all time" })
-  @Get("simulated-tests/report")
-  async getBandScoreReport(@CurrentUser() learner: ICurrentUser) {
-    return this.simulatedTestService.getBandScoreReport(learner);
-  }
-
+  @ApiOperation({ summary: "Get session history of a simulated test" })
   @ApiQuery({ name: "offset", type: Number, required: false })
   @ApiQuery({ name: "limit", type: Number, required: false })
   @ApiQuery({ name: "skill", enum: SkillEnum, required: false })
@@ -90,6 +96,7 @@ export class SimulatedTestController {
     return this.simulatedTestService.getSessionHistory(learner, offset, limit, { simulatedTestId, skill });
   }
 
+  @ApiOperation({ summary: "Get simulated test information, include all skill tests inside" })
   @ApiParam({ name: "id", type: Number, required: true })
   @ApiResponse({ type: SimulatedIeltsTestDetailDto })
   @Get("simulated-tests/:id")
@@ -97,6 +104,7 @@ export class SimulatedTestController {
     return this.simulatedTestService.getSimulatedTestInfo(testId);
   }
 
+  @ApiOperation({ summary: "Get a skill test content to render question to learner" })
   @ApiParam({ name: "id", type: Number, required: true })
   @ApiQuery({ name: "part", type: Number, required: true })
   @Get("skill-tests/:id")

@@ -69,6 +69,25 @@ export class SimulatedTestService {
     }
   }
 
+  async getCollectionInformation(collectionId: number) {
+    try {
+      const data = await TestCollection.findOneOrFail({
+        where: { id: collectionId },
+        relations: {
+          thumbnail: true,
+        },
+      });
+      this.logger.log(data);
+      return {
+        ...data,
+        thumbnail: await this.bucketService.getPresignedDownloadUrlForAfterLoad(data.thumbnail),
+      };
+    } catch (error) {
+      this.logger.error(error);
+      throw new BadRequestException(error);
+    }
+  }
+
   async getSimulatedTestsInCollections(collectionId: number, offset: number, limit: number, profileId: string) {
     try {
       const items = await SimulatedIeltsTest.getSimulatedTestInCollections(collectionId, offset, limit, profileId);
