@@ -123,11 +123,9 @@ export class AISpeakingService {
       return plainToInstance(SpeakingEvaluation, plainEvaluations);
     } catch (error) {
       this.logger.error(error);
-      throw new BadRequestException(error);
+      throw error;
     } finally {
       this.genAIFileManager.deleteFile(geminiFileName);
-      // Delete it manually
-      // Or it will automatically be adeleted after 48 hours
     }
   }
 

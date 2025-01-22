@@ -63,14 +63,14 @@ describe("BucketController", () => {
 
   describe("getPresignedDownloadUrl", () => {
     it("should return presigned URL", async () => {
-      await expect(bucketController.getPresignedDownloadUrl(bucket.id)).resolves.toEqual({
+      await expect(bucketController.getPresignedDownloadUrl(learner, bucket.id)).resolves.toEqual({
         url: mockPresignedUrl,
       });
     });
 
     it("should throw an error", async () => {
       (bucketService.getPresignedDownloadUrl as any).mockRejectedValue(new BadRequestException());
-      await expect(bucketController.getPresignedDownloadUrl(bucket.id)).rejects.toThrow(BadRequestException);
+      await expect(bucketController.getPresignedDownloadUrl(learner, bucket.id)).rejects.toThrow(BadRequestException);
     });
   });
 

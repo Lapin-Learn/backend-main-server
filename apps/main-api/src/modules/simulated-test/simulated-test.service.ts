@@ -1,4 +1,11 @@
 import {
+  Injectable,
+  Logger,
+  BadRequestException,
+  InternalServerErrorException,
+  ForbiddenException,
+} from "@nestjs/common";
+import {
   Bucket,
   LearnerProfile,
   SimulatedIeltsTest,
@@ -17,14 +24,6 @@ import {
   TextResponseDto,
   UpdateSessionDto,
 } from "@app/types/dtos/simulated-tests";
-import { ICurrentUser, IGradingStrategy, ITestCollection } from "@app/types/interfaces";
-import {
-  BadRequestException,
-  ForbiddenException,
-  Injectable,
-  InternalServerErrorException,
-  Logger,
-} from "@nestjs/common";
 import _ from "lodash";
 import { BucketService } from "../bucket/bucket.service";
 import { GradingContext } from "@app/shared-modules/grading";
@@ -40,6 +39,7 @@ import {
 import { plainToInstance } from "class-transformer";
 import { InjectQueue } from "@nestjs/bullmq";
 import { Queue } from "bullmq";
+import { ITestCollection, ICurrentUser, IGradingStrategy } from "@app/types/interfaces";
 
 @Injectable()
 export class SimulatedTestService {
@@ -230,7 +230,7 @@ export class SimulatedTestService {
             const fileName = `${SPEAKING_FILE_PREFIX}-${sessionId}`;
             const bucket = await Bucket.findOne({ where: { name: fileName, owner: learner.userId } });
             if (bucket) {
-              session["resource"] = await this.bucketService.getPresignedDownloadUrl(bucket.id, {
+              session["resource"] = await this.bucketService.getPresignedDownloadUrl(learner, bucket.id, {
                 ResponseCacheControl: "pulic, max-age=31536000",
               });
             }
@@ -265,6 +265,8 @@ export class SimulatedTestService {
       });
 
       if (
+        sessionStatus === TestSessionStatusEnum.NOT_EVALUATED ||
+        sessionStatus === TestSessionStatusEnum.EVALUATION_FAILED ||
         sessionStatus === TestSessionStatusEnum.FINISHED ||
         sessionStatus === TestSessionStatusEnum.CANCELED ||
         sessionStatus === TestSessionStatusEnum.IN_EVALUATING
@@ -291,10 +293,12 @@ export class SimulatedTestService {
           if (uploaded !== true) {
             throw new InternalServerErrorException("Error uploading speaking file");
           }
+          sessionData.status = TestSessionStatusEnum.NOT_EVALUATED;
           this.gradingContext.setGradingStrategy(speakingStrategy);
         } else if (response instanceof TextResponseDto) {
           if (skillTest.skill === SkillEnum.WRITING) {
             this.gradingContext.setGradingStrategy(new EvaluateWriting(sessionId, responseInfo));
+            sessionData.status = TestSessionStatusEnum.NOT_EVALUATED;
           } else {
             const { answers } = await SkillTestAnswer.findOneOrFail({
               where: { skillTestId },
@@ -334,10 +338,13 @@ export class SimulatedTestService {
         },
       });
 
+      if (session.status === TestSessionStatusEnum.FINISHED || session.status === TestSessionStatusEnum.CANCELED) {
+        throw new BadRequestException(`Session is already ${session.status}`);
+      }
+
       if (session.learnerProfile.carrots < REQUIRED_CREDENTIAL) {
         throw new ForbiddenException("You don't have enough carrots");
       }
-
       let strategy: IGradingStrategy;
       if (session.skillTest.skill === SkillEnum.SPEAKING) {
         const speakingResponses = plainToInstance(InfoSpeakingResponseDto, session.responses as Array<any>);
@@ -353,7 +360,7 @@ export class SimulatedTestService {
         throw new BadRequestException("This skill test is not supported with AI evaluation");
       }
       this.gradingContext.setGradingStrategy(strategy);
-      await this.gradingContext.evaluateBandScore();
+      this.gradingContext.evaluateBandScore();
       await SkillTestSession.save({
         ...session,
         status: TestSessionStatusEnum.IN_EVALUATING,

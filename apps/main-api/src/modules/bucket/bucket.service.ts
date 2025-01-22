@@ -50,12 +50,20 @@ export class BucketService {
     }
   }
 
-  async getPresignedDownloadUrl(fileId: string, objRequest: Partial<GetObjectRequest> = null) {
+  async getPresignedDownloadUrl(user: ICurrentUser, fileId: string, objRequest: Partial<GetObjectRequest> = null) {
     try {
       const data = await Bucket.findOne({ where: { id: fileId } });
 
       if (!data || data.uploadStatus === BucketUploadStatusEnum.PENDING) {
         throw new BadRequestException("File not found");
+      }
+
+      if (
+        data.permission === BucketPermissionsEnum.PRIVATE &&
+        data.owner !== user.userId &&
+        user.role !== AccountRoleEnum.ADMIN
+      ) {
+        throw new UnauthorizedException("Unauthorized access");
       }
 
       const command = new GetObjectCommand({
@@ -170,7 +178,6 @@ export class BucketService {
       throw new BadRequestException(error);
     }
   }
-
   async uploadFile(fileName: string, file: Express.Multer.File, user: ICurrentUser) {
     const uploadedFile: UploadFileDto = {
       name: fileName,
@@ -182,7 +189,6 @@ export class BucketService {
         "Content-Type": file.mimetype,
       },
     });
-
     if (res.status !== HttpStatus.OK) {
       this.logger.error("Error upload file: ", res.data);
       return false;

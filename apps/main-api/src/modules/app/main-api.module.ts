@@ -23,6 +23,7 @@ import { SimulatedTestModule } from "../simulated-test/simulated-test.module";
 import { AIModule } from "../ai/ai.module";
 import { BullModule } from "@nestjs/bullmq";
 import { PaymentModule } from "../payment/payment.module";
+import { WORKER_ATTEMPTS } from "@app/types/constants";
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -42,10 +43,12 @@ import { PaymentModule } from "../payment/payment.module";
           host: configService.get("REDIS_HOST"),
           port: configService.get("REDIS_PORT"),
         },
+        defaultJobOptions: {
+          attempts: WORKER_ATTEMPTS,
+        },
       }),
       inject: [ConfigService],
     }),
-
     AuthModule,
     BucketModule,
     UserModule,
