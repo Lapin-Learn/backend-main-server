@@ -77,7 +77,6 @@ export class SimulatedTestService {
           thumbnail: true,
         },
       });
-      this.logger.log(data);
       return {
         ...data,
         thumbnail: await this.bucketService.getPresignedDownloadUrlForAfterLoad(data.thumbnail),

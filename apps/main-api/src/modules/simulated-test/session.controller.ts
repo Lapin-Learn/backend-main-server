@@ -21,6 +21,7 @@ import { FilesInterceptor } from "@nestjs/platform-express";
 import { plainToInstance } from "class-transformer";
 import { SessionService } from "./session.service";
 import { SkillEnum } from "@app/types/enums";
+import { LatestInprogressSessionDto } from "@app/types/response-dtos";
 
 @ApiTags("Simulated tests")
 @ApiDefaultResponses()
@@ -44,6 +45,7 @@ export class SessionController {
   @ApiOperation({ summary: "Get a latest in-progress session" })
   @ApiQuery({ name: "skill", required: false, enum: SkillEnum })
   @ApiQuery({ name: "collectionId", required: false, type: Number })
+  @ApiResponse({ type: LatestInprogressSessionDto, status: 200 })
   @Get("simulated-tests/sessions/latest")
   async getLatestInprogressSession(
     @CurrentUser() user: ICurrentUser,
