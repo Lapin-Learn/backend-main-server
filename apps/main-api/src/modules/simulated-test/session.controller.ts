@@ -59,4 +59,11 @@ export class SessionController {
 
     return this.simulatedTestService.updateSession(sessionId, data, learner, files);
   }
+
+  @ApiOperation({ summary: "Evaluate response of speaking and listening test by AI" })
+  @ApiParam({ name: "id", type: Number, required: true })
+  @Post("simulated-tests/sessions/:id/evaluating")
+  async evaluateTestResopnse(@Param("id", ParseIntPipe) sessionId: number, @CurrentUser() learner: ICurrentUser) {
+    return this.simulatedTestService.evaluateSkillTest(sessionId, learner);
+  }
 }

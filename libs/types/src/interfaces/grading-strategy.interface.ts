@@ -1,5 +1,6 @@
+import { SpeakingEvaluation, WritingEvaluation } from "../dtos/simulated-tests";
 export interface IGradingStrategy {
   evaluateBandScore(): void;
-  getResults(): boolean[] | string[] | null;
+  getResults(): boolean[] | SpeakingEvaluation[] | WritingEvaluation[] | null;
   getEstimatedBandScore(): number;
 }
