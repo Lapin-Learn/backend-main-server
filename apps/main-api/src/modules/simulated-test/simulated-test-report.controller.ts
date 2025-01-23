@@ -33,10 +33,4 @@ export class SimulatedTestReportController {
   ) {
     return this.simulatedTestService.getQuestionTypeAccuracy(learner, skill);
   }
-
-  @ApiOperation({ summary: "Get average band scores of 4 skills all time" })
-  @Get("simulated-tests/report")
-  async getBandScoreReport(@CurrentUser() learner: ICurrentUser) {
-    return this.simulatedTestService.getBandScoreReport(learner);
-  }
 }
