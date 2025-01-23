@@ -189,7 +189,7 @@ export class SkillTestSession extends BaseEntity {
 
   static async getBandScoreReport(learnerId: string) {
     return await this.createQueryBuilder("session")
-      .select(['COALESCE(AVG(session.estimatedBandScore), 0) as "estimatedBandScore"'])
+      .select(['AVG(session.estimatedBandScore) as "estimatedBandScore"'])
       .leftJoin("session.skillTest", "test")
       .addSelect(['test.skill as "skill"'])
       .leftJoin("session.learnerProfile", "learner")
@@ -222,10 +222,13 @@ export class SkillTestSession extends BaseEntity {
 
   static async getLatestInprogressSessionWithFilter(learnerId: string, skill?: SkillEnum, collectionId?: number) {
     const query = this.createQueryBuilder("session")
-      .select(["session.id", "session.responses", "session.mode", "session.status", "session.parts"])
+      .select(["session.id", "session.mode", "session.status", "session.parts"])
       .leftJoin("session.skillTest", "skillTest")
       .addSelect(["skillTest.id", "skillTest.skill", "skillTest.testId"])
       .leftJoin("skillTest.simulatedIeltsTest", "simulatedIeltsTest")
+      .addSelect(["simulatedIeltsTest.testName"])
+      .leftJoin("simulatedIeltsTest.testCollection", "testCollection")
+      .addSelect(["testCollection.name"])
       .where("session.learnerProfileId = :learnerId", { learnerId })
       .andWhere("session.status = :status", { status: TestSessionStatusEnum.IN_PROGRESS });
     if (skill) {
