@@ -156,6 +156,13 @@ export class SkillTestSession extends BaseEntity {
     simulatedTestId?: number,
     skill?: SkillEnum
   ) {
+    const finishedStatuses = [
+      TestSessionStatusEnum.FINISHED,
+      TestSessionStatusEnum.EVALUATION_FAILED,
+      TestSessionStatusEnum.NOT_EVALUATED,
+      TestSessionStatusEnum.IN_EVALUATING,
+    ];
+
     const query = this.createQueryBuilder("session")
       .select([
         "session.id",
@@ -164,13 +171,14 @@ export class SkillTestSession extends BaseEntity {
         "session.elapsedTime",
         "session.results",
         "session.mode",
+        "session.status",
       ])
       .leftJoin("session.skillTest", "skillTest")
       .addSelect(["skillTest.id", "skillTest.skill"])
       .leftJoin("skillTest.simulatedIeltsTest", "test")
       .addSelect(["test.testName"])
       .where("session.learner_profile_id = :learnerId", { learnerId })
-      .andWhere("session.status = :status", { status: TestSessionStatusEnum.FINISHED })
+      .andWhere("session.status IN (:...statuses)", { statuses: finishedStatuses })
       .orderBy("session.createdAt", "DESC");
 
     if (simulatedTestId) {
