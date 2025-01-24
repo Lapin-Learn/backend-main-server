@@ -10,7 +10,6 @@ import { MailModule } from "@app/shared-modules/mail";
 import { ActivityModule } from "../activity/activity.module";
 import { StreakModule } from "../streak/streak.module";
 import { DailyLessonModule } from "../daily-lesson/daily-lesson.module";
-import { LessonModule } from "../lesson/lesson.module";
 import { AdminModule } from "../admin/admin.module";
 import { MissionModule } from "../mission/mission.module";
 import { NotificationModule } from "../notification/notification.module";
@@ -56,7 +55,6 @@ import { WORKER_ATTEMPTS } from "@app/types/constants";
     ActivityModule,
     StreakModule,
     DailyLessonModule,
-    LessonModule,
     AdminModule,
     MissionModule,
     NotificationModule,

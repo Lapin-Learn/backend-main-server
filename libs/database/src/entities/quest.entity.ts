@@ -11,7 +11,7 @@ import {
   UpdateDateColumn,
 } from "typeorm";
 import { Action } from "./action.entity";
-import { IntervalTypeEnum } from "@app/types/enums";
+import { IntervalTypeEnum, MissionCategoryNameEnum } from "@app/types/enums";
 import { Mission } from "./mission.entity";
 
 @Entity({ name: "quests" })
@@ -38,7 +38,7 @@ export class Quest extends BaseEntity implements IQuest {
   type: IntervalTypeEnum;
 
   @Column({ name: "category", type: "varchar", length: 255, nullable: false })
-  category: string;
+  category: MissionCategoryNameEnum;
 
   @CreateDateColumn({ name: "created_at", type: "timestamp", nullable: false, default: () => "CURRENT_TIMESTAMP" })
   createdAt: Date;

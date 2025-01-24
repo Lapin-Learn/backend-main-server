@@ -1,8 +1,11 @@
-import { Instruction, Lesson, LessonProcess, QuestionType } from "@app/database";
+import { Instruction, LearnerProfile, Lesson, LessonProcess, LessonRecord, QuestionType } from "@app/database";
+import { QuestService } from "@app/shared-modules/mission-factory";
+import { CompleteLessonDto } from "@app/types/dtos";
 import { BandScoreEnum, SkillEnum } from "@app/types/enums";
-import { IInstruction } from "@app/types/interfaces";
+import { ICurrentUser, IInstruction } from "@app/types/interfaces";
 import { BadRequestException, Injectable, Logger } from "@nestjs/common";
 import _ from "lodash";
+import { EntityNotFoundError, QueryFailedError } from "typeorm";
 
 @Injectable()
 export class DailyLessonService {
@@ -80,6 +83,60 @@ export class DailyLessonService {
       });
     } catch (error) {
       this.logger.error(error);
+      throw new BadRequestException(error);
+    }
+  }
+
+  async completeLesson(dto: CompleteLessonDto, user: ICurrentUser) {
+    try {
+      const learner = await LearnerProfile.findOneOrFail({
+        where: { id: user.profileId },
+        relations: { lessonProcesses: true },
+      });
+
+      const lessonRecord = await LessonRecord.create({
+        lessonId: dto.lessonId,
+        learnerProfileId: user.profileId,
+        correctAnswers: dto.correctAnswers,
+        wrongAnswers: dto.wrongAnswers,
+        duration: dto.duration,
+      }).save();
+
+      const currentLesson = await Lesson.findOneOrFail({
+        where: { id: dto.lessonId },
+        relations: { questionType: true },
+      });
+
+      const { bonusXP, bonusCarrot } = lessonRecord.getBonusResources();
+
+      const result = await learner.updateResources({ bonusXP, bonusCarrot });
+
+      const profileMilestones = await learner.getProfileMileStones();
+      const learnProgressMilestones = await learner.getLearnProcessMileStones(
+        dto,
+        result.bonusXP,
+        currentLesson.questionType.id
+      );
+      const questService = new QuestService();
+
+      const missionMilestones = await questService.getMissionsMileStones(learner);
+
+      return {
+        ...lessonRecord,
+        ...result,
+        milestones: [
+          ...profileMilestones,
+          ...learnProgressMilestones,
+          ...(missionMilestones.newValue.length > 0 ? [missionMilestones] : []),
+        ],
+      };
+    } catch (error) {
+      this.logger.error(error);
+      if (error instanceof EntityNotFoundError) {
+        throw new BadRequestException("Learner profile not found");
+      } else if (error instanceof QueryFailedError && error.message.includes("violates foreign key constraint")) {
+        throw new BadRequestException("Lesson not found");
+      }
       throw new BadRequestException(error);
     }
   }

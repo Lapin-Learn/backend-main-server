@@ -1,4 +1,4 @@
-import { IntervalTypeEnum } from "../enums";
+import { IntervalTypeEnum, MissionCategoryNameEnum } from "../enums";
 import { IAction } from "./action.interface";
 
 export interface IQuest {
@@ -9,7 +9,7 @@ export interface IQuest {
   requirements: number;
   rewards: number;
   type: IntervalTypeEnum;
-  category: string;
+  category: MissionCategoryNameEnum;
   createdAt: Date;
   updatedAt: Date;
 
