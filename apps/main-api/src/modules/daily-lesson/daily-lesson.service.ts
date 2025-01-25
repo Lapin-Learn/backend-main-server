@@ -1,5 +1,7 @@
 import { Instruction, LearnerProfile, Lesson, LessonProcess, LessonRecord, QuestionType } from "@app/database";
-import { QuestService } from "@app/shared-modules/mission-factory";
+import { MissionSubject } from "@app/shared-modules/milestone";
+import { LearnerProfileSubject } from "@app/shared-modules/milestone/learner.subject";
+import { MileStonesObserver } from "@app/shared-modules/milestone/milestone.observer";
 import { CompleteLessonDto } from "@app/types/dtos";
 import { BandScoreEnum, SkillEnum } from "@app/types/enums";
 import { ICurrentUser, IInstruction } from "@app/types/interfaces";
@@ -111,24 +113,24 @@ export class DailyLessonService {
 
       const result = await learner.updateResources({ bonusXP, bonusCarrot });
 
-      const profileMilestones = await learner.getProfileMileStones();
-      const learnProgressMilestones = await learner.getLearnProcessMileStones(
-        dto,
+      const observer = new MileStonesObserver();
+      const learnerProfileSubject = new LearnerProfileSubject(learner, observer);
+      await learnerProfileSubject.checkProfileChange();
+      await learnerProfileSubject.checkAfterFinishLesson(
         result.bonusXP,
-        currentLesson.questionType.id
+        dto.duration,
+        dto.lessonId,
+        currentLesson.questionTypeId
       );
-      const questService = new QuestService();
+      const missionSuject = new MissionSubject(learner, observer);
+      await missionSuject.checkMissionProgress();
 
-      const missionMilestones = await questService.getMissionsMileStones(learner);
+      const milestones = observer.getMileStones();
 
       return {
         ...lessonRecord,
         ...result,
-        milestones: [
-          ...profileMilestones,
-          ...learnProgressMilestones,
-          ...(missionMilestones.newValue.length > 0 ? [missionMilestones] : []),
-        ],
+        milestones,
       };
     } catch (error) {
       this.logger.error(error);

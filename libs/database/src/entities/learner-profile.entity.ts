@@ -169,7 +169,7 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
     return milestones;
   }
 
-  private async isLevelUp(): Promise<boolean> {
+  async isLevelUp(): Promise<boolean> {
     if (this.xp >= this.level.xp) {
       const nextLevel = await Level.findOne({ where: { id: this.levelId + 1 } });
       if (nextLevel) {
@@ -181,7 +181,7 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
     return false;
   }
 
-  private isRankUp(): boolean {
+  isRankUp(): boolean {
     const newRank = LevelRankMap.get(this.level.id);
     if (newRank && newRank !== this.rank) {
       this.rank = newRank;
@@ -190,7 +190,7 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
     return false;
   }
 
-  private async isAchieveDailyStreakOrCreate(): Promise<boolean> {
+  async isAchieveDailyStreakOrCreate(): Promise<boolean> {
     const bonusStreakPoint = await Activity.getBonusStreakPoint(this.id);
     if (bonusStreakPoint == 0) {
       const action = await Action.findByName(ActionNameEnum.DAILY_STREAK);
@@ -213,7 +213,7 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
     return false;
   }
 
-  private async isBandScoreQuestionTypeUp(
+  async isBandScoreQuestionTypeUp(
     xp: number,
     duration: number,
     completedLessonId: number,
