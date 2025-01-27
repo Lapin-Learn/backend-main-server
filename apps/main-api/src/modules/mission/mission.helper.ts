@@ -30,7 +30,7 @@ export class MissionHelper {
               status: progress?.status ?? ProfileMissionProgressStatusEnum.ASSIGNED,
               missionId: mission.id,
               questId: mission.quest.id,
-              quantity: mission.quantity,
+              quantity: mission.quest.quantity,
               rewards: mission.quest.rewards,
               category: mission.quest.category,
               requirements: mission.quest.requirements,

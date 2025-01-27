@@ -60,7 +60,7 @@ export class QuestService {
         if (!progress) {
           const current = await this.handler.getUpdatedProgress(0);
           const status =
-            current === mission.quantity
+            current === mission.quest.quantity
               ? ProfileMissionProgressStatusEnum.COMPLETED
               : ProfileMissionProgressStatusEnum.ASSIGNED;
           progress = await ProfileMissionProgress.save({
@@ -77,7 +77,7 @@ export class QuestService {
           }
           progress.current = updatedCurrent;
           progress.status =
-            updatedCurrent === mission.quantity ? ProfileMissionProgressStatusEnum.COMPLETED : progress.status;
+            updatedCurrent === mission.quest.quantity ? ProfileMissionProgressStatusEnum.COMPLETED : progress.status;
           progress = await ProfileMissionProgress.save({
             ...progress,
           });

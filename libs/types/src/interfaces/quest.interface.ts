@@ -7,6 +7,7 @@ export interface IQuest {
   description: string;
   actionId: string;
   requirements: number;
+  quantity: number;
   rewards: number;
   type: IntervalTypeEnum;
   category: MissionCategoryNameEnum;

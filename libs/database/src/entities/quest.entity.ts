@@ -31,6 +31,9 @@ export class Quest extends BaseEntity implements IQuest {
   @Column({ name: "requirements", type: "int", nullable: false, default: 0 })
   requirements: number;
 
+  @Column({ name: "requirements", type: "int", nullable: false, default: 0 })
+  quantity: number;
+
   @Column({ name: "rewards", type: "int", nullable: false, default: 0 })
   rewards: number;
 
