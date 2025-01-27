@@ -9,7 +9,7 @@ export class MoveQuantityColumnMissionsToQuests1737949282085 implements Migratio
         name: "quantity",
         type: "int",
         isNullable: false,
-        default: 0,
+        default: 1,
       })
     );
   }
@@ -22,7 +22,7 @@ export class MoveQuantityColumnMissionsToQuests1737949282085 implements Migratio
         name: "quantity",
         type: "int",
         isNullable: false,
-        default: 0,
+        default: 1,
       })
     );
   }

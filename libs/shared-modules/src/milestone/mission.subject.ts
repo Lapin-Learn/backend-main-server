@@ -5,9 +5,10 @@ import {
   RequiredDurationHandler,
   DistinctSkillsHandler,
   ExceedLearningStreak,
-} from "../mission-handlers";
+} from "../quest-handlers";
 import { LearnerProfile, Mission, ProfileMissionProgress } from "@app/database";
 import { MileStonesObserver } from "./milestone.observer";
+import { CompleteASessionHandler } from "../quest-handlers/simulated-tests";
 
 export class MissionSubject {
   private handlerMap = new Map<MissionCategoryNameEnum, new () => QuestHandler>([
@@ -15,6 +16,7 @@ export class MissionSubject {
     [MissionCategoryNameEnum.TOTAL_DURATION_OF_LEARN_DAILY_LESSON, RequiredDurationHandler],
     [MissionCategoryNameEnum.COMPLETE_LESSON_WITH_DIFFERENT_SKILLS, DistinctSkillsHandler],
     [MissionCategoryNameEnum.EXCEED_LEARNING_STREAK_WITHOUT_BREAK, ExceedLearningStreak],
+    [MissionCategoryNameEnum.COMPLETE_A_SESSION, CompleteASessionHandler],
   ]);
   private readonly observer: MileStonesObserver;
   private readonly learner: LearnerProfile;
@@ -37,62 +39,67 @@ export class MissionSubject {
   }
 
   async checkMissionProgress(): Promise<void> {
-    const updatedProgress: ProfileMissionProgress[] = [];
+    try {
+      const updatedProgress: ProfileMissionProgress[] = [];
 
-    const missions = await Mission.getMissions();
+      const missions = await Mission.getMissions();
 
-    for (const mission of missions) {
-      const isCompleteMission = this.learner.profileMissionsProgress.some(
-        (m) =>
-          m.missionId === mission.id &&
-          (m.status === ProfileMissionProgressStatusEnum.COMPLETED ||
-            m.status === ProfileMissionProgressStatusEnum.RECEIVED)
-      );
+      for (const mission of missions) {
+        const isCompleteMission = this.learner.profileMissionsProgress.some(
+          (m) =>
+            m.missionId === mission.id &&
+            (m.status === ProfileMissionProgressStatusEnum.COMPLETED ||
+              m.status === ProfileMissionProgressStatusEnum.RECEIVED)
+        );
 
-      if (!isCompleteMission) {
-        let isUpdated = false;
-        this.setHandler(mission.quest.category);
-        await this.handler.checkQuestCompleted(mission.quest.requirements, this.learner);
+        if (!isCompleteMission) {
+          let isUpdated = false;
+          this.setHandler(mission.quest.category);
+          await this.handler.checkQuestCompleted(mission.quest.requirements, this.learner);
 
-        let progress = await ProfileMissionProgress.findOne({
-          where: {
-            missionId: mission.id,
-            profileId: this.learner.id,
-          },
-        });
-
-        if (!progress) {
-          const current = await this.handler.getUpdatedProgress(0);
-          const status =
-            current >= mission.quest.quantity
-              ? ProfileMissionProgressStatusEnum.COMPLETED
-              : ProfileMissionProgressStatusEnum.ASSIGNED;
-
-          progress = await ProfileMissionProgress.save({
-            profileId: this.learner.id,
-            current,
-            status,
-            mission,
+          let progress = await ProfileMissionProgress.findOne({
+            where: {
+              missionId: mission.id,
+              profileId: this.learner.id,
+            },
           });
-          isUpdated = true;
-        } else {
-          const updatedCurrent = await this.handler.getUpdatedProgress(progress.current);
-          if (updatedCurrent != progress.current) {
-            isUpdated = true;
+
+          if (!progress) {
+            const current = await this.handler.getUpdatedProgress(0);
+            const status =
+              current >= mission.quest.quantity
+                ? ProfileMissionProgressStatusEnum.COMPLETED
+                : ProfileMissionProgressStatusEnum.ASSIGNED;
+
+            progress = await ProfileMissionProgress.save({
+              profileId: this.learner.id,
+              current,
+              status,
+              mission,
+            });
+            if (current > 0) isUpdated = true;
+          } else {
+            const updatedCurrent = await this.handler.getUpdatedProgress(progress.current);
+            if (updatedCurrent != progress.current) {
+              isUpdated = true;
+            }
+            progress.current = updatedCurrent;
+            progress.status =
+              updatedCurrent === mission.quest.quantity ? ProfileMissionProgressStatusEnum.COMPLETED : progress.status;
+
+            progress = await ProfileMissionProgress.save({
+              ...progress,
+            });
           }
-          progress.current = updatedCurrent;
-          progress.status =
-            updatedCurrent === mission.quest.quantity ? ProfileMissionProgressStatusEnum.COMPLETED : progress.status;
-
-          progress = await ProfileMissionProgress.save({
-            ...progress,
-          });
-        }
-        if (isUpdated) {
-          updatedProgress.push(progress);
+          if (isUpdated) {
+            updatedProgress.push(progress);
+          }
         }
       }
+      if (updatedProgress.length > 0) this.notify(MileStonesEnum.IS_MISSION_COMPLETED, updatedProgress);
+    } catch (error) {
+      console.log("error: ", error);
+      throw error(error);
     }
-    if (updatedProgress.length > 0) this.notify(MileStonesEnum.IS_MISSION_COMPLETED, updatedProgress);
   }
 }

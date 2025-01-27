@@ -40,6 +40,8 @@ import { plainToInstance } from "class-transformer";
 import { InjectQueue } from "@nestjs/bullmq";
 import { Queue } from "bullmq";
 import { ITestCollection, ICurrentUser, IGradingStrategy } from "@app/types/interfaces";
+import { MileStonesObserver } from "@app/shared-modules/milestone/milestone.observer";
+import { MissionSubject } from "@app/shared-modules/milestone";
 
 @Injectable()
 export class SimulatedTestService {
@@ -339,8 +341,16 @@ export class SimulatedTestService {
           responseInfo = response.info;
         }
       }
+
       await SkillTestSession.save({ id: sessionId, ...sessionData, responses: responseInfo });
-      return OK_RESPONSE;
+
+      const learnerProfile = await LearnerProfile.findOne({ where: { id: learner.profileId } });
+      const observer = new MileStonesObserver();
+      const missionSubject = new MissionSubject(learnerProfile, observer);
+      await missionSubject.checkMissionProgress();
+      const milestones = observer.getMileStones();
+
+      return milestones;
     } catch (error) {
       this.logger.error(error);
       throw new BadRequestException(error);
