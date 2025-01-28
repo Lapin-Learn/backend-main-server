@@ -43,3 +43,4 @@ export * from "./test-session-responses.interface";
 export * from "./speaking-evaluation.interface";
 export * from "./ai-writing-question.interface";
 export * from "./payment";
+export * from "./verify-skill-strategy.interface";

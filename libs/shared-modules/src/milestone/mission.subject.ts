@@ -5,10 +5,16 @@ import {
   RequiredDurationHandler,
   DistinctSkillsHandler,
   ExceedLearningStreak,
-} from "../quest-handlers";
+} from "../quest-handlers/daily-lessons";
+import {
+  CompleteASessionHandler,
+  CompleteDistinctSkillTestsHandler,
+  CompleteDistinctedSkillsHandler,
+} from "../quest-handlers/simulated-tests";
+
 import { LearnerProfile, Mission, ProfileMissionProgress } from "@app/database";
 import { MileStonesObserver } from "./milestone.observer";
-import { CompleteASessionHandler } from "../quest-handlers/simulated-tests";
+import { Logger } from "@nestjs/common";
 
 export class MissionSubject {
   private handlerMap = new Map<MissionCategoryNameEnum, new () => QuestHandler>([
@@ -17,11 +23,14 @@ export class MissionSubject {
     [MissionCategoryNameEnum.COMPLETE_LESSON_WITH_DIFFERENT_SKILLS, DistinctSkillsHandler],
     [MissionCategoryNameEnum.EXCEED_LEARNING_STREAK_WITHOUT_BREAK, ExceedLearningStreak],
     [MissionCategoryNameEnum.COMPLETE_A_SESSION, CompleteASessionHandler],
+    [MissionCategoryNameEnum.COMPLETE_DISTINCT_SKILL_SESSION, CompleteDistinctedSkillsHandler],
+    [MissionCategoryNameEnum.COMPLETE_DISTINCT_SKILL_TEST_SESSION, CompleteDistinctSkillTestsHandler],
   ]);
   private readonly observer: MileStonesObserver;
   private readonly learner: LearnerProfile;
-
   private handler: QuestHandler;
+
+  private readonly logger = new Logger(MissionSubject.name);
 
   constructor(learner: LearnerProfile, observer: MileStonesObserver) {
     this.learner = learner;
@@ -98,7 +107,7 @@ export class MissionSubject {
       }
       if (updatedProgress.length > 0) this.notify(MileStonesEnum.IS_MISSION_COMPLETED, updatedProgress);
     } catch (error) {
-      console.log("error: ", error);
+      this.logger.error(error);
       throw error(error);
     }
   }

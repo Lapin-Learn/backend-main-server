@@ -40,8 +40,7 @@ import { plainToInstance } from "class-transformer";
 import { InjectQueue } from "@nestjs/bullmq";
 import { Queue } from "bullmq";
 import { ITestCollection, ICurrentUser, IGradingStrategy } from "@app/types/interfaces";
-import { MileStonesObserver } from "@app/shared-modules/milestone/milestone.observer";
-import { MissionSubject } from "@app/shared-modules/milestone";
+import { MissionSubject, MileStonesObserver } from "@app/shared-modules/milestone";
 
 @Injectable()
 export class SimulatedTestService {
@@ -426,8 +425,13 @@ export class SimulatedTestService {
   }
 
   async getBandScoreReport(learner: ICurrentUser) {
-    const plainReport = await SkillTestSession.getBandScoreReport(learner.profileId);
-    return plainToInstance(SkillTestSession, plainReport);
+    try {
+      const plainReport = await SkillTestSession.getBandScoreReport(learner.profileId);
+      return plainToInstance(SkillTestSession, plainReport);
+    } catch (error) {
+      this.logger.error(error);
+      throw new BadRequestException(error);
+    }
   }
 
   async getSessionProgress(learner: ICurrentUser, data: GetSessionProgressDto) {

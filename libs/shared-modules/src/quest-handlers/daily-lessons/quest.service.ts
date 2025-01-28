@@ -5,7 +5,7 @@ import { RequiredDurationHandler } from "./required-duration.handler";
 import { DistinctSkillsHandler } from "./distinct-skills.handler";
 import { ExceedLearningStreak } from "./exceed-learning-streak.handler";
 import { LearnerProfile, Mission, ProfileMissionProgress } from "@app/database";
-import { MileStonesObserver } from "../milestone/milestone.observer";
+import { MileStonesObserver } from "../../milestone/milestone.observer";
 
 export class QuestService {
   private handlerMap = new Map<MissionCategoryNameEnum, new () => QuestHandler>([
