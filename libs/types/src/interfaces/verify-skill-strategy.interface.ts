@@ -1,5 +1,5 @@
 import { SkillTestSession } from "@app/database";
 
 export interface VerifySkillStrategy {
-  verifiy(session: SkillTestSession): boolean;
+  verify(session: SkillTestSession, requirements?: number): boolean;
 }

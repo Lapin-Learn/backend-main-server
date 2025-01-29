@@ -4,11 +4,12 @@ import { VerifySkillStrategy } from "@app/types/interfaces";
 import { plainToInstance } from "class-transformer";
 
 export class VerifyReadingListening implements VerifySkillStrategy {
-  private readonly REQUIRED_ANSWER = 0.8;
+  private readonly DEFAULT_REQUIRED_ANSWER = 80;
 
-  verifiy(session: SkillTestSession): boolean {
+  verify(session: SkillTestSession, requirements?: number): boolean {
+    requirements = requirements ?? this.DEFAULT_REQUIRED_ANSWER;
     const responses = plainToInstance(InfoTextResponseDto, session.responses as Array<any>);
     const numberOfAnswers = responses.filter((r) => r.answer != null).length;
-    return numberOfAnswers / responses.length >= this.REQUIRED_ANSWER;
+    return numberOfAnswers / responses.length >= requirements / 100;
   }
 }

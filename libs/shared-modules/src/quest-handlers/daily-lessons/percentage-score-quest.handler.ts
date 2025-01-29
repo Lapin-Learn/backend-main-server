@@ -1,5 +1,6 @@
 import { LessonRecord } from "@app/database";
 import { QuestHandler } from "@app/types/abstracts";
+import { MissionCategoryNameEnum } from "@app/types/enums";
 import { ILearnerProfile } from "@app/types/interfaces";
 import { Logger } from "@nestjs/common";
 import moment from "moment-timezone";
@@ -7,6 +8,7 @@ import { Between } from "typeorm";
 
 export class PercentageScoreHandler extends QuestHandler {
   private readonly serviceLogger = new Logger(PercentageScoreHandler.name);
+  private readonly category = MissionCategoryNameEnum.COMPLETE_LESSON_WITH_PERCENTAGE_SCORE;
   async checkQuestCompleted(requirements: number, learner: ILearnerProfile): Promise<void> {
     try {
       const percentage = requirements;
@@ -27,5 +29,9 @@ export class PercentageScoreHandler extends QuestHandler {
       this.serviceLogger.error(error);
       throw error;
     }
+  }
+
+  getCategoryName(): MissionCategoryNameEnum {
+    return this.category;
   }
 }

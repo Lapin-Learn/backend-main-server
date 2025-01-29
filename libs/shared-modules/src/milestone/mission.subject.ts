@@ -1,31 +1,11 @@
 import { QuestHandler } from "@app/types/abstracts";
 import { MileStonesEnum, MissionCategoryNameEnum, ProfileMissionProgressStatusEnum } from "@app/types/enums";
-import {
-  PercentageScoreHandler,
-  RequiredDurationHandler,
-  DistinctSkillsHandler,
-  ExceedLearningStreak,
-} from "../quest-handlers/daily-lessons";
-import {
-  CompleteASessionHandler,
-  CompleteDistinctSkillTestsHandler,
-  CompleteDistinctedSkillsHandler,
-} from "../quest-handlers/simulated-tests";
-
 import { LearnerProfile, Mission, ProfileMissionProgress } from "@app/database";
 import { MileStonesObserver } from "./milestone.observer";
 import { Logger } from "@nestjs/common";
+import { MissionContainer } from "../quest-handlers/mission.container";
 
 export class MissionSubject {
-  private handlerMap = new Map<MissionCategoryNameEnum, new () => QuestHandler>([
-    [MissionCategoryNameEnum.COMPLETE_LESSON_WITH_PERCENTAGE_SCORE, PercentageScoreHandler],
-    [MissionCategoryNameEnum.TOTAL_DURATION_OF_LEARN_DAILY_LESSON, RequiredDurationHandler],
-    [MissionCategoryNameEnum.COMPLETE_LESSON_WITH_DIFFERENT_SKILLS, DistinctSkillsHandler],
-    [MissionCategoryNameEnum.EXCEED_LEARNING_STREAK_WITHOUT_BREAK, ExceedLearningStreak],
-    [MissionCategoryNameEnum.COMPLETE_A_SESSION, CompleteASessionHandler],
-    [MissionCategoryNameEnum.COMPLETE_DISTINCT_SKILL_SESSION, CompleteDistinctedSkillsHandler],
-    [MissionCategoryNameEnum.COMPLETE_DISTINCT_SKILL_TEST_SESSION, CompleteDistinctSkillTestsHandler],
-  ]);
   private readonly observer: MileStonesObserver;
   private readonly learner: LearnerProfile;
   private handler: QuestHandler;
@@ -35,12 +15,11 @@ export class MissionSubject {
   constructor(learner: LearnerProfile, observer: MileStonesObserver) {
     this.learner = learner;
     this.observer = observer;
+    MissionContainer.init();
   }
 
-  setHandler(category: MissionCategoryNameEnum) {
-    const handler = this.handlerMap.get(category);
-    if (!handler) throw new Error("Invalid mission category");
-    this.handler = new handler();
+  private setHandler(category: MissionCategoryNameEnum) {
+    this.handler = MissionContainer.resolve(category);
   }
 
   private notify(type: MileStonesEnum, newValue: any) {
@@ -93,8 +72,7 @@ export class MissionSubject {
               isUpdated = true;
             }
             progress.current = updatedCurrent;
-            progress.status =
-              updatedCurrent === mission.quest.quantity ? ProfileMissionProgressStatusEnum.COMPLETED : progress.status;
+            updatedCurrent >= mission.quest.quantity && (progress.status = ProfileMissionProgressStatusEnum.COMPLETED);
 
             progress = await ProfileMissionProgress.save({
               ...progress,

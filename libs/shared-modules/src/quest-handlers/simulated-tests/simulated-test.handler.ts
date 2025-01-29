@@ -13,7 +13,7 @@ export abstract class SimulatedTestQuestHandler extends QuestHandler {
     this.verifyContext = new VerifyContext();
   }
 
-  abstract checkQuestCompleted(_: number, learner: ILearnerProfile): Promise<void>;
+  abstract checkQuestCompleted(requirements: number, learner: ILearnerProfile): Promise<void>;
 
   setVerifyStrategy(session: SkillTestSession) {
     const { skill } = session.skillTest;
@@ -26,8 +26,8 @@ export abstract class SimulatedTestQuestHandler extends QuestHandler {
     }
   }
 
-  verifySession(session: SkillTestSession): boolean {
-    return session ? this.verifyContext.verify(session) : false;
+  verifySession(session: SkillTestSession, requirements?: number): boolean {
+    return session ? this.verifyContext.verify(session, requirements) : false;
   }
 
   filterSessions(sessions: SkillTestSession[]): SkillTestSession[] {

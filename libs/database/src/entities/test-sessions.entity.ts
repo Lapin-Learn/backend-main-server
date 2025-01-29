@@ -251,30 +251,42 @@ export class SkillTestSession extends BaseEntity {
       .where("session.learnerProfileId = :learnerId", { learnerId })
       .andWhere("session.mode = :mode", { mode: TestSessionModeEnum.FULL_TEST })
       .andWhere("session.status IN (:...statuses)", { statuses: FINISHED_STATUSES })
-      .andWhere("DATE(session.createdAt) = CURRENT_DATE")
+      .andWhere("DATE(session.updatedAt) = CURRENT_DATE")
       .getOne();
   }
 
-  static async getDistinctSkillSessions(learnerId: string) {
+  static async getSessionsOfSkill(skill: SkillEnum, learnerId: string) {
     return this.createQueryBuilder("session")
       .leftJoin("session.skillTest", "skillTest")
       .addSelect(["skillTest.id", "skillTest.skill", "skillTest.partsDetail"])
       .where("session.learnerProfileId = :learnerId", { learnerId })
       .andWhere("session.mode = :mode", { mode: TestSessionModeEnum.FULL_TEST })
       .andWhere("session.status IN (:...statuses)", { statuses: FINISHED_STATUSES })
-      .andWhere("DATE(session.createdAt) = CURRENT_DATE")
+      .andWhere("DATE(session.updatedAt) = CURRENT_DATE")
+      .andWhere("skillTest.skill = :skill", { skill })
+      .getMany();
+  }
+
+  static async getDistinctSkillNameSessions(learnerId: string) {
+    return this.createQueryBuilder("session")
+      .leftJoin("session.skillTest", "skillTest")
+      .addSelect(["skillTest.id", "skillTest.skill", "skillTest.partsDetail"])
+      .where("session.learnerProfileId = :learnerId", { learnerId })
+      .andWhere("session.mode = :mode", { mode: TestSessionModeEnum.FULL_TEST })
+      .andWhere("session.status IN (:...statuses)", { statuses: FINISHED_STATUSES })
+      .andWhere("DATE(session.updatedAt) = CURRENT_DATE")
       .distinctOn(["skillTest.skill"])
       .getMany();
   }
 
-  static async getDistinctSkillTestSessions(learnerId: string) {
+  static async getDistinctSkillTestIdSessions(learnerId: string) {
     return this.createQueryBuilder("session")
       .leftJoin("session.skillTest", "skillTest")
       .addSelect(["skillTest.id", "skillTest.skill", "skillTest.partsDetail"])
       .where("session.learnerProfileId = :learnerId", { learnerId })
       .andWhere("session.mode = :mode", { mode: TestSessionModeEnum.FULL_TEST })
       .andWhere("session.status IN (:...statuses)", { statuses: FINISHED_STATUSES })
-      .andWhere("DATE(session.createdAt) = CURRENT_DATE")
+      .andWhere("DATE(session.updatedAt) = CURRENT_DATE")
       .distinctOn(["session.skillTestId"])
       .getMany();
   }

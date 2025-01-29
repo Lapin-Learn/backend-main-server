@@ -19,4 +19,5 @@ export abstract class QuestHandler {
   }
 
   abstract checkQuestCompleted(requirements: number, learner: ILearnerProfile): Promise<void>;
+  // abstract getCategoryName(): MissionCategoryNameEnum;
 }

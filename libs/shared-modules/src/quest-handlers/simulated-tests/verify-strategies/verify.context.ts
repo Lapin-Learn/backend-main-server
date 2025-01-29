@@ -8,7 +8,7 @@ export class VerifyContext {
     this.strategy = strategy;
   }
 
-  verify(session: SkillTestSession): boolean {
-    return this.strategy.verifiy(session);
+  verify(session: SkillTestSession, requirements?: number): boolean {
+    return this.strategy.verify(session, requirements);
   }
 }

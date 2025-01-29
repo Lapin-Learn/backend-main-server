@@ -1,10 +1,12 @@
 import { LessonRecord } from "@app/database";
 import { QuestHandler } from "@app/types/abstracts";
+import { MissionCategoryNameEnum } from "@app/types/enums";
 import { ILearnerProfile } from "@app/types/interfaces";
 import { Logger } from "@nestjs/common";
 
 export class RequiredDurationHandler extends QuestHandler {
   private currentTotalDuration: number;
+  private readonly category = MissionCategoryNameEnum.TOTAL_DURATION_OF_LEARN_DAILY_LESSON;
   private readonly serviceLogger = new Logger(RequiredDurationHandler.name);
 
   async checkQuestCompleted(requirements: number, learner: ILearnerProfile): Promise<void> {
@@ -26,5 +28,9 @@ export class RequiredDurationHandler extends QuestHandler {
   override async getUpdatedProgress(): Promise<number> {
     this.serviceLogger.log(`overide with totalDuration: ${this.currentTotalDuration}`);
     return this.currentTotalDuration;
+  }
+
+  getCategoryName(): MissionCategoryNameEnum {
+    return this.category;
   }
 }

@@ -14,7 +14,7 @@ export class LearnerProfileSubject {
     this.observer.update(type, newValue);
   }
 
-  async checkLevelUp() {
+  private async checkLevelUp() {
     const isLevelUp = await this.learner.isLevelUp();
     if (isLevelUp) {
       await this.learner.save();
@@ -22,7 +22,7 @@ export class LearnerProfileSubject {
     }
   }
 
-  async checkRankUp() {
+  private async checkRankUp() {
     const isRankUp = this.learner.isRankUp();
     if (isRankUp) {
       await this.learner.save();
@@ -30,7 +30,7 @@ export class LearnerProfileSubject {
     }
   }
 
-  async checkAchieveDailyStreak() {
+  private async checkAchieveDailyStreak() {
     const isAchieveDailyStreak = await this.learner.isAchieveDailyStreakOrCreate();
     if (isAchieveDailyStreak) {
       this.notify(MileStonesEnum.IS_DAILY_STREAK, this.learner.streak.current);

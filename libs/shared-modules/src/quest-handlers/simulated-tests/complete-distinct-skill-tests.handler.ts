@@ -4,7 +4,7 @@ import { ILearnerProfile } from "@app/types/interfaces";
 import { Logger } from "@nestjs/common";
 
 export class CompleteDistinctSkillTestsHandler extends SimulatedTestQuestHandler {
-  private currentDistinctSkilTests: number = 0;
+  private currentDistinctSkillTests: number = 0;
   private readonly serviceLogger = new Logger(CompleteDistinctSkillTestsHandler.name);
 
   constructor() {
@@ -13,9 +13,9 @@ export class CompleteDistinctSkillTestsHandler extends SimulatedTestQuestHandler
 
   async checkQuestCompleted(_: number, learner: ILearnerProfile): Promise<void> {
     try {
-      const sessions = await SkillTestSession.getDistinctSkillTestSessions(learner.id);
+      const sessions = await SkillTestSession.getDistinctSkillTestIdSessions(learner.id);
       const filtered = this.filterSessions(sessions);
-      this.currentDistinctSkilTests = filtered.length;
+      this.currentDistinctSkillTests = filtered.length;
       this.setCompletedStatus(filtered.length > 0);
     } catch (error) {
       this.serviceLogger.error(error);
@@ -24,6 +24,6 @@ export class CompleteDistinctSkillTestsHandler extends SimulatedTestQuestHandler
   }
 
   override async getUpdatedProgress(): Promise<number> {
-    return this.currentDistinctSkilTests;
+    return this.currentDistinctSkillTests;
   }
 }
