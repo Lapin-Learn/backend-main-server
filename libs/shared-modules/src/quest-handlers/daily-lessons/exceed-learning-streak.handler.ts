@@ -17,16 +17,14 @@ export class ExceedLearningStreak extends QuestHandler {
     this.allowedBroken = allowedBroken;
   }
 
-  async checkQuestCompleted(requirements: number, learner: LearnerProfile): Promise<void> {
+  async checkQuestCompleted(_: number, learner: LearnerProfile): Promise<void> {
     try {
-      const requiredStreaks = requirements; // should be  1
       const today = moment().tz(VN_TIME_ZONE).startOf("day").toDate();
       const res = await LessonRecord.find({
         where: { learnerProfileId: learner.id, createdAt: Between(today, moment(today).endOf("day").toDate()) },
       });
-
-      this.setCompletedStatus(res.length >= requiredStreaks);
       this.learner = learner;
+      this.setCompletedStatus(res.length > 0);
     } catch (error) {
       this.serviceLogger.error(error);
       throw error;

@@ -9,16 +9,11 @@ export class DistinctSkillsHandler extends QuestHandler {
   private currentDistinctSkills: number;
   private readonly serviceLogger = new Logger(DistinctSkillsHandler.name);
 
-  async checkQuestCompleted(requirements: number, learner: ILearnerProfile): Promise<void> {
+  async checkQuestCompleted(_: number, learner: ILearnerProfile): Promise<void> {
     try {
-      this.serviceLogger.log(`distinct mission with requirement: ${requirements}`);
-
-      const distinctSkills = requirements;
       const res = await LessonRecord.getCompletedLessonDistinctSkills(learner.id);
-      this.serviceLogger.log("res: ", res.distinctSkills);
-
       this.currentDistinctSkills = res.distinctSkills;
-      this.setCompletedStatus(res.distinctSkills >= distinctSkills);
+      this.setCompletedStatus(res.distinctSkills > 0);
     } catch (error) {
       this.serviceLogger.error(error);
       throw error;

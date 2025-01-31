@@ -3,12 +3,10 @@ import { SkillTestSession } from "@app/database";
 import { ILearnerProfile } from "@app/types/interfaces";
 import { SimulatedTestQuestHandler } from "./simulated-test.handler";
 import { Logger } from "@nestjs/common";
-import { MissionCategoryNameEnum } from "@app/types/enums";
 
 @Injectable()
 export class CompleteDistinctedSkillsHandler extends SimulatedTestQuestHandler {
   private readonly serviceLogger = new Logger(CompleteDistinctedSkillsHandler.name);
-  private readonly category = MissionCategoryNameEnum.COMPLETE_LESSON_WITH_DIFFERENT_SKILLS;
   private currentDistinctedSkills: number = 0;
 
   constructor() {
@@ -29,9 +27,5 @@ export class CompleteDistinctedSkillsHandler extends SimulatedTestQuestHandler {
 
   override async getUpdatedProgress(): Promise<number> {
     return this.currentDistinctedSkills;
-  }
-
-  getCategoryName(): MissionCategoryNameEnum {
-    return this.category;
   }
 }
