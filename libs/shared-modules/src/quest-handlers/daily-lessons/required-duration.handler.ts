@@ -1,9 +1,11 @@
+import { Injectable } from "@nestjs/common";
 import { LessonRecord } from "@app/database";
 import { QuestHandler } from "@app/types/abstracts";
 import { MissionCategoryNameEnum } from "@app/types/enums";
 import { ILearnerProfile } from "@app/types/interfaces";
 import { Logger } from "@nestjs/common";
 
+@Injectable()
 export class RequiredDurationHandler extends QuestHandler {
   private currentTotalDuration: number;
   private readonly category = MissionCategoryNameEnum.TOTAL_DURATION_OF_LEARN_DAILY_LESSON;

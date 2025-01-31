@@ -17,3 +17,4 @@ export * from "./payment-config.constant";
 export * from "./transaction-manager-storage.constant";
 export * from "./required-credential-evaluating.constant";
 export * from "./finished-status-group.constant";
+export * from "./mission-provider.constant";

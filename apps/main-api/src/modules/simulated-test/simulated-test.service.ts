@@ -4,6 +4,7 @@ import {
   BadRequestException,
   InternalServerErrorException,
   ForbiddenException,
+  Inject,
 } from "@nestjs/common";
 import {
   Bucket,
@@ -35,12 +36,14 @@ import {
   REQUIRED_CREDENTIAL,
   EVALUATE_SPEAKING_QUEUE,
   EVALUATE_WRITING_QUEUE,
+  MISSION_SUBJECT_FACTORY,
 } from "@app/types/constants";
 import { plainToInstance } from "class-transformer";
 import { InjectQueue } from "@nestjs/bullmq";
 import { Queue } from "bullmq";
 import { ITestCollection, ICurrentUser, IGradingStrategy } from "@app/types/interfaces";
-import { MissionSubject, MileStonesObserver } from "@app/shared-modules/milestone";
+import { MileStonesObserver } from "@app/shared-modules/observers";
+import { MissionSubject } from "@app/shared-modules/subjects";
 
 @Injectable()
 export class SimulatedTestService {
@@ -48,8 +51,11 @@ export class SimulatedTestService {
   constructor(
     private readonly bucketService: BucketService,
     private readonly gradingContext: GradingContext,
+    private readonly observer: MileStonesObserver,
     @InjectQueue(EVALUATE_SPEAKING_QUEUE) private speakingQueue: Queue,
-    @InjectQueue(EVALUATE_WRITING_QUEUE) private writingQueue: Queue
+    @InjectQueue(EVALUATE_WRITING_QUEUE) private writingQueue: Queue,
+    @Inject(MISSION_SUBJECT_FACTORY)
+    private readonly missionSubjectFactory: (observer: MileStonesObserver) => MissionSubject
   ) {}
   async getCollectionsWithSimulatedTest(offset: number, limit: number, keyword: string, profileId: string) {
     try {
@@ -344,10 +350,9 @@ export class SimulatedTestService {
       await SkillTestSession.save({ id: sessionId, ...sessionData, responses: responseInfo });
 
       const learnerProfile = await LearnerProfile.findOne({ where: { id: learner.profileId } });
-      const observer = new MileStonesObserver();
-      const missionSubject = new MissionSubject(learnerProfile, observer);
-      await missionSubject.checkMissionProgress();
-      const milestones = observer.getMileStones();
+      const missionSubject = this.missionSubjectFactory(this.observer);
+      await missionSubject.checkMissionProgress(learnerProfile);
+      const milestones = this.observer.getMileStones();
 
       return milestones;
     } catch (error) {

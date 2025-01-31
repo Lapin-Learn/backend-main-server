@@ -1,6 +1,10 @@
+import { Injectable, Scope } from "@nestjs/common";
 import { MileStonesEnum } from "@app/types/enums";
 import { IMileStoneInfo } from "@app/types/interfaces";
 
+@Injectable({
+  scope: Scope.REQUEST,
+})
 export class MileStonesObserver {
   private readonly mileStones: IMileStoneInfo<any>[] = [];
 

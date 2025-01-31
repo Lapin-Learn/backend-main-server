@@ -1,8 +1,10 @@
+import { Injectable } from "@nestjs/common";
 import { LessonRecord } from "@app/database";
 import { QuestHandler } from "@app/types/abstracts";
 import { ILearnerProfile } from "@app/types/interfaces";
 import { Logger } from "@nestjs/common";
 
+@Injectable()
 export class DistinctSkillsHandler extends QuestHandler {
   private currentDistinctSkills: number;
   private readonly serviceLogger = new Logger(DistinctSkillsHandler.name);

@@ -45,7 +45,7 @@ export class DailyLessonController {
   @ApiOperation({ summary: "Get all questions of a lesson" })
   @ApiParam({ name: "lessonId", description: "Lesson id", type: Number })
   @ApiDefaultResponses()
-  @Get("lessons/:lessonId/questions")
+  @Get("/:lessonId/questions")
   async getQuestionsByLesson(@Param("lessonId") lessonId: number) {
     return this.dailyLessonService.getContentOfLesson(lessonId);
   }

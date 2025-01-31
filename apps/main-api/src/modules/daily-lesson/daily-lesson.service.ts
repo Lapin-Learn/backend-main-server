@@ -1,11 +1,11 @@
 import { Instruction, LearnerProfile, Lesson, LessonProcess, LessonRecord, QuestionType } from "@app/database";
-import { MissionSubject } from "@app/shared-modules/milestone";
-import { LearnerProfileSubject } from "@app/shared-modules/milestone/learner.subject";
-import { MileStonesObserver } from "@app/shared-modules/milestone/milestone.observer";
+import { MileStonesObserver } from "@app/shared-modules/observers";
+import { MissionSubject, LearnerProfileSubject } from "@app/shared-modules/subjects";
+import { LEARNER_SUBJECT_FACTORY, MISSION_SUBJECT_FACTORY } from "@app/types/constants";
 import { CompleteLessonDto } from "@app/types/dtos";
 import { BandScoreEnum, SkillEnum } from "@app/types/enums";
 import { ICurrentUser, IInstruction } from "@app/types/interfaces";
-import { BadRequestException, Injectable, Logger } from "@nestjs/common";
+import { BadRequestException, Inject, Injectable, Logger } from "@nestjs/common";
 import _ from "lodash";
 import { EntityNotFoundError, QueryFailedError } from "typeorm";
 
@@ -13,6 +13,13 @@ import { EntityNotFoundError, QueryFailedError } from "typeorm";
 export class DailyLessonService {
   private readonly logger = new Logger(DailyLessonService.name);
 
+  constructor(
+    @Inject(MISSION_SUBJECT_FACTORY)
+    private readonly missionSubjectFactory: (observer: MileStonesObserver) => MissionSubject,
+    @Inject(LEARNER_SUBJECT_FACTORY)
+    private readonly learnerSubjectFactory: (observer: MileStonesObserver) => LearnerProfileSubject,
+    private readonly mileStonesObserver: MileStonesObserver
+  ) {}
   async getQuestionTypesProgressOfLearner(skill: SkillEnum, learnerProfileId: string) {
     try {
       const questionTypes = await QuestionType.getQuestionTypeProgressOfLearner(skill, learnerProfileId);
@@ -113,19 +120,20 @@ export class DailyLessonService {
 
       const result = await learner.updateResources({ bonusXP, bonusCarrot });
 
-      const observer = new MileStonesObserver();
-      const learnerProfileSubject = new LearnerProfileSubject(learner, observer);
-      await learnerProfileSubject.checkProfileChange();
+      const learnerProfileSubject = this.learnerSubjectFactory(this.mileStonesObserver);
+      await learnerProfileSubject.checkProfileChange(learner);
       await learnerProfileSubject.checkAfterFinishLesson(
+        learner,
         result.bonusXP,
         dto.duration,
         dto.lessonId,
         currentLesson.questionTypeId
       );
-      const missionSuject = new MissionSubject(learner, observer);
-      await missionSuject.checkMissionProgress();
 
-      const milestones = observer.getMileStones();
+      const missionSubject = this.missionSubjectFactory(this.mileStonesObserver);
+      await missionSubject.checkMissionProgress(learner);
+
+      const milestones = this.mileStonesObserver.getMileStones();
 
       return {
         ...lessonRecord,

@@ -1,3 +1,4 @@
+import { Injectable } from "@nestjs/common";
 import { LessonRecord } from "@app/database";
 import { QuestHandler } from "@app/types/abstracts";
 import { MissionCategoryNameEnum } from "@app/types/enums";
@@ -6,6 +7,7 @@ import { Logger } from "@nestjs/common";
 import moment from "moment-timezone";
 import { Between } from "typeorm";
 
+@Injectable()
 export class PercentageScoreHandler extends QuestHandler {
   private readonly serviceLogger = new Logger(PercentageScoreHandler.name);
   private readonly category = MissionCategoryNameEnum.COMPLETE_LESSON_WITH_PERCENTAGE_SCORE;

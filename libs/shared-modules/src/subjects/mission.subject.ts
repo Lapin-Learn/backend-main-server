@@ -1,39 +1,38 @@
 import { QuestHandler } from "@app/types/abstracts";
 import { MileStonesEnum, MissionCategoryNameEnum, ProfileMissionProgressStatusEnum } from "@app/types/enums";
 import { LearnerProfile, Mission, ProfileMissionProgress } from "@app/database";
-import { MileStonesObserver } from "./milestone.observer";
+import { MileStonesObserver } from "../observers";
 import { Logger } from "@nestjs/common";
-import { MissionContainer } from "../quest-handlers/mission.container";
+import { Injectable } from "@nestjs/common";
+import { QuestHandlerContainer } from "../quest-handlers";
 
+@Injectable()
 export class MissionSubject {
-  private readonly observer: MileStonesObserver;
-  private readonly learner: LearnerProfile;
   private handler: QuestHandler;
 
   private readonly logger = new Logger(MissionSubject.name);
 
-  constructor(learner: LearnerProfile, observer: MileStonesObserver) {
-    this.learner = learner;
-    this.observer = observer;
-    MissionContainer.init();
-  }
+  constructor(
+    private readonly observer: MileStonesObserver,
+    private readonly questHandlerContainer: QuestHandlerContainer
+  ) {}
 
   private setHandler(category: MissionCategoryNameEnum) {
-    this.handler = MissionContainer.resolve(category);
+    this.handler = this.questHandlerContainer.resolve(category);
   }
 
   private notify(type: MileStonesEnum, newValue: any) {
     this.observer.update(type, newValue);
   }
 
-  async checkMissionProgress(): Promise<void> {
+  async checkMissionProgress(learner: LearnerProfile): Promise<void> {
     try {
       const updatedProgress: ProfileMissionProgress[] = [];
 
       const missions = await Mission.getMissions();
 
       for (const mission of missions) {
-        const isCompleteMission = this.learner.profileMissionsProgress.some(
+        const isCompleteMission = learner.profileMissionsProgress.some(
           (m) =>
             m.missionId === mission.id &&
             (m.status === ProfileMissionProgressStatusEnum.COMPLETED ||
@@ -43,12 +42,12 @@ export class MissionSubject {
         if (!isCompleteMission) {
           let isUpdated = false;
           this.setHandler(mission.quest.category);
-          await this.handler.checkQuestCompleted(mission.quest.requirements, this.learner);
+          await this.handler.checkQuestCompleted(mission.quest.requirements, learner);
 
           let progress = await ProfileMissionProgress.findOne({
             where: {
               missionId: mission.id,
-              profileId: this.learner.id,
+              profileId: learner.id,
             },
           });
 
@@ -60,7 +59,7 @@ export class MissionSubject {
                 : ProfileMissionProgressStatusEnum.ASSIGNED;
 
             progress = await ProfileMissionProgress.save({
-              profileId: this.learner.id,
+              profileId: learner.id,
               current,
               status,
               mission,

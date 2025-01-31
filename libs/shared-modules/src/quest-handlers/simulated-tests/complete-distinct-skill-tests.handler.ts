@@ -1,8 +1,10 @@
+import { Injectable } from "@nestjs/common";
 import { SkillTestSession } from "@app/database";
 import { SimulatedTestQuestHandler } from "./simulated-test.handler";
 import { ILearnerProfile } from "@app/types/interfaces";
 import { Logger } from "@nestjs/common";
 
+@Injectable()
 export class CompleteDistinctSkillTestsHandler extends SimulatedTestQuestHandler {
   private currentDistinctSkillTests: number = 0;
   private readonly serviceLogger = new Logger(CompleteDistinctSkillTestsHandler.name);
