@@ -44,6 +44,12 @@ import { WORKER_ATTEMPTS } from "@app/types/constants";
         },
         defaultJobOptions: {
           attempts: WORKER_ATTEMPTS,
+          removeOnComplete: {
+            age: 86400,
+          },
+          removeOnFail: {
+            age: 86400,
+          },
         },
       }),
       inject: [ConfigService],
