@@ -76,6 +76,15 @@ export class SimulatedTestService {
     }
   }
 
+  async getAutoCompleteCollections(keyword: string) {
+    try {
+      return TestCollection.getCollectionByKeyword(keyword);
+    } catch (err) {
+      this.logger.error(err);
+      throw new BadRequestException(err);
+    }
+  }
+
   async getCollectionInformation(collectionId: number) {
     try {
       const data = await TestCollection.findOneOrFail({

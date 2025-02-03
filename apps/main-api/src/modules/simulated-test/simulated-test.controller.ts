@@ -12,7 +12,7 @@ import {
 import { SimulatedTestService } from "./simulated-test.service";
 import { PaginationInterceptor } from "@app/utils/interceptors";
 import { FirebaseJwtAuthGuard } from "../../guards";
-import { ApiDefaultResponses, ApiPaginatedResponse, CurrentUser } from "../../decorators";
+import { ApiDefaultResponses, ApiPaginatedResponse, CurrentUser, PublicRoute } from "../../decorators";
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { SimulatedIeltsTestDetailDto, TestCollectionDto } from "@app/types/response-dtos";
 import { ICurrentUser } from "@app/types/interfaces";
@@ -40,6 +40,14 @@ export class SimulatedTestController {
     @CurrentUser() user: ICurrentUser
   ) {
     return this.simulatedTestService.getCollectionsWithSimulatedTest(offset, limit, keyword, user.profileId);
+  }
+
+  @PublicRoute()
+  @ApiOperation({ summary: "Search collections by keyword" })
+  @ApiQuery({ name: "keyword", type: String, required: true })
+  @Get("collections/searching")
+  async getCollectionsByKeyword(@Query("keyword") keyword: string = "") {
+    return this.simulatedTestService.getAutoCompleteCollections(keyword);
   }
 
   @ApiOperation({ summary: "Get all STs in a collection" })

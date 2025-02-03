@@ -74,4 +74,12 @@ export class TestCollection extends BaseEntity implements ITestCollection {
       profileId,
     ]);
   }
+
+  static async getCollectionByKeyword(keyword: string) {
+    if (keyword) {
+      keyword = keyword.trim().replace(/\s+/g, "&");
+    }
+
+    return this.createQueryBuilder().connection.query(`select * from get_collections_by_keyword($1)`, [keyword]);
+  }
 }
