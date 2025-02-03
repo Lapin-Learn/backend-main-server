@@ -1,24 +1,12 @@
 import {
   ActionNameEnum,
   BandScoreEnum,
-  IntervalTypeEnum,
   ItemName,
   MileStonesEnum,
-  MissionCategoryNameEnum,
-  MissionGroupNameEnum,
   ProfileItemStatusEnum,
-  ProfileMissionProgressStatusEnum,
   RankEnum,
 } from "@app/types/enums";
-import {
-  IActivity,
-  ILearnerProfile,
-  ILearnerProfileInfo,
-  ILevel,
-  IMileStoneInfo,
-  IMission,
-  IProfileMissionProgress,
-} from "@app/types/interfaces";
+import { IActivity, ILearnerProfile, ILearnerProfileInfo, ILevel, IMileStoneInfo } from "@app/types/interfaces";
 import {
   BaseEntity,
   Column,
@@ -40,7 +28,7 @@ import { ProfileMissionProgress } from "./profile-mission-progress.entity";
 import { ProfileItem } from "./profile-item.entity";
 import { LessonRecord } from "./lesson-record.entity";
 import { LessonProcess } from "./lesson-process.entity";
-import { findMissionGroup, LevelRankMap, NextBandScoreMap } from "@app/utils/maps";
+import { LevelRankMap, NextBandScoreMap } from "@app/utils/maps";
 import { UpdateResourcesDto } from "@app/types/dtos/learners";
 import { Action } from "./action.entity";
 import { CompleteLessonDto } from "@app/types/dtos";
@@ -181,46 +169,7 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
     return milestones;
   }
 
-  public async handleMissionComplete(mission: IMission): Promise<IProfileMissionProgress | null> {
-    let missionProgress = this.profileMissionsProgress.find((m) => m.missionId === mission.id);
-    if (missionProgress) {
-      if (missionProgress.mission.type === IntervalTypeEnum.DAILY) {
-        missionProgress.current += 1;
-      } else if (missionProgress.mission.type === IntervalTypeEnum.MONTHLY) {
-        const missionGroup = findMissionGroup(mission.quest.category as MissionCategoryNameEnum);
-        if (missionGroup != MissionGroupNameEnum.STREAK_MISSION) {
-          if (!moment(missionProgress.updatedAt).isSame(moment(), "date")) {
-            missionProgress.current += 1;
-          } else {
-            return null;
-          }
-        } else {
-          if (missionProgress.mission.quest.category === MissionCategoryNameEnum.EXCEED_LEARNING_STREAK_WITHOUT_BREAK) {
-            missionProgress.current = await LessonRecord.countMaxConsecutiveLearningLessonDate(this.id);
-          }
-        }
-      }
-      if (missionProgress.current >= mission.quantity) {
-        missionProgress.status = ProfileMissionProgressStatusEnum.COMPLETED;
-      }
-    } else {
-      missionProgress = new ProfileMissionProgress({
-        profileId: this.id,
-        current: 1,
-        status:
-          mission.quantity === 1
-            ? ProfileMissionProgressStatusEnum.COMPLETED
-            : ProfileMissionProgressStatusEnum.ASSIGNED,
-        mission: mission,
-      });
-      this.profileMissionsProgress.push(missionProgress);
-    }
-
-    await missionProgress.save();
-    return missionProgress;
-  }
-
-  private async isLevelUp(): Promise<boolean> {
+  async isLevelUp(): Promise<boolean> {
     if (this.xp >= this.level.xp) {
       const nextLevel = await Level.findOne({ where: { id: this.levelId + 1 } });
       if (nextLevel) {
@@ -232,7 +181,7 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
     return false;
   }
 
-  private isRankUp(): boolean {
+  isRankUp(): boolean {
     const newRank = LevelRankMap.get(this.level.id);
     if (newRank && newRank !== this.rank) {
       this.rank = newRank;
@@ -241,7 +190,7 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
     return false;
   }
 
-  private async isAchieveDailyStreakOrCreate(): Promise<boolean> {
+  async isAchieveDailyStreakOrCreate(): Promise<boolean> {
     const bonusStreakPoint = await Activity.getBonusStreakPoint(this.id);
     if (bonusStreakPoint == 0) {
       const action = await Action.findByName(ActionNameEnum.DAILY_STREAK);
@@ -264,7 +213,7 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
     return false;
   }
 
-  private async isBandScoreQuestionTypeUp(
+  async isBandScoreQuestionTypeUp(
     xp: number,
     duration: number,
     completedLessonId: number,

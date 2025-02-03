@@ -21,6 +21,7 @@ export class RangeGradingStrategy implements IGradingStrategy {
   setRange(skill: SkillEnum) {
     this.ranges = bandScoreRangeMap.get(skill);
   }
+
   private validateAnswers() {
     const results: boolean[] = [];
     if (this.testAnswers && this.testAnswers.length > 0) {

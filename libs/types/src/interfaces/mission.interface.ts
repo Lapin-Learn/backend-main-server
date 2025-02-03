@@ -6,7 +6,6 @@ export interface IMission {
   id: string;
   type: IntervalTypeEnum;
   questId: string;
-  quantity: number;
   createdAt: Date;
   updatedAt: Date;
 

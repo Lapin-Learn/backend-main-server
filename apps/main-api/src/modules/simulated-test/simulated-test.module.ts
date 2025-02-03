@@ -9,6 +9,8 @@ import { RedisModule } from "@app/shared-modules/redis";
 import { SimulatedTestReportController } from "./simulated-test-report.controller";
 import { SessionController } from "./session.controller";
 import { SessionService } from "./session.service";
+import { SubjectModule } from "@app/shared-modules/subjects";
+import { ObserverModule } from "@app/shared-modules/observers";
 
 @Module({
   imports: [
@@ -24,6 +26,8 @@ import { SessionService } from "./session.service";
     ),
     BucketModule,
     RedisModule,
+    SubjectModule,
+    ObserverModule,
   ],
   providers: [SimulatedTestService, SessionService],
   controllers: [SimulatedTestController, SimulatedTestReportController, SessionController],

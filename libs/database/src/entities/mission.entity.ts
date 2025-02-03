@@ -25,9 +25,6 @@ export class Mission extends BaseEntity implements IMission {
   @Column({ name: "quest_id", type: "uuid", nullable: false })
   questId: string;
 
-  @Column({ name: "quantity", type: "int", nullable: false })
-  quantity: number;
-
   @CreateDateColumn({ name: "created_at", type: "timestamp", nullable: false, default: () => "CURRENT_TIMESTAMP" })
   createdAt: Date;
 

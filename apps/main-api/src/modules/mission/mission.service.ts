@@ -88,7 +88,6 @@ export class MissionService {
         Mission.save({
           type: q.type,
           questId: q.id,
-          quantity: Math.floor(Math.random() * (5 - 2 + 1)) + 2,
         });
       });
     } catch (error) {
