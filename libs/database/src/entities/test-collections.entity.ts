@@ -63,14 +63,10 @@ export class TestCollection extends BaseEntity implements ITestCollection {
   @OneToMany(() => SimulatedIeltsTest, (simulatedtIeltsTests) => simulatedtIeltsTests.testCollection)
   simulatedIeltsTests: SimulatedIeltsTest[];
 
-  static async getCollectionsWithTests(offset: number, limit: number, keyword: string, profileId: string) {
-    if (keyword) {
-      keyword = keyword.trim().replace(/\s+/g, "&");
-    }
-    return this.createQueryBuilder().connection.query(`SELECT * from get_filtered_collections($1, $2, $3, $4)`, [
+  static async getCollectionsWithTests(offset: number, limit: number, profileId: string) {
+    return this.createQueryBuilder().connection.query(`SELECT * from get_filtered_collections($1, $2, $3)`, [
       offset,
       limit,
-      keyword,
       profileId,
     ]);
   }

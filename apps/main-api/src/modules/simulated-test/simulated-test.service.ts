@@ -57,9 +57,9 @@ export class SimulatedTestService {
     @Inject(MISSION_SUBJECT_FACTORY)
     private readonly missionSubjectFactory: (observer: MileStonesObserver) => MissionSubject
   ) {}
-  async getCollectionsWithSimulatedTest(offset: number, limit: number, keyword: string, profileId: string) {
+  async getCollectionsWithSimulatedTest(offset: number, limit: number, profileId: string) {
     try {
-      const data = await TestCollection.getCollectionsWithTests(offset, limit, keyword, profileId);
+      const data = await TestCollection.getCollectionsWithTests(offset, limit, profileId);
       const total = await TestCollection.count();
       return {
         items: await Promise.all(

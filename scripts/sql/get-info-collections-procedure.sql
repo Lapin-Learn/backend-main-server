@@ -1,7 +1,6 @@
 CREATE OR REPLACE FUNCTION get_filtered_collections(
     p_offset INT,
     p_limit INT,
-    p_keyword TEXT,
     p_learner_profile_id UUID
 ) RETURNS TABLE (
     id INT,
@@ -16,21 +15,9 @@ BEGIN
     RETURN QUERY
     WITH ranked_collections AS (
         SELECT
-            c.id AS collection_id,
-            CASE
-                WHEN p_keyword IS NOT NULL AND p_keyword <> ''
-                THEN ts_rank(c.keyword, to_tsquery(p_keyword || ':*'))
-                ELSE NULL
-            END AS rank
+            c.id AS collection_id
         FROM test_collections c
-        WHERE
-            (p_keyword IS NULL OR p_keyword = '' OR c.keyword @@ to_tsquery(p_keyword || ':*'))
-        ORDER BY
-            CASE
-                WHEN p_keyword IS NOT NULL AND p_keyword <> ''
-                THEN ts_rank(c.keyword, to_tsquery(p_keyword || ':*'))
-                ELSE NULL
-            END DESC
+        ORDER BY c.id
         OFFSET p_offset
         LIMIT p_limit
     ),
@@ -57,7 +44,6 @@ BEGIN
             CASE
                 WHEN COUNT(t.id) = COUNT(ls.skill_test_id) AND COUNT(NULLIF(ls.band_score, NULL)) = COUNT(ls.skill_test_id)
                 THEN ROUND(AVG(ls.band_score) * 2) / 2
-                ELSE NULL
             END AS estimated_band_score
         FROM simulated_ielts_tests st
         LEFT JOIN skill_tests t ON st.id = t.test_id
@@ -72,8 +58,8 @@ BEGIN
                     'id', t.id,
                     'order', t.order,
                     'testName', t.test_name,
-                    'estimatedBandScore', COALESCE(sbs.estimated_band_score, NULL),
-                    'status', COALESCE(sbs.status, 'not_started')
+                    'estimatedBandScore',sbs.estimated_band_score,
+                    'status', sbs.status
                 )
                 ORDER BY t.order
             ) FILTER (WHERE t.row_num <= 4) AS limited_top_tests
@@ -94,10 +80,7 @@ BEGIN
         string_to_array(c.tags, ',') AS tags,
         c.description::text AS description,
         COUNT(t.id)::integer AS "testCount",
-        COALESCE(
-            (SELECT lt.limited_top_tests FROM limited_tests lt WHERE lt.collection_id = c.id),
-            '[]'::JSONB
-        ) AS "simulatedIeltsTests",
+        (SELECT lt.limited_top_tests FROM limited_tests lt WHERE lt.collection_id = c.id) AS "simulatedIeltsTests",
         JSONB_BUILD_OBJECT(
             'id', th.id,
             'name', th.name
