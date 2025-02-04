@@ -349,12 +349,18 @@ export class SimulatedTestService {
 
       await SkillTestSession.save({ id: sessionId, ...sessionData, responses: responseInfo });
 
-      const learnerProfile = await LearnerProfile.findOne({ where: { id: learner.profileId } });
-      const missionSubject = this.missionSubjectFactory(this.observer);
-      await missionSubject.checkMissionProgress(learnerProfile);
-      const milestones = this.observer.getMileStones();
+      if (
+        sessionData.status != TestSessionStatusEnum.CANCELED &&
+        sessionData.status != TestSessionStatusEnum.IN_PROGRESS
+      ) {
+        const learnerProfile = await LearnerProfile.findOne({ where: { id: learner.profileId } });
+        const missionSubject = this.missionSubjectFactory(this.observer);
+        await missionSubject.checkMissionProgress(learnerProfile);
+        const milestones = this.observer.getMileStones();
+        return milestones;
+      }
 
-      return milestones;
+      return OK_RESPONSE;
     } catch (error) {
       this.logger.error(error);
       throw new BadRequestException(error);
