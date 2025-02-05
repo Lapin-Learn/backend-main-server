@@ -115,7 +115,7 @@ export class TestCollection extends BaseEntity implements ITestCollection {
         'collection.id = "testCounts"."collection_id"'
       )
       .groupBy('collection.id, collection.name, "testCounts"."totalTests"')
-      .take(4)
+      .take(3)
       .orderBy("collection.id")
       .getRawMany();
   }

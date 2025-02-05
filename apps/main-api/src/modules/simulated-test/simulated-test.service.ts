@@ -275,7 +275,7 @@ export class SimulatedTestService {
               .map((partIndex) => partsDetail[partIndex - 1])
           : [];
 
-        if (session.status === TestSessionStatusEnum.FINISHED) {
+        if (FINISHED_STATUSES.includes(session.status)) {
           session.skillTest["answers"] = session.skillTest.skillTestAnswer?.answers ?? [];
           session.skillTest["guidances"] = session.skillTest.skillTestAnswer?.guidances ?? [];
 
@@ -370,10 +370,7 @@ export class SimulatedTestService {
 
       await SkillTestSession.save({ id: sessionId, ...sessionData, responses: responseInfo });
 
-      if (
-        sessionData.status != TestSessionStatusEnum.CANCELED &&
-        sessionData.status != TestSessionStatusEnum.IN_PROGRESS
-      ) {
+      if (FINISHED_STATUSES.includes(sessionData.status)) {
         const learnerProfile = await LearnerProfile.findOne({ where: { id: learner.profileId } });
         const missionSubject = this.missionSubjectFactory(this.observer);
         await missionSubject.checkMissionProgress(learnerProfile);

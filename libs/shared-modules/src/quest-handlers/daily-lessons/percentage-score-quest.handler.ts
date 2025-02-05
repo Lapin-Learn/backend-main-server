@@ -24,6 +24,7 @@ export class PercentageScoreHandler extends QuestHandler {
 
       if (latestLessonRecord.length === 0) {
         this.setCompletedStatus(false);
+        return;
       }
       const { correctAnswers, wrongAnswers } = latestLessonRecord[0];
       this.setCompletedStatus((correctAnswers / (correctAnswers + wrongAnswers)) * 100.0 >= percentage);

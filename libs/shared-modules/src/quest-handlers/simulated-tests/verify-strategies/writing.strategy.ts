@@ -14,7 +14,6 @@ export class VerifyWriting implements VerifySkillStrategy {
       const cleanedText = part.answer.replace(/<\/?[^>]+(>|$)/g, " ");
       const words = cleanedText.trim().split(/\s+/);
       if (words.length > requirements) {
-        console.log("count: ", words.length);
         return true;
       } else {
         count += words.length;
