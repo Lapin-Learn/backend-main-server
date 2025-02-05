@@ -40,6 +40,13 @@ export class SimulatedTestController {
     return this.simulatedTestService.getCollectionsWithSimulatedTest(offset, limit, user.profileId);
   }
 
+  @ApiOperation({ summary: "Get list collections for landing page" })
+  @PublicRoute()
+  @Get("collections/introduction")
+  async getIntroductionCollections() {
+    return this.simulatedTestService.getCollectionsForIntroduction();
+  }
+
   @PublicRoute()
   @ApiOperation({ summary: "Search collections by keyword" })
   @ApiQuery({ name: "keyword", type: String, required: true })

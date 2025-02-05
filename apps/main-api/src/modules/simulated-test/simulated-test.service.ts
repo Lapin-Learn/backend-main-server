@@ -37,11 +37,12 @@ import {
   EVALUATE_SPEAKING_QUEUE,
   EVALUATE_WRITING_QUEUE,
   MISSION_SUBJECT_FACTORY,
+  FINISHED_STATUSES,
 } from "@app/types/constants";
 import { plainToInstance } from "class-transformer";
 import { InjectQueue } from "@nestjs/bullmq";
 import { Queue } from "bullmq";
-import { ITestCollection, ICurrentUser, IGradingStrategy } from "@app/types/interfaces";
+import { ITestCollection, ICurrentUser, IGradingStrategy, IBucket } from "@app/types/interfaces";
 import { MileStonesObserver } from "@app/shared-modules/observers";
 import { MissionSubject } from "@app/shared-modules/subjects";
 
@@ -73,6 +74,23 @@ export class SimulatedTestService {
     } catch (error) {
       this.logger.error(error);
       throw new BadRequestException(error);
+    }
+  }
+
+  async getCollectionsForIntroduction() {
+    try {
+      const collections = await TestCollection.getListCollectionsForIntroduction();
+      return await Promise.all(
+        collections.map(async (collection) => ({
+          ...collection,
+          thumbnail: await this.bucketService.getPresignedDownloadUrlForAfterLoad({
+            id: collection.thumbnail,
+          } as unknown as IBucket),
+        }))
+      );
+    } catch (err) {
+      this.logger.error(err);
+      throw new BadRequestException(err);
     }
   }
 
@@ -299,14 +317,8 @@ export class SimulatedTestService {
         relations: { skillTest: true },
       });
 
-      if (
-        sessionStatus === TestSessionStatusEnum.NOT_EVALUATED ||
-        sessionStatus === TestSessionStatusEnum.EVALUATION_FAILED ||
-        sessionStatus === TestSessionStatusEnum.FINISHED ||
-        sessionStatus === TestSessionStatusEnum.CANCELED ||
-        sessionStatus === TestSessionStatusEnum.IN_EVALUATING
-      ) {
-        throw new BadRequestException(`Session is ${sessionStatus}`);
+      if (FINISHED_STATUSES.includes(status)) {
+        throw new BadRequestException(`session was already ${sessionStatus}`);
       }
 
       let responseInfo = null;
