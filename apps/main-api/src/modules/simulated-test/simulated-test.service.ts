@@ -1,11 +1,4 @@
-import {
-  Injectable,
-  Logger,
-  BadRequestException,
-  InternalServerErrorException,
-  ForbiddenException,
-  Inject,
-} from "@nestjs/common";
+import { Injectable, Logger, BadRequestException, ForbiddenException, Inject } from "@nestjs/common";
 import {
   Bucket,
   LearnerProfile,
@@ -37,6 +30,7 @@ import {
   EVALUATE_SPEAKING_QUEUE,
   EVALUATE_WRITING_QUEUE,
   MISSION_SUBJECT_FACTORY,
+  PUSH_SPEAKING_FILE_QUEUE,
   FINISHED_STATUSES,
 } from "@app/types/constants";
 import { plainToInstance } from "class-transformer";
@@ -55,6 +49,7 @@ export class SimulatedTestService {
     private readonly observer: MileStonesObserver,
     @InjectQueue(EVALUATE_SPEAKING_QUEUE) private speakingQueue: Queue,
     @InjectQueue(EVALUATE_WRITING_QUEUE) private writingQueue: Queue,
+    @InjectQueue(PUSH_SPEAKING_FILE_QUEUE) private pushFileQueue: Queue,
     @Inject(MISSION_SUBJECT_FACTORY)
     private readonly missionSubjectFactory: (observer: MileStonesObserver) => MissionSubject
   ) {}
@@ -335,11 +330,8 @@ export class SimulatedTestService {
             await speakingStrategy.getResponseWithTimeStampAudio(additionalResources);
           responseInfo = userResponses;
 
-          const fileName = `${SPEAKING_FILE_PREFIX}-${sessionId}`;
-          const uploaded = await this.bucketService.uploadFile(fileName, speakingAudio, learner);
-          if (uploaded !== true) {
-            throw new InternalServerErrorException("Error uploading speaking file");
-          }
+          speakingStrategy.setPushSpeakingFileQueue(this.pushFileQueue);
+          await speakingStrategy.pushSpeakingFile(speakingAudio, learner);
           sessionData.status = TestSessionStatusEnum.NOT_EVALUATED;
           this.gradingContext.setGradingStrategy(speakingStrategy);
         } else if (response instanceof TextResponseDto) {
@@ -406,7 +398,7 @@ export class SimulatedTestService {
       if (session.skillTest.skill === SkillEnum.SPEAKING) {
         const speakingResponses = plainToInstance(InfoSpeakingResponseDto, session.responses as Array<any>);
         const speakingStrategy = new EvaluateSpeaking(sessionId, speakingResponses);
-        speakingStrategy.setQueue(this.speakingQueue);
+        speakingStrategy.setEvaluateSpeakingQueue(this.speakingQueue);
         strategy = speakingStrategy;
       } else if (session.skillTest.skill === SkillEnum.WRITING) {
         const writingResponses = plainToInstance(InfoTextResponseDto, session.responses as Array<any>);
