@@ -11,6 +11,7 @@ export class GenAIWritingScoreModel extends GenAIModelAbstract {
       type: SchemaType.ARRAY,
       items: {
         type: SchemaType.OBJECT,
+        description: "Exactly 3 object for each part (1, 2, overall)",
         properties: {
           part: {
             type: SchemaType.STRING,
@@ -97,6 +98,7 @@ export class GenAIWritingScoreModel extends GenAIModelAbstract {
            - Task Response: Evaluate how well the user addresses the prompt and stays on topic.
         2. User can provide a written response for part 1 or part 2 of the IELTS Writing test, and you will evaluate it based on the user's response.
         3. The evaluate field should be in Vietnamese. The remaining objects should be in English.
+        4. You must return exactly 3 objects for each part (1, 2, overall), regardless of the user's input.
         `;
   }
 }

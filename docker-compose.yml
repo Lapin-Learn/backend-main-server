@@ -53,6 +53,24 @@ services:
     networks:
       - ll-network
 
+  directus:
+    image: directus/directus:11.3.5
+    ports:
+      - 8055:8055
+    volumes:
+      - ./uploads:/directus/uploads
+      - ./extensions:/directus/extensions
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    env_file:
+      - stack.env
+    restart: always
+    networks:
+      - ll-network
+
 volumes:
   postgres-data:
     name: postgres-data

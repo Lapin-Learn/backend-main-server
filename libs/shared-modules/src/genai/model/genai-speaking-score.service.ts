@@ -11,6 +11,7 @@ export class GenAISpeakingScoreModel extends GenAIModelAbstract {
       type: SchemaType.ARRAY,
       items: {
         type: SchemaType.OBJECT,
+        description: "Exactly 3 object for each part (1, 2, overall)",
         properties: {
           part: {
             type: SchemaType.STRING,
@@ -97,6 +98,7 @@ export class GenAISpeakingScoreModel extends GenAIModelAbstract {
         2. Feedback: Offer specific and constructive feedback for improvement in each category.
         3. Use users' previous feedback to adapt and improve your evaluation (if available).
         4. The evaluate field should be in Vietnamese. The remaining objects should be in English.
+        5. You must return exactly 3 objects for each part (1, 2, overall), regardless of the user's input.
         `;
   }
 }

@@ -1,24 +1,23 @@
-import { Controller, Get, Param, ParseIntPipe, Query, UseGuards, ValidationPipe } from "@nestjs/common";
+import { Body, Controller, Get, Param, ParseIntPipe, Post, Query, UseGuards, ValidationPipe } from "@nestjs/common";
 import { DailyLessonService } from "./daily-lesson.service";
-import { ApiBearerAuth, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from "@nestjs/swagger";
-import { QueryQuestionTypesDto } from "@app/types/dtos";
-import { SkillEnum } from "@app/types/enums";
+import { ApiBearerAuth, ApiBody, ApiOperation, ApiParam, ApiQuery, ApiTags } from "@nestjs/swagger";
+import { CompleteLessonDto, QueryQuestionTypesDto } from "@app/types/dtos";
+import { AccountRoleEnum, SkillEnum } from "@app/types/enums";
 import { FirebaseJwtAuthGuard } from "../../guards";
-import { CurrentUser } from "../../decorators";
+import { ApiDefaultResponses, CurrentUser, Roles } from "../../decorators";
 import { ICurrentUser } from "@app/types/interfaces";
 
 @ApiTags("Daily Lessons")
 @ApiBearerAuth()
 @UseGuards(FirebaseJwtAuthGuard)
+@Roles(AccountRoleEnum.LEARNER)
 @Controller("daily-lessons")
 export class DailyLessonController {
   constructor(private readonly dailyLessonService: DailyLessonService) {}
 
   @ApiOperation({ summary: "Get all question types of learner progress" })
   @ApiQuery({ name: "skill", enum: SkillEnum, required: false })
-  @ApiResponse({ status: 200, description: "Get all question types successfully" })
-  @ApiResponse({ status: 400, description: "Invalid skill param value" })
-  @ApiResponse({ status: 401, description: "Unauthorized" })
+  @ApiDefaultResponses()
   @Get("question-types")
   async getQuestionTypes(
     @Query(new ValidationPipe()) query: QueryQuestionTypesDto,
@@ -29,25 +28,31 @@ export class DailyLessonController {
 
   @ApiOperation({ summary: "Get all lessons of a question type base on current progress of leaner" })
   @ApiParam({ name: "id", description: "Question type id", type: Number })
-  @ApiResponse({ status: 200, description: "Get all lessons of a question type successfully" })
-  @ApiResponse({ status: 401, description: "Unauthorized" })
+  @ApiDefaultResponses()
   @Get("question-types/:id/lessons")
   async getLessonsByQuestionType(@Param("id", ParseIntPipe) id: number, @CurrentUser() learner: ICurrentUser) {
     return this.dailyLessonService.getLessonsInQuestionTypeOfLearner(id, learner.profileId);
   }
 
+  @ApiOperation({ summary: "Complete a lesson" })
+  @ApiBody({ type: CompleteLessonDto })
+  @ApiDefaultResponses()
+  @Post("completion")
+  async completeLesson(@Body() dto: CompleteLessonDto, @CurrentUser() user: ICurrentUser) {
+    return this.dailyLessonService.completeLesson(dto, user);
+  }
+
   @ApiOperation({ summary: "Get all questions of a lesson" })
   @ApiParam({ name: "lessonId", description: "Lesson id", type: Number })
-  @ApiResponse({ status: 200, description: "Get all questions of a lesson successfully" })
-  @ApiResponse({ status: 401, description: "Unauthorized" })
-  @Get("lessons/:lessonId/questions")
+  @ApiDefaultResponses()
+  @Get("/:lessonId/questions")
   async getQuestionsByLesson(@Param("lessonId") lessonId: number) {
     return this.dailyLessonService.getContentOfLesson(lessonId);
   }
 
   @ApiOperation({ summary: "Get instruction of a question type" })
   @ApiParam({ name: "id", description: "Question type id", type: Number })
-  @ApiResponse({ status: 200, description: "Get instruction of a question type successfully" })
+  @ApiDefaultResponses()
   @Get("question-types/:id/instruction")
   async getInstructionsByQuestionType(@Param("id", ParseIntPipe) id: number) {
     return this.dailyLessonService.getInstructionsOfQuestionType(id);

@@ -20,6 +20,7 @@ import {
 } from "@app/types/dtos/simulated-tests";
 import { Transform } from "class-transformer";
 import { TransformBandScore } from "@app/utils/pipes";
+import { FINISHED_STATUSES } from "@app/types/constants";
 
 @Entity({ name: "skill_test_sessions" })
 export class SkillTestSession extends BaseEntity {
@@ -33,7 +34,7 @@ export class SkillTestSession extends BaseEntity {
   learnerProfileId: string;
 
   @Column({ name: "responses", type: "jsonb", nullable: true })
-  responses: InfoTextResponseDto[] | InfoSpeakingResponseDto;
+  responses: InfoTextResponseDto[] | InfoSpeakingResponseDto[];
 
   @Column({
     name: "results",
@@ -164,13 +165,14 @@ export class SkillTestSession extends BaseEntity {
         "session.elapsedTime",
         "session.results",
         "session.mode",
+        "session.status",
       ])
       .leftJoin("session.skillTest", "skillTest")
       .addSelect(["skillTest.id", "skillTest.skill"])
       .leftJoin("skillTest.simulatedIeltsTest", "test")
       .addSelect(["test.testName"])
       .where("session.learner_profile_id = :learnerId", { learnerId })
-      .andWhere("session.status = :status", { status: TestSessionStatusEnum.FINISHED })
+      .andWhere("session.status IN (:...statuses)", { statuses: FINISHED_STATUSES })
       .orderBy("session.createdAt", "DESC");
 
     if (simulatedTestId) {
@@ -189,7 +191,7 @@ export class SkillTestSession extends BaseEntity {
 
   static async getBandScoreReport(learnerId: string) {
     return await this.createQueryBuilder("session")
-      .select(['COALESCE(AVG(session.estimatedBandScore), 0) as "estimatedBandScore"'])
+      .select(['AVG(session.estimatedBandScore) as "estimatedBandScore"'])
       .leftJoin("session.skillTest", "test")
       .addSelect(['test.skill as "skill"'])
       .leftJoin("session.learnerProfile", "learner")
@@ -209,7 +211,7 @@ export class SkillTestSession extends BaseEntity {
       ])
       .innerJoin("session.skillTest", "test", "test.skill = :skill", { skill })
       .where("session.learnerProfileId = :learnerId", { learnerId })
-      .andWhere("session.status = :status", { status: TestSessionStatusEnum.FINISHED })
+      .andWhere("session.status IN (:...statuses)", { statuses: FINISHED_STATUSES })
       .andWhere("session.estimatedBandScore IS NOT NULL")
       .orderBy("session.id");
 
@@ -218,5 +220,74 @@ export class SkillTestSession extends BaseEntity {
     }
 
     return query.getRawMany();
+  }
+
+  static async getLatestInprogressSessionWithFilter(learnerId: string, skill?: SkillEnum, collectionId?: number) {
+    const query = this.createQueryBuilder("session")
+      .select(["session.id", "session.mode", "session.status", "session.parts"])
+      .leftJoin("session.skillTest", "skillTest")
+      .addSelect(["skillTest.id", "skillTest.skill", "skillTest.testId"])
+      .leftJoin("skillTest.simulatedIeltsTest", "simulatedIeltsTest")
+      .addSelect(["simulatedIeltsTest.testName"])
+      .leftJoin("simulatedIeltsTest.testCollection", "testCollection")
+      .addSelect(["testCollection.name"])
+      .where("session.learnerProfileId = :learnerId", { learnerId })
+      .andWhere("session.status = :status", { status: TestSessionStatusEnum.IN_PROGRESS });
+    if (skill) {
+      query.andWhere("skillTest.skill = :skill", { skill });
+    }
+    if (collectionId) {
+      query.andWhere("simulatedIeltsTest.collectionId = :collectionId", { collectionId });
+    }
+    query.orderBy("session.id", "DESC");
+
+    return query.getOne();
+  }
+
+  static async getAFinishedSessionCurrentDate(learnerId: string) {
+    return this.createQueryBuilder("session")
+      .leftJoin("session.skillTest", "skillTest")
+      .addSelect(["skillTest.id", "skillTest.skill", 'skillTest.partsDetail as "partsDetail"'])
+      .where("session.learnerProfileId = :learnerId", { learnerId })
+      .andWhere("session.mode = :mode", { mode: TestSessionModeEnum.FULL_TEST })
+      .andWhere("session.status IN (:...statuses)", { statuses: FINISHED_STATUSES })
+      .andWhere("DATE(session.updatedAt) = CURRENT_DATE")
+      .getOne();
+  }
+
+  static async getSessionsOfSkill(skill: SkillEnum, learnerId: string) {
+    return this.createQueryBuilder("session")
+      .leftJoin("session.skillTest", "skillTest")
+      .addSelect(["skillTest.id", "skillTest.skill", "skillTest.partsDetail"])
+      .where("session.learnerProfileId = :learnerId", { learnerId })
+      .andWhere("session.mode = :mode", { mode: TestSessionModeEnum.FULL_TEST })
+      .andWhere("session.status IN (:...statuses)", { statuses: FINISHED_STATUSES })
+      .andWhere("DATE(session.updatedAt) = CURRENT_DATE")
+      .andWhere("skillTest.skill = :skill", { skill })
+      .getMany();
+  }
+
+  static async getDistinctSkillNameSessions(learnerId: string) {
+    return this.createQueryBuilder("session")
+      .leftJoin("session.skillTest", "skillTest")
+      .addSelect(["skillTest.id", "skillTest.skill", "skillTest.partsDetail"])
+      .where("session.learnerProfileId = :learnerId", { learnerId })
+      .andWhere("session.mode = :mode", { mode: TestSessionModeEnum.FULL_TEST })
+      .andWhere("session.status IN (:...statuses)", { statuses: FINISHED_STATUSES })
+      .andWhere("DATE(session.updatedAt) = CURRENT_DATE")
+      .distinctOn(["skillTest.skill"])
+      .getMany();
+  }
+
+  static async getDistinctSkillTestIdSessions(learnerId: string) {
+    return this.createQueryBuilder("session")
+      .leftJoin("session.skillTest", "skillTest")
+      .addSelect(["skillTest.id", "skillTest.skill", "skillTest.partsDetail"])
+      .where("session.learnerProfileId = :learnerId", { learnerId })
+      .andWhere("session.mode = :mode", { mode: TestSessionModeEnum.FULL_TEST })
+      .andWhere("session.status IN (:...statuses)", { statuses: FINISHED_STATUSES })
+      .andWhere("DATE(session.updatedAt) = CURRENT_DATE")
+      .distinctOn(["session.skillTestId"])
+      .getMany();
   }
 }

@@ -103,6 +103,16 @@ export class LessonRecord extends BaseEntity implements ILessonRecord {
     return currentStreak?.length || 0;
   }
 
+  static async countDistinctLearningDaysThisMonth(learnerId: string) {
+    return this.createQueryBuilder("record")
+      .select("DISTINCT DATE(record.createdAt)", '"learningDate"')
+      .where("record.learnerProfileId = :learnerId", { learnerId })
+      .andWhere(
+        "EXTRACT(MONTH FROM record.createdAt) = EXTRACT(MONTH FROM CURRENT_DATE) and EXTRACT(YEAR FROM record.createdAt) = EXTRACT(YEAR FROM CURRENT_DATE)"
+      )
+      .getCount();
+  }
+
   public getBonusResources(): { bonusXP: number; bonusCarrot: number } {
     const totalAnswers = this.correctAnswers + this.wrongAnswers;
     const bonusXP = totalAnswers === 0 ? 0 : Math.round(50 * (this.correctAnswers / totalAnswers));
@@ -111,13 +121,10 @@ export class LessonRecord extends BaseEntity implements ILessonRecord {
     let bonusCarrot = 0;
     switch (true) {
       case this.duration < 3 * 60:
-        bonusCarrot = 20;
-        break;
-      case this.duration < 5 * 60:
-        bonusCarrot = 10;
+        bonusCarrot = 2;
         break;
       default:
-        bonusCarrot = 5;
+        bonusCarrot = 1;
         break;
     }
 

@@ -47,7 +47,7 @@ export class AISpeakingController {
   @Post("speech-evaluation")
   @UseInterceptors(FileInterceptor("file"))
   async generateIpaEvaluation(@UploadedFile() file: Express.Multer.File, @Body("original") original: string) {
-    return this.aiSpeakingService.generateIpaEvaluation(file, original);
+    return this.aiSpeakingService.getIpaEvaluation(file, original);
   }
 
   @Roles(AccountRoleEnum.ADMIN)

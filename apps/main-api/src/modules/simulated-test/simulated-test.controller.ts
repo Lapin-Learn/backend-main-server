@@ -1,30 +1,22 @@
 import {
-  Body,
   ClassSerializerInterceptor,
   Controller,
   DefaultValuePipe,
   Get,
   Param,
-  ParseEnumPipe,
   ParseIntPipe,
-  Post,
-  Put,
   Query,
-  UploadedFiles,
   UseGuards,
   UseInterceptors,
 } from "@nestjs/common";
 import { SimulatedTestService } from "./simulated-test.service";
 import { PaginationInterceptor } from "@app/utils/interceptors";
 import { FirebaseJwtAuthGuard } from "../../guards";
-import { ApiDefaultResponses, ApiPaginatedResponse, CurrentUser } from "../../decorators";
-import { ApiBearerAuth, ApiBody, ApiParam, ApiQuery, ApiResponse, ApiTags } from "@nestjs/swagger";
+import { ApiDefaultResponses, ApiPaginatedResponse, CurrentUser, PublicRoute } from "../../decorators";
+import { ApiBearerAuth, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { SimulatedIeltsTestDetailDto, TestCollectionDto } from "@app/types/response-dtos";
 import { ICurrentUser } from "@app/types/interfaces";
-import { GetSessionProgressDto, StartSessionDto, UpdateSessionDto } from "@app/types/dtos/simulated-tests";
 import { SkillEnum } from "@app/types/enums";
-import { FilesInterceptor } from "@nestjs/platform-express";
-import { plainToInstance } from "class-transformer";
 
 @ApiTags("Simulated tests")
 @ApiDefaultResponses()
@@ -34,21 +26,36 @@ import { plainToInstance } from "class-transformer";
 export class SimulatedTestController {
   constructor(private readonly simulatedTestService: SimulatedTestService) {}
 
+  @ApiOperation({ summary: "Get all ST collections" })
   @ApiQuery({ name: "offset", type: Number, required: false })
   @ApiQuery({ name: "limit", type: Number, required: false })
-  @ApiQuery({ name: "keyword", type: String, required: false })
   @ApiPaginatedResponse(TestCollectionDto)
   @UseInterceptors(ClassSerializerInterceptor, PaginationInterceptor)
   @Get("collections")
   async getCollectionWithSimulatedTest(
     @Query("offset", new DefaultValuePipe(0), ParseIntPipe) offset: number,
     @Query("limit", new DefaultValuePipe(10), ParseIntPipe) limit: number,
-    @Query("keyword") keyword: string = "",
     @CurrentUser() user: ICurrentUser
   ) {
-    return this.simulatedTestService.getCollectionsWithSimulatedTest(offset, limit, keyword, user.profileId);
+    return this.simulatedTestService.getCollectionsWithSimulatedTest(offset, limit, user.profileId);
   }
 
+  @ApiOperation({ summary: "Get list collections for landing page" })
+  @PublicRoute()
+  @Get("collections/introduction")
+  async getIntroductionCollections() {
+    return this.simulatedTestService.getCollectionsForIntroduction();
+  }
+
+  @PublicRoute()
+  @ApiOperation({ summary: "Search collections by keyword" })
+  @ApiQuery({ name: "keyword", type: String, required: true })
+  @Get("collections/searching")
+  async getCollectionsByKeyword(@Query("keyword") keyword: string = "") {
+    return this.simulatedTestService.getAutoCompleteCollections(keyword);
+  }
+
+  @ApiOperation({ summary: "Get all STs in a collection" })
   @ApiParam({ name: "id", type: Number, required: true })
   @ApiQuery({ name: "offset", type: Number, required: false })
   @ApiQuery({ name: "limit", type: Number, required: false })
@@ -64,6 +71,16 @@ export class SimulatedTestController {
     return this.simulatedTestService.getSimulatedTestsInCollections(collectionId, offset, limit, user.profileId);
   }
 
+  @ApiOperation({
+    summary: "Get information of a ST collection, to render collection detail page",
+  })
+  @ApiParam({ name: "id", type: Number, required: true })
+  @Get("collections/:id")
+  async getCollectionInfo(@Param("id", ParseIntPipe) collectionId: number) {
+    return this.simulatedTestService.getCollectionInformation(collectionId);
+  }
+
+  @ApiOperation({ summary: "Get session history (all)" })
   @ApiQuery({ name: "offset", type: Number, required: false })
   @ApiQuery({ name: "limit", type: Number, required: false })
   @Get("simulated-tests/sessions")
@@ -76,6 +93,13 @@ export class SimulatedTestController {
     return this.simulatedTestService.getSessionHistory(learner, offset, limit);
   }
 
+  @ApiOperation({ summary: "Get average band scores of 4 skills all time" })
+  @Get("simulated-tests/report")
+  async getBandScoreReport(@CurrentUser() learner: ICurrentUser) {
+    return this.simulatedTestService.getBandScoreReport(learner);
+  }
+
+  @ApiOperation({ summary: "Get session history of a simulated test" })
   @ApiQuery({ name: "offset", type: Number, required: false })
   @ApiQuery({ name: "limit", type: Number, required: false })
   @ApiQuery({ name: "skill", enum: SkillEnum, required: false })
@@ -91,41 +115,7 @@ export class SimulatedTestController {
     return this.simulatedTestService.getSessionHistory(learner, offset, limit, { simulatedTestId, skill });
   }
 
-  @Get("simulated-tests/report")
-  async getBandScoreReport(@CurrentUser() learner: ICurrentUser) {
-    return this.simulatedTestService.getBandScoreReport(learner);
-  }
-
-  @ApiBody({ type: StartSessionDto })
-  @ApiResponse({ type: String })
-  @Post("simulated-tests/sessions")
-  async startSession(@CurrentUser() learner: ICurrentUser, @Body() sessionData: StartSessionDto) {
-    return this.simulatedTestService.startSession(learner, sessionData);
-  }
-
-  @ApiParam({ name: "id", type: Number, required: true })
-  @Get("simulated-tests/sessions/:id")
-  async getSessionDetail(@CurrentUser() learner: ICurrentUser, @Param("id", ParseIntPipe) sessionId: number) {
-    return this.simulatedTestService.getSessionDetail(sessionId, learner);
-  }
-
-  @ApiParam({ name: "id", type: Number, required: true })
-  @ApiBody({ type: UpdateSessionDto })
-  @ApiResponse({ type: String })
-  @UseInterceptors(FilesInterceptor("files"))
-  @Put("simulated-tests/sessions/:id")
-  async updateSession(
-    @Param("id", ParseIntPipe) sessionId: number,
-    @CurrentUser() learner: ICurrentUser,
-    @Body() sessionData: any,
-    @UploadedFiles() files?: Array<Express.Multer.File>
-  ) {
-    sessionData.response = sessionData.response && JSON.parse(sessionData.response);
-    const data: UpdateSessionDto = plainToInstance(UpdateSessionDto, sessionData);
-
-    return this.simulatedTestService.updateSession(sessionId, data, learner, files);
-  }
-
+  @ApiOperation({ summary: "Get simulated test information, include all skill tests inside" })
   @ApiParam({ name: "id", type: Number, required: true })
   @ApiResponse({ type: SimulatedIeltsTestDetailDto })
   @Get("simulated-tests/:id")
@@ -133,27 +123,11 @@ export class SimulatedTestController {
     return this.simulatedTestService.getSimulatedTestInfo(testId);
   }
 
+  @ApiOperation({ summary: "Get a skill test content to render question to learner" })
   @ApiParam({ name: "id", type: Number, required: true })
   @ApiQuery({ name: "part", type: Number, required: true })
   @Get("skill-tests/:id")
   async getPassageContents(@Param("id", ParseIntPipe) skillTestId: number, @Query("part", ParseIntPipe) part: number) {
     return this.simulatedTestService.getSkillTestContent(skillTestId, part);
-  }
-
-  @ApiQuery({ name: "skill", enum: SkillEnum, required: true })
-  @ApiQuery({ name: "from", type: Date, required: false })
-  @ApiQuery({ name: "to", type: Date, required: false })
-  @Get("sessions/progress")
-  async getSessionProgress(@CurrentUser() learner: ICurrentUser, @Query() query: GetSessionProgressDto) {
-    return this.simulatedTestService.getSessionProgress(learner, query);
-  }
-
-  @ApiQuery({ name: "skill", enum: SkillEnum, required: true })
-  @Get("question-types/accuracy")
-  async getQuestionTypesAccuract(
-    @CurrentUser() learner: ICurrentUser,
-    @Query("skill", new ParseEnumPipe(SkillEnum)) skill: SkillEnum
-  ) {
-    return this.simulatedTestService.getQuestionTypeAccuracy(learner, skill);
   }
 }

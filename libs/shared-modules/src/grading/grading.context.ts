@@ -10,14 +10,17 @@ export class GradingContext {
   }
 
   getResults() {
+    if (!this.strategy) return null;
     return this.strategy.getResults();
   }
 
   evaluateBandScore() {
+    if (!this.strategy) return;
     this.strategy.evaluateBandScore();
   }
 
   getEstimatedScore() {
+    if (!this.strategy) return null;
     return this.strategy.getEstimatedBandScore();
   }
 }

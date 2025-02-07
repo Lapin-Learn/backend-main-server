@@ -1,11 +1,24 @@
-import { ApiBearerAuth, ApiOperation, ApiParam, ApiTags } from "@nestjs/swagger";
+import { ApiBearerAuth, ApiOperation, ApiParam, ApiQuery, ApiTags } from "@nestjs/swagger";
 import { ApiDefaultResponses, CurrentUser } from "../../decorators";
-import { Body, Controller, Get, Param, Post, Put, UseGuards } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  DefaultValuePipe,
+  Get,
+  Param,
+  ParseIntPipe,
+  Post,
+  Put,
+  Query,
+  UseGuards,
+  UseInterceptors,
+} from "@nestjs/common";
 import { FirebaseJwtAuthGuard } from "../../guards";
 import { PaymentService } from "./payment.service";
 import { CreatePaymentLinkDto } from "@app/types/dtos/payment";
 import { CancelPaymentLinkDto } from "@app/types/dtos/payment/cancel-payment-link.dto";
 import { ICurrentUser } from "@app/types/interfaces";
+import { PaginationInterceptor, Transactional } from "@app/utils/interceptors";
 
 @ApiTags("Payment")
 @ApiDefaultResponses()
@@ -17,6 +30,7 @@ export class PaymentController {
 
   @ApiOperation({ summary: "Create payment link" })
   @Post("payment-link")
+  @UseInterceptors(Transactional)
   async createPaymentLink(@CurrentUser() user: ICurrentUser, @Body() data: CreatePaymentLinkDto) {
     return this.paymentService.createPaymentTransaction(data, user.userId);
   }
@@ -24,6 +38,7 @@ export class PaymentController {
   @ApiOperation({ summary: "Get payment link information" })
   @ApiParam({ name: "orderId", type: Number })
   @Get("payment-link/:orderId")
+  @UseInterceptors(Transactional)
   async getPaymentLinkInformation(@Param("orderId") orderId: number) {
     return this.paymentService.getPaymentInformation(orderId);
   }
@@ -31,9 +46,30 @@ export class PaymentController {
   @ApiOperation({ summary: "Cancel payment link" })
   @ApiParam({ name: "orderId", type: Number })
   @Put("payment-link/:orderId")
+  @UseInterceptors(Transactional)
   async cancelPaymentLink(@Param("orderId") orderId: number, @Body() data: CancelPaymentLinkDto) {
     return this.paymentService.cancelPayment(orderId, data);
   }
 
-  // TODO: Transaction list endpoint, they will start with /payment/transactions
+  @ApiOperation({
+    summary: "Get all transactions belong to current user",
+  })
+  @ApiQuery({ name: "offset", type: Number, required: false })
+  @ApiQuery({ name: "limit", type: Number, required: false })
+  @Get("/transactions")
+  @UseInterceptors(PaginationInterceptor)
+  async getTransactionHistory(
+    @CurrentUser() user: ICurrentUser,
+    @Query("offset", new DefaultValuePipe(0), ParseIntPipe) offset: number,
+    @Query("limit", new DefaultValuePipe(10), ParseIntPipe) limit: number
+  ) {
+    return this.paymentService.getTransactionHistory(user.userId, offset, limit);
+  }
+
+  @ApiParam({ name: "id", type: Number, required: true })
+  @Get("/transactions/:id")
+  @UseInterceptors(Transactional)
+  async getTransactionDetail(@Param("id", ParseIntPipe) id: number) {
+    return this.paymentService.getPaymentInformation(id);
+  }
 }

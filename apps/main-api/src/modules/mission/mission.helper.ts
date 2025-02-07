@@ -1,6 +1,6 @@
 import { IMission, IProfileMissionProgress } from "@app/types/interfaces";
 import { Injectable } from "@nestjs/common";
-import { MissionCategoryNameEnum } from "@app/types/enums";
+import { MissionCategoryNameEnum, ProfileMissionProgressStatusEnum } from "@app/types/enums";
 import { LessonRecord } from "@app/database";
 
 @Injectable()
@@ -27,7 +27,10 @@ export class MissionHelper {
               name: mission.quest.name,
               description: mission.quest.description,
               current,
-              quantity: mission.quantity,
+              status: progress?.status ?? ProfileMissionProgressStatusEnum.ASSIGNED,
+              missionId: mission.id,
+              questId: mission.quest.id,
+              quantity: mission.quest.quantity,
               rewards: mission.quest.rewards,
               category: mission.quest.category,
               requirements: mission.quest.requirements,

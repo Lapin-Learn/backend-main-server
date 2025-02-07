@@ -10,7 +10,6 @@ import { MailModule } from "@app/shared-modules/mail";
 import { ActivityModule } from "../activity/activity.module";
 import { StreakModule } from "../streak/streak.module";
 import { DailyLessonModule } from "../daily-lesson/daily-lesson.module";
-import { LessonModule } from "../lesson/lesson.module";
 import { AdminModule } from "../admin/admin.module";
 import { MissionModule } from "../mission/mission.module";
 import { NotificationModule } from "../notification/notification.module";
@@ -23,6 +22,7 @@ import { SimulatedTestModule } from "../simulated-test/simulated-test.module";
 import { AIModule } from "../ai/ai.module";
 import { BullModule } from "@nestjs/bullmq";
 import { PaymentModule } from "../payment/payment.module";
+import { WORKER_ATTEMPTS } from "@app/types/constants";
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -42,10 +42,18 @@ import { PaymentModule } from "../payment/payment.module";
           host: configService.get("REDIS_HOST"),
           port: configService.get("REDIS_PORT"),
         },
+        defaultJobOptions: {
+          attempts: WORKER_ATTEMPTS,
+          removeOnComplete: {
+            age: 86400,
+          },
+          removeOnFail: {
+            age: 86400,
+          },
+        },
       }),
       inject: [ConfigService],
     }),
-
     AuthModule,
     BucketModule,
     UserModule,
@@ -53,7 +61,6 @@ import { PaymentModule } from "../payment/payment.module";
     ActivityModule,
     StreakModule,
     DailyLessonModule,
-    LessonModule,
     AdminModule,
     MissionModule,
     NotificationModule,

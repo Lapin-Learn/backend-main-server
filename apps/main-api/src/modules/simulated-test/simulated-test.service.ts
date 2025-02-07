@@ -1,5 +1,7 @@
+import { Injectable, Logger, BadRequestException, ForbiddenException, Inject } from "@nestjs/common";
 import {
   Bucket,
+  LearnerProfile,
   SimulatedIeltsTest,
   SkillTest,
   SkillTestAnswer,
@@ -9,28 +11,34 @@ import {
 } from "@app/database";
 import {
   GetSessionProgressDto,
+  InfoSpeakingResponseDto,
+  InfoTextResponseDto,
   SpeakingResponseDto,
   StartSessionDto,
   TextResponseDto,
   UpdateSessionDto,
 } from "@app/types/dtos/simulated-tests";
-import { ICurrentUser, ITestCollection } from "@app/types/interfaces";
-import { BadRequestException, Injectable, Logger } from "@nestjs/common";
 import _ from "lodash";
 import { BucketService } from "../bucket/bucket.service";
 import { GradingContext } from "@app/shared-modules/grading";
 import { SkillEnum, TestSessionModeEnum, TestSessionStatusEnum } from "@app/types/enums";
-import { InjectQueue } from "@nestjs/bullmq";
-import { Queue } from "bullmq";
-import { EvaluateSpeaking, EvaluateWriting, RangeGradingStrategy } from "@app/shared-modules/grading/grading-strategy";
+import { EvaluateSpeaking, EvaluateWriting, RangeGradingStrategy } from "@app/shared-modules/grading";
 import {
-  EVALUATE_SPEAKING_QUEUE,
-  EVALUATE_WRITING_QUEUE,
   SPEAKING_FILE_PREFIX,
   OK_RESPONSE,
+  REQUIRED_CREDENTIAL,
+  EVALUATE_SPEAKING_QUEUE,
+  EVALUATE_WRITING_QUEUE,
+  MISSION_SUBJECT_FACTORY,
+  PUSH_SPEAKING_FILE_QUEUE,
+  FINISHED_STATUSES,
 } from "@app/types/constants";
 import { plainToInstance } from "class-transformer";
-import { RedisService } from "@app/shared-modules/redis";
+import { InjectQueue } from "@nestjs/bullmq";
+import { Queue } from "bullmq";
+import { ITestCollection, ICurrentUser, IGradingStrategy, IBucket } from "@app/types/interfaces";
+import { MileStonesObserver } from "@app/shared-modules/observers";
+import { MissionSubject } from "@app/shared-modules/subjects";
 
 @Injectable()
 export class SimulatedTestService {
@@ -38,13 +46,16 @@ export class SimulatedTestService {
   constructor(
     private readonly bucketService: BucketService,
     private readonly gradingContext: GradingContext,
-    private readonly redisService: RedisService,
-    @InjectQueue(EVALUATE_SPEAKING_QUEUE) private evaluateSpeakingQueue: Queue,
-    @InjectQueue(EVALUATE_WRITING_QUEUE) private evaluateWritingQueue: Queue
+    private readonly observer: MileStonesObserver,
+    @InjectQueue(EVALUATE_SPEAKING_QUEUE) private speakingQueue: Queue,
+    @InjectQueue(EVALUATE_WRITING_QUEUE) private writingQueue: Queue,
+    @InjectQueue(PUSH_SPEAKING_FILE_QUEUE) private pushFileQueue: Queue,
+    @Inject(MISSION_SUBJECT_FACTORY)
+    private readonly missionSubjectFactory: (observer: MileStonesObserver) => MissionSubject
   ) {}
-  async getCollectionsWithSimulatedTest(offset: number, limit: number, keyword: string, profileId: string) {
+  async getCollectionsWithSimulatedTest(offset: number, limit: number, profileId: string) {
     try {
-      const data = await TestCollection.getCollectionsWithTests(offset, limit, keyword, profileId);
+      const data = await TestCollection.getCollectionsWithTests(offset, limit, profileId);
       const total = await TestCollection.count();
       return {
         items: await Promise.all(
@@ -61,26 +72,104 @@ export class SimulatedTestService {
     }
   }
 
+  async getCollectionsForIntroduction() {
+    try {
+      const collections = await TestCollection.getListCollectionsForIntroduction();
+      return await Promise.all(
+        collections.map(async (collection) => ({
+          ...collection,
+          thumbnail: await this.bucketService.getPresignedDownloadUrlForAfterLoad({
+            id: collection.thumbnail,
+          } as unknown as IBucket),
+        }))
+      );
+    } catch (err) {
+      this.logger.error(err);
+      throw new BadRequestException(err);
+    }
+  }
+
+  async getAutoCompleteCollections(keyword: string) {
+    try {
+      return TestCollection.getCollectionByKeyword(keyword);
+    } catch (err) {
+      this.logger.error(err);
+      throw new BadRequestException(err);
+    }
+  }
+
+  async getCollectionInformation(collectionId: number) {
+    try {
+      const data = await TestCollection.findOneOrFail({
+        where: { id: collectionId },
+        relations: {
+          thumbnail: true,
+        },
+      });
+      this.logger.log(data);
+      return {
+        ...data,
+        thumbnail: await this.bucketService.getPresignedDownloadUrlForAfterLoad(data.thumbnail),
+      };
+    } catch (error) {
+      this.logger.error(error);
+      throw new BadRequestException(error);
+    }
+  }
+
   async getSimulatedTestsInCollections(collectionId: number, offset: number, limit: number, profileId: string) {
     try {
       const items = await SimulatedIeltsTest.getSimulatedTestInCollections(collectionId, offset, limit, profileId);
       const groupedItems = _.groupBy(items, "id");
 
       const formattedItems = _.map(groupedItems, (group) => {
-        const collectionId = group[0].id || null;
-        const order = group[0].order || null;
-        const testName = group[0].testname || "";
+        const collectionId = group[0].id ?? null;
+        const order = group[0].order ?? null;
+        const testName = group[0].testName ?? "";
         let totalTimeSpent = 0;
 
-        const skillTests = _.map(group, (item) => {
-          totalTimeSpent += item.elapsedtime;
+        const validGroup = group.filter(
+          (item: any) => item.skill !== null || item.status === TestSessionStatusEnum.CANCELED
+        );
+        const skillTests = _.groupBy(validGroup, "skill");
+
+        const essentialData = _.map(skillTests, (st: any) => {
+          const {
+            status,
+            skill,
+            estimatedBandScore,
+            results,
+            responses,
+            elapsedTime,
+            skillTestId,
+            sessionId,
+            partsDetail = [],
+          } = st[0];
+          totalTimeSpent += elapsedTime;
+
+          let correctAnswers = 0;
+
+          if (
+            (skill === SkillEnum.READING || skill === SkillEnum.LISTENING) &&
+            status === TestSessionStatusEnum.FINISHED &&
+            results
+          ) {
+            correctAnswers = results.filter((t: boolean) => Boolean(t)).length;
+          }
+
+          const submittedAnswers = responses
+            ? responses.filter((r: InfoTextResponseDto | InfoSpeakingResponseDto) => r !== null).length
+            : 0;
+
           return {
-            id: item.skilltestid,
-            skill: item.skill,
-            partsDetail: item.partsdetail || [],
-            status: item.status || null,
-            estimatedBandScore: item.estimatedbandscore || null,
-            sessionId: item.sessionid,
+            skillTestId,
+            sessionId,
+            status: status ?? TestSessionStatusEnum.NOT_STARTED,
+            estimatedBandScore,
+            submittedAnswers,
+            correctAnswers,
+            skill,
+            partsDetail,
           };
         });
 
@@ -89,7 +178,7 @@ export class SimulatedTestService {
           order,
           testName,
           totalTimeSpent,
-          skillTests,
+          skillTests: essentialData,
         };
       });
 
@@ -181,7 +270,7 @@ export class SimulatedTestService {
               .map((partIndex) => partsDetail[partIndex - 1])
           : [];
 
-        if (session.status === TestSessionStatusEnum.FINISHED) {
+        if (FINISHED_STATUSES.includes(session.status)) {
           session.skillTest["answers"] = session.skillTest.skillTestAnswer?.answers ?? [];
           session.skillTest["guidances"] = session.skillTest.skillTestAnswer?.guidances ?? [];
 
@@ -223,53 +312,45 @@ export class SimulatedTestService {
         relations: { skillTest: true },
       });
 
-      if (
-        sessionStatus === TestSessionStatusEnum.FINISHED ||
-        sessionStatus === TestSessionStatusEnum.CANCELED ||
-        sessionStatus === TestSessionStatusEnum.IN_EVALUATING
-      ) {
-        throw new BadRequestException(`Session is ${sessionStatus}`);
+      if (FINISHED_STATUSES.includes(status)) {
+        throw new BadRequestException(`session was already ${sessionStatus}`);
       }
 
       let responseInfo = null;
       if (status === TestSessionStatusEnum.FINISHED) {
         const { response } = sessionData;
+        responseInfo = response.info.sort(
+          (a: InfoSpeakingResponseDto | InfoTextResponseDto, b: InfoSpeakingResponseDto | InfoTextResponseDto) =>
+            a.questionNo - b.questionNo
+        );
 
         if (response instanceof SpeakingResponseDto) {
-          this.gradingContext.setGradingStrategy(
-            new EvaluateSpeaking(
-              this.evaluateSpeakingQueue,
-              sessionId,
-              EVALUATE_SPEAKING_QUEUE,
-              additionalResources,
-              response.info,
-              learner
-            )
-          );
-          sessionData.status = TestSessionStatusEnum.IN_EVALUATING;
-          responseInfo = response.info;
-        } else if (response instanceof TextResponseDto) {
-          const { info } = response;
-          responseInfo = info.sort((a, b) => a.questionNo - b.questionNo);
+          const speakingStrategy = new EvaluateSpeaking(sessionId, responseInfo);
+          const { userResponses, speakingAudio } =
+            await speakingStrategy.getResponseWithTimeStampAudio(additionalResources);
+          responseInfo = userResponses;
 
+          speakingStrategy.setPushSpeakingFileQueue(this.pushFileQueue);
+          await speakingStrategy.pushSpeakingFile(speakingAudio, learner);
+          sessionData.status = TestSessionStatusEnum.NOT_EVALUATED;
+          this.gradingContext.setGradingStrategy(speakingStrategy);
+        } else if (response instanceof TextResponseDto) {
           if (skillTest.skill === SkillEnum.WRITING) {
-            this.gradingContext.setGradingStrategy(
-              new EvaluateWriting(this.evaluateWritingQueue, sessionId, EVALUATE_WRITING_QUEUE, info)
-            );
-            sessionData.status = TestSessionStatusEnum.IN_EVALUATING;
+            this.gradingContext.setGradingStrategy(new EvaluateWriting(sessionId, responseInfo));
+            sessionData.status = TestSessionStatusEnum.NOT_EVALUATED;
           } else {
             const { answers } = await SkillTestAnswer.findOneOrFail({
               where: { skillTestId },
               relations: { skillTest: true },
             });
 
-            this.gradingContext.setGradingStrategy(new RangeGradingStrategy(answers, info, skillTest.skill));
+            const rangeStrategy = new RangeGradingStrategy(answers, responseInfo, skillTest.skill);
+            rangeStrategy.evaluateBandScore();
+            sessionData["results"] = rangeStrategy.getResults();
+            this.gradingContext.setGradingStrategy(rangeStrategy);
           }
         }
 
-        this.gradingContext.evaluateBandScore();
-
-        sessionData["results"] = this.gradingContext.getResults();
         if (mode === TestSessionModeEnum.FULL_TEST || parts.length === skillTest?.partsDetail?.length) {
           sessionData["estimatedBandScore"] = this.gradingContext.getEstimatedScore();
         }
@@ -278,7 +359,66 @@ export class SimulatedTestService {
           responseInfo = response.info;
         }
       }
+
       await SkillTestSession.save({ id: sessionId, ...sessionData, responses: responseInfo });
+
+      if (FINISHED_STATUSES.includes(sessionData.status)) {
+        const learnerProfile = await LearnerProfile.findOne({ where: { id: learner.profileId } });
+        const missionSubject = this.missionSubjectFactory(this.observer);
+        await missionSubject.checkMissionProgress(learnerProfile);
+        const milestones = this.observer.getMileStones();
+        return milestones;
+      }
+
+      return OK_RESPONSE;
+    } catch (error) {
+      this.logger.error(error);
+      throw new BadRequestException(error);
+    }
+  }
+
+  async evaluateSkillTest(sessionId: number, learner: ICurrentUser) {
+    try {
+      const session = await SkillTestSession.findOneOrFail({
+        where: { id: sessionId, learnerProfileId: learner.profileId },
+        relations: {
+          skillTest: true,
+          learnerProfile: true,
+        },
+      });
+
+      if (session.status === TestSessionStatusEnum.FINISHED || session.status === TestSessionStatusEnum.CANCELED) {
+        throw new BadRequestException(`Session is already ${session.status}`);
+      }
+
+      if (session.learnerProfile.carrots < REQUIRED_CREDENTIAL) {
+        throw new ForbiddenException("You don't have enough carrots");
+      }
+      let strategy: IGradingStrategy;
+      if (session.skillTest.skill === SkillEnum.SPEAKING) {
+        const speakingResponses = plainToInstance(InfoSpeakingResponseDto, session.responses as Array<any>);
+        const speakingStrategy = new EvaluateSpeaking(sessionId, speakingResponses);
+        speakingStrategy.setEvaluateSpeakingQueue(this.speakingQueue);
+        strategy = speakingStrategy;
+      } else if (session.skillTest.skill === SkillEnum.WRITING) {
+        const writingResponses = plainToInstance(InfoTextResponseDto, session.responses as Array<any>);
+        const writingStategy = new EvaluateWriting(sessionId, writingResponses);
+        writingStategy.setQueue(this.writingQueue);
+        strategy = writingStategy;
+      } else {
+        throw new BadRequestException("This skill test is not supported with AI evaluation");
+      }
+      this.gradingContext.setGradingStrategy(strategy);
+      this.gradingContext.evaluateBandScore();
+      await SkillTestSession.save({
+        ...session,
+        status: TestSessionStatusEnum.IN_EVALUATING,
+      });
+
+      await LearnerProfile.save({
+        ...session.learnerProfile,
+        carrots: session.learnerProfile.carrots - REQUIRED_CREDENTIAL,
+      });
       return OK_RESPONSE;
     } catch (error) {
       this.logger.error(error);
@@ -306,8 +446,13 @@ export class SimulatedTestService {
   }
 
   async getBandScoreReport(learner: ICurrentUser) {
-    const plainReport = await SkillTestSession.getBandScoreReport(learner.profileId);
-    return plainToInstance(SkillTestSession, plainReport);
+    try {
+      const plainReport = await SkillTestSession.getBandScoreReport(learner.profileId);
+      return plainToInstance(SkillTestSession, plainReport);
+    } catch (error) {
+      this.logger.error(error);
+      throw new BadRequestException(error);
+    }
   }
 
   async getSessionProgress(learner: ICurrentUser, data: GetSessionProgressDto) {

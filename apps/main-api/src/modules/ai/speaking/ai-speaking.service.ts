@@ -13,6 +13,10 @@ import { SkillTest, SkillTestSession } from "@app/database";
 import { InfoSpeakingResponseDto, SpeakingEvaluation } from "@app/types/dtos/simulated-tests";
 import { plainToInstance } from "class-transformer";
 import { CreateSkillTestDto } from "@app/types/dtos";
+import { AxiosInstance } from "axios";
+import { genericHttpConsumer } from "@app/utils/axios";
+import { Blob } from "buffer";
+import { ConfigService } from "@nestjs/config";
 
 const PUNCTUATION = "/[.,/#!$%^&*;:{}=-_`~()]/g";
 
@@ -22,14 +26,19 @@ export class AISpeakingService {
   private genAISpeakingModel: GenAISpeakingModel;
   private genAISpeakingScoreEvaluationModel: GenAISpeakingScoreModel;
   private genAISpeechToIPAModel: GenAISpeakingIPAModel;
+  private readonly httpService: AxiosInstance;
+  private readonly EVALUATION_SERVICE_API: string = "";
 
   constructor(
     @Inject(GENAI_MANAGER) private readonly genAIManager: GoogleGenerativeAI,
-    @Inject(GENAI_FILE_MANAGER) private readonly genAIFileManager: GoogleAIFileManager
+    @Inject(GENAI_FILE_MANAGER) private readonly genAIFileManager: GoogleAIFileManager,
+    private readonly configService: ConfigService
   ) {
     this.genAISpeakingModel = new GenAISpeakingModel(this.genAIManager);
     this.genAISpeakingScoreEvaluationModel = new GenAISpeakingScoreModel(this.genAIManager);
     this.genAISpeechToIPAModel = new GenAISpeakingIPAModel(this.genAIManager);
+    this.httpService = genericHttpConsumer();
+    this.EVALUATION_SERVICE_API = this.configService.get("EVALUATION_SERVICE_API");
   }
 
   async generateQuestion(dto: CreateSkillTestDto) {
@@ -123,11 +132,9 @@ export class AISpeakingService {
       return plainToInstance(SpeakingEvaluation, plainEvaluations);
     } catch (error) {
       this.logger.error(error);
-      throw new BadRequestException(error);
+      throw error;
     } finally {
       this.genAIFileManager.deleteFile(geminiFileName);
-      // Delete it manually
-      // Or it will automatically be adeleted after 48 hours
     }
   }
 
@@ -138,6 +145,25 @@ export class AISpeakingService {
     } catch (error) {
       this.logger.error(error);
       throw new BadRequestException(error);
+    }
+  }
+
+  async getIpaEvaluation(file: Express.Multer.File, original: string) {
+    try {
+      const formData = new FormData();
+      const newBlob = new Blob([file.buffer]);
+      formData.append("file", newBlob);
+
+      formData.append("original", original);
+      const response = await this.httpService.post(this.EVALUATION_SERVICE_API, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      return response.data;
+    } catch (err) {
+      this.logger.error(err);
+      throw new BadRequestException(err);
     }
   }
 
