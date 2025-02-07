@@ -2,23 +2,29 @@ import * as tmp from "tmp";
 import * as fs from "fs";
 
 import { Queue } from "bullmq";
-import { IGradingStrategy } from "@app/types/interfaces";
+import { ICurrentUser, IGradingStrategy } from "@app/types/interfaces";
 import { InfoSpeakingResponseDto } from "@app/types/dtos/simulated-tests";
 import { createExpressMulterFile, mergeAudioFiles } from "@app/utils/audio";
-import { EVALUATE_SPEAKING_QUEUE } from "@app/types/constants";
+import { EVALUATE_SPEAKING_QUEUE, PUSH_SPEAKING_FILE_QUEUE } from "@app/types/constants";
 
 export class EvaluateSpeaking implements IGradingStrategy {
   private sessionId: number;
   private userResponses: InfoSpeakingResponseDto[];
-  private jobName: string = EVALUATE_SPEAKING_QUEUE;
-  private queue: Queue;
+  private jobEvaluateSpeakingName: string = EVALUATE_SPEAKING_QUEUE;
+  private jobPushSpeakingFileName: string = PUSH_SPEAKING_FILE_QUEUE;
+  private evaluateSpeakingqueue: Queue;
+  private pushSpeakingFileQueue: Queue;
   constructor(sessionId: number, userResponses: InfoSpeakingResponseDto[]) {
     this.sessionId = sessionId;
     this.userResponses = userResponses;
   }
 
-  setQueue(queue: Queue) {
-    this.queue = queue;
+  setEvaluateSpeakingQueue(queue: Queue) {
+    this.evaluateSpeakingqueue = queue;
+  }
+
+  setPushSpeakingFileQueue(queue: Queue) {
+    this.pushSpeakingFileQueue = queue;
   }
 
   async getResponseWithTimeStampAudio(speakingFiles: Array<Express.Multer.File>) {
@@ -56,10 +62,19 @@ export class EvaluateSpeaking implements IGradingStrategy {
   }
 
   async evaluateBandScore() {
-    if (this.queue)
-      await this.queue.add(this.jobName, {
+    if (this.evaluateSpeakingqueue)
+      await this.evaluateSpeakingqueue.add(this.jobEvaluateSpeakingName, {
         sessionId: this.sessionId,
         userResponse: this.userResponses,
+      });
+  }
+
+  async pushSpeakingFile(speakingAudio: Express.Multer.File, currentUser: ICurrentUser) {
+    if (this.pushSpeakingFileQueue)
+      await this.pushSpeakingFileQueue.add(this.jobPushSpeakingFileName, {
+        sessionId: this.sessionId,
+        speakingAudio,
+        currentUser,
       });
   }
 
