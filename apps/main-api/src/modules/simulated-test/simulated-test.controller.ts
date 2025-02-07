@@ -12,7 +12,7 @@ import {
 import { SimulatedTestService } from "./simulated-test.service";
 import { PaginationInterceptor } from "@app/utils/interceptors";
 import { FirebaseJwtAuthGuard } from "../../guards";
-import { ApiDefaultResponses, ApiPaginatedResponse, CurrentUser } from "../../decorators";
+import { ApiDefaultResponses, ApiPaginatedResponse, CurrentUser, PublicRoute } from "../../decorators";
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { SimulatedIeltsTestDetailDto, TestCollectionDto } from "@app/types/response-dtos";
 import { ICurrentUser } from "@app/types/interfaces";
@@ -29,17 +29,30 @@ export class SimulatedTestController {
   @ApiOperation({ summary: "Get all ST collections" })
   @ApiQuery({ name: "offset", type: Number, required: false })
   @ApiQuery({ name: "limit", type: Number, required: false })
-  @ApiQuery({ name: "keyword", type: String, required: false })
   @ApiPaginatedResponse(TestCollectionDto)
   @UseInterceptors(ClassSerializerInterceptor, PaginationInterceptor)
   @Get("collections")
   async getCollectionWithSimulatedTest(
     @Query("offset", new DefaultValuePipe(0), ParseIntPipe) offset: number,
     @Query("limit", new DefaultValuePipe(10), ParseIntPipe) limit: number,
-    @Query("keyword") keyword: string = "",
     @CurrentUser() user: ICurrentUser
   ) {
-    return this.simulatedTestService.getCollectionsWithSimulatedTest(offset, limit, keyword, user.profileId);
+    return this.simulatedTestService.getCollectionsWithSimulatedTest(offset, limit, user.profileId);
+  }
+
+  @ApiOperation({ summary: "Get list collections for landing page" })
+  @PublicRoute()
+  @Get("collections/introduction")
+  async getIntroductionCollections() {
+    return this.simulatedTestService.getCollectionsForIntroduction();
+  }
+
+  @PublicRoute()
+  @ApiOperation({ summary: "Search collections by keyword" })
+  @ApiQuery({ name: "keyword", type: String, required: true })
+  @Get("collections/searching")
+  async getCollectionsByKeyword(@Query("keyword") keyword: string = "") {
+    return this.simulatedTestService.getAutoCompleteCollections(keyword);
   }
 
   @ApiOperation({ summary: "Get all STs in a collection" })

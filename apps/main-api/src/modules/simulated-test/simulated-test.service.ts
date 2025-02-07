@@ -37,11 +37,12 @@ import {
   EVALUATE_SPEAKING_QUEUE,
   EVALUATE_WRITING_QUEUE,
   MISSION_SUBJECT_FACTORY,
+  FINISHED_STATUSES,
 } from "@app/types/constants";
 import { plainToInstance } from "class-transformer";
 import { InjectQueue } from "@nestjs/bullmq";
 import { Queue } from "bullmq";
-import { ITestCollection, ICurrentUser, IGradingStrategy } from "@app/types/interfaces";
+import { ITestCollection, ICurrentUser, IGradingStrategy, IBucket } from "@app/types/interfaces";
 import { MileStonesObserver } from "@app/shared-modules/observers";
 import { MissionSubject } from "@app/shared-modules/subjects";
 
@@ -57,9 +58,9 @@ export class SimulatedTestService {
     @Inject(MISSION_SUBJECT_FACTORY)
     private readonly missionSubjectFactory: (observer: MileStonesObserver) => MissionSubject
   ) {}
-  async getCollectionsWithSimulatedTest(offset: number, limit: number, keyword: string, profileId: string) {
+  async getCollectionsWithSimulatedTest(offset: number, limit: number, profileId: string) {
     try {
-      const data = await TestCollection.getCollectionsWithTests(offset, limit, keyword, profileId);
+      const data = await TestCollection.getCollectionsWithTests(offset, limit, profileId);
       const total = await TestCollection.count();
       return {
         items: await Promise.all(
@@ -73,6 +74,32 @@ export class SimulatedTestService {
     } catch (error) {
       this.logger.error(error);
       throw new BadRequestException(error);
+    }
+  }
+
+  async getCollectionsForIntroduction() {
+    try {
+      const collections = await TestCollection.getListCollectionsForIntroduction();
+      return await Promise.all(
+        collections.map(async (collection) => ({
+          ...collection,
+          thumbnail: await this.bucketService.getPresignedDownloadUrlForAfterLoad({
+            id: collection.thumbnail,
+          } as unknown as IBucket),
+        }))
+      );
+    } catch (err) {
+      this.logger.error(err);
+      throw new BadRequestException(err);
+    }
+  }
+
+  async getAutoCompleteCollections(keyword: string) {
+    try {
+      return TestCollection.getCollectionByKeyword(keyword);
+    } catch (err) {
+      this.logger.error(err);
+      throw new BadRequestException(err);
     }
   }
 
@@ -248,7 +275,7 @@ export class SimulatedTestService {
               .map((partIndex) => partsDetail[partIndex - 1])
           : [];
 
-        if (session.status === TestSessionStatusEnum.FINISHED) {
+        if (FINISHED_STATUSES.includes(session.status)) {
           session.skillTest["answers"] = session.skillTest.skillTestAnswer?.answers ?? [];
           session.skillTest["guidances"] = session.skillTest.skillTestAnswer?.guidances ?? [];
 
@@ -290,14 +317,8 @@ export class SimulatedTestService {
         relations: { skillTest: true },
       });
 
-      if (
-        sessionStatus === TestSessionStatusEnum.NOT_EVALUATED ||
-        sessionStatus === TestSessionStatusEnum.EVALUATION_FAILED ||
-        sessionStatus === TestSessionStatusEnum.FINISHED ||
-        sessionStatus === TestSessionStatusEnum.CANCELED ||
-        sessionStatus === TestSessionStatusEnum.IN_EVALUATING
-      ) {
-        throw new BadRequestException(`Session is ${sessionStatus}`);
+      if (FINISHED_STATUSES.includes(status)) {
+        throw new BadRequestException(`session was already ${sessionStatus}`);
       }
 
       let responseInfo = null;
@@ -349,10 +370,7 @@ export class SimulatedTestService {
 
       await SkillTestSession.save({ id: sessionId, ...sessionData, responses: responseInfo });
 
-      if (
-        sessionData.status != TestSessionStatusEnum.CANCELED &&
-        sessionData.status != TestSessionStatusEnum.IN_PROGRESS
-      ) {
+      if (FINISHED_STATUSES.includes(sessionData.status)) {
         const learnerProfile = await LearnerProfile.findOne({ where: { id: learner.profileId } });
         const missionSubject = this.missionSubjectFactory(this.observer);
         await missionSubject.checkMissionProgress(learnerProfile);
