@@ -13,6 +13,10 @@ import { signInRequestMock, signUpRequestMock } from "./test/requests.mock";
 import { userStub } from "../user/test/user.stub";
 import { NovuService } from "@app/shared-modules/novu";
 import { NOVU_PROVIDER_TOKEN, REDIS_PROVIDER } from "@app/types/constants";
+import { ConfigService } from "@nestjs/config";
+import { S3_PROVIDER_NAME } from "../bucket/test/constants/s3-provider.const";
+import { S3 } from "@aws-sdk/client-s3";
+import { BucketService } from "../bucket/bucket.service";
 
 jest.mock("@app/shared-modules/firebase/firebase-auth.service");
 jest.mock("@app/shared-modules/mail");
@@ -25,6 +29,7 @@ describe("AuthService", function () {
   let authHelper: AuthHelper;
   let novuService: NovuService;
   let redisService: RedisService;
+  let bucketService: BucketService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -34,6 +39,17 @@ describe("AuthService", function () {
         FirebaseAuthService,
         RedisService,
         NovuService,
+        BucketService,
+        {
+          provide: ConfigService,
+          useValue: {
+            get: jest.fn(),
+          },
+        },
+        {
+          provide: S3_PROVIDER_NAME,
+          useFactory: () => S3,
+        },
         {
           provide: getRepositoryToken(Account),
           useClass: Repository,
@@ -59,6 +75,7 @@ describe("AuthService", function () {
     firebaseAuthService = module.get<FirebaseAuthService>(FirebaseAuthService);
     novuService = module.get<NovuService>(NovuService);
     redisService = module.get<RedisService>(RedisService);
+    bucketService = module.get<BucketService>(BucketService);
   });
 
   it("should be defined", () => {
@@ -157,6 +174,11 @@ describe("AuthService", function () {
       } catch (e) {
         expect(e).toBeInstanceOf(BadRequestException);
       }
+    });
+  });
+  describe("sign in / sign up with provider", () => {
+    it("upload file from link should be defined", () => {
+      expect(bucketService.uploadAvatarFromLink).toBeDefined();
     });
   });
 });
