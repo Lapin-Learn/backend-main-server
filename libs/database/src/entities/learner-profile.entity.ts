@@ -220,7 +220,7 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
     questionTypeId: number
   ): Promise<boolean> {
     let currentQuestionTypeProcess = this.lessonProcesses.find(
-      (lessonProcess) => lessonProcess.questionType.id === questionTypeId
+      (lessonProcess) => lessonProcess.questionTypeId === questionTypeId
     );
 
     if (currentQuestionTypeProcess === undefined) {
