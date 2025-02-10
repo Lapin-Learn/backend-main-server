@@ -1,12 +1,5 @@
-import {
-  ActionNameEnum,
-  BandScoreEnum,
-  ItemName,
-  MileStonesEnum,
-  ProfileItemStatusEnum,
-  RankEnum,
-} from "@app/types/enums";
-import { IActivity, ILearnerProfile, ILearnerProfileInfo, ILevel, IMileStoneInfo } from "@app/types/interfaces";
+import { ActionNameEnum, BandScoreEnum, ItemName, ProfileItemStatusEnum, RankEnum } from "@app/types/enums";
+import { IActivity, ILearnerProfile, ILearnerProfileInfo } from "@app/types/interfaces";
 import {
   BaseEntity,
   Column,
@@ -31,14 +24,13 @@ import { LessonProcess } from "./lesson-process.entity";
 import { LevelRankMap, NextBandScoreMap } from "@app/utils/maps";
 import { UpdateResourcesDto } from "@app/types/dtos/learners";
 import { Action } from "./action.entity";
-import { CompleteLessonDto } from "@app/types/dtos";
 import { Lesson } from "@app/database/entities/lesson.entity";
 import { QuestionType } from "@app/database/entities/question-type.entity";
-import { TMileStoneLearnProgress, TMileStoneProfile } from "@app/types/types";
 import moment from "moment-timezone";
 import { getBeginOfOffsetDay, getEndOfOffsetDay } from "@app/utils/time";
-import { VN_TIME_ZONE } from "@app/types/constants";
+import { BandScoreOrder, VN_TIME_ZONE } from "@app/types/constants";
 import { SkillTestSession } from "./test-sessions.entity";
+import { BadRequestException } from "@nestjs/common";
 
 @Entity("learner_profiles")
 export class LearnerProfile extends BaseEntity implements ILearnerProfile {
@@ -125,50 +117,6 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
     };
   }
 
-  public async getProfileMileStones(): Promise<TMileStoneProfile[]> {
-    const milestones: TMileStoneProfile[] = [];
-    const isLevelUp = await this.isLevelUp();
-    const isRankUp = this.isRankUp();
-    const isAchieveDailyStreak = await this.isAchieveDailyStreakOrCreate();
-    await this.save();
-    if (isLevelUp) {
-      const milestone: IMileStoneInfo<ILevel> = { type: MileStonesEnum.IS_LEVEL_UP, newValue: this.level };
-      milestones.push(milestone);
-    }
-
-    if (isRankUp) {
-      const milestone: IMileStoneInfo<RankEnum> = { type: MileStonesEnum.IS_RANK_UP, newValue: this.rank };
-      milestones.push(milestone);
-    }
-
-    if (isAchieveDailyStreak) {
-      const milestone: IMileStoneInfo<number> = { type: MileStonesEnum.IS_DAILY_STREAK, newValue: this.streak.current };
-      milestones.push(milestone);
-    }
-    return milestones;
-  }
-
-  public async getLearnProcessMileStones(
-    data: CompleteLessonDto,
-    xp: number,
-    questionTypeId: number
-  ): Promise<TMileStoneLearnProgress[]> {
-    const milestones: IMileStoneInfo<BandScoreEnum>[] = [];
-    const isBandScoreQuestionTypeUp = await this.isBandScoreQuestionTypeUp(
-      xp,
-      data.duration,
-      data.lessonId,
-      questionTypeId
-    );
-
-    isBandScoreQuestionTypeUp &&
-      milestones.push({
-        type: MileStonesEnum.IS_BAND_SCORE_QUESTION_TYPE_UP,
-        newValue: this.lessonProcesses.find((lesson) => lesson.questionTypeId === questionTypeId).bandScore,
-      });
-    return milestones;
-  }
-
   async isLevelUp(): Promise<boolean> {
     if (this.xp >= this.level.xp) {
       const nextLevel = await Level.findOne({ where: { id: this.levelId + 1 } });
@@ -220,23 +168,48 @@ export class LearnerProfile extends BaseEntity implements ILearnerProfile {
     questionTypeId: number
   ): Promise<boolean> {
     let currentQuestionTypeProcess = this.lessonProcesses.find(
-      (lessonProcess) => lessonProcess.questionType.id === questionTypeId
+      (lessonProcess) => lessonProcess.questionTypeId === questionTypeId
     );
+
+    const currentLesson = await Lesson.findOne({ where: { id: completedLessonId } });
 
     if (currentQuestionTypeProcess === undefined) {
       currentQuestionTypeProcess = new LessonProcess({
         learnerProfile: this,
         questionTypeId: questionTypeId,
-        currentLesson: await Lesson.findOne({ where: { questionTypeId } }),
+        currentLesson,
         questionType: await QuestionType.findOne({ where: { id: questionTypeId } }),
         bandScore: BandScoreEnum.PRE_IELTS,
         xp: [],
       });
       this.lessonProcesses.push(currentQuestionTypeProcess);
+    } else if (
+      BandScoreOrder.indexOf(currentQuestionTypeProcess.bandScore) < BandScoreOrder.indexOf(currentLesson.bandScore)
+    ) {
+      throw new BadRequestException("you can not finish the lesson with higher band score level");
     }
 
     const currentBandScore = currentQuestionTypeProcess.bandScore;
+    if (BandScoreOrder.indexOf(currentLesson.bandScore) < BandScoreOrder.indexOf(currentBandScore)) {
+      let completedLessonProcess = currentQuestionTypeProcess.xp.find((p) => p.lessonId === completedLessonId);
+      if (!completedLessonProcess) {
+        completedLessonProcess = {
+          lessonId: completedLessonId,
+          xp,
+          duration,
+        };
+        currentQuestionTypeProcess.xp.push(completedLessonProcess);
+      } else {
+        const currentRequiredBandScore = currentQuestionTypeProcess.questionType.bandScoreRequires.find(
+          (require) => require.bandScore === currentLesson.bandScore
+        );
 
+        completedLessonProcess.xp = Math.max(completedLessonProcess.xp + xp, currentRequiredBandScore.requireXP);
+        completedLessonProcess.duration += duration;
+      }
+      await currentQuestionTypeProcess.save();
+      return false;
+    }
     await currentQuestionTypeProcess.updateLessonProcessOfLearner(xp, duration, completedLessonId);
     return (
       currentQuestionTypeProcess.bandScore !== currentBandScore &&
