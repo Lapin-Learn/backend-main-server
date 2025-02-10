@@ -312,7 +312,7 @@ export class SimulatedTestService {
         relations: { skillTest: true },
       });
 
-      if (FINISHED_STATUSES.includes(status)) {
+      if (FINISHED_STATUSES.includes(sessionStatus)) {
         throw new BadRequestException(`session was already ${sessionStatus}`);
       }
 

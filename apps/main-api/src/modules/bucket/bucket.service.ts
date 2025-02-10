@@ -16,6 +16,7 @@ import { AccountRoleEnum, BucketPermissionsEnum, BucketUploadStatusEnum } from "
 import _ from "lodash";
 import { AxiosInstance } from "axios";
 import { genericHttpConsumer } from "@app/utils/axios";
+import fs from "fs";
 
 @Injectable()
 export class BucketService {
@@ -184,7 +185,8 @@ export class BucketService {
       permission: BucketPermissionsEnum.PUBLIC,
     };
     const presignedUrl = await this.getPresignedUploadUrl(user, uploadedFile);
-    const res = await this.httpService.put(presignedUrl.url, file.buffer, {
+    const fsBuffer = fs.readFileSync(file.path);
+    const res = await this.httpService.put(presignedUrl.url, fsBuffer, {
       headers: {
         "Content-Type": file.mimetype,
       },

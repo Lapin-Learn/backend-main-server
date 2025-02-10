@@ -62,7 +62,7 @@ export class AISpeakingService {
 
   async generateScore(
     sessionId: number,
-    file: Express.Multer.File,
+    downloadedUrl: URL,
     info: InfoSpeakingResponseDto[]
   ): Promise<SpeakingEvaluation[]> {
     try {
@@ -109,8 +109,8 @@ export class AISpeakingService {
         },
         {
           type: "file",
-          data: file.buffer,
-          mimeType: file.mimetype,
+          data: downloadedUrl,
+          mimeType: "audio/mpeg",
         },
       ];
 
