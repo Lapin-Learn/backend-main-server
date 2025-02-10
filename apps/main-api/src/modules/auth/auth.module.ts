@@ -10,9 +10,19 @@ import { FirebaseStrategy } from "../../strategies";
 import { MailModule } from "@app/shared-modules/mail";
 import { RedisModule } from "@app/shared-modules/redis";
 import { NovuModule } from "@app/shared-modules/novu";
+import { BucketModule } from "../bucket/bucket.module";
 
 @Module({
-  imports: [PassportModule, DatabaseModule, FirebaseModule, ConfigModule, MailModule, RedisModule, NovuModule],
+  imports: [
+    PassportModule,
+    DatabaseModule,
+    FirebaseModule,
+    ConfigModule,
+    MailModule,
+    RedisModule,
+    NovuModule,
+    BucketModule,
+  ],
   controllers: [AuthController],
   providers: [AuthService, AuthHelper, FirebaseStrategy],
   exports: [AuthService],

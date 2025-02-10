@@ -1,16 +1,17 @@
 import { BadRequestException, Injectable, Logger, NotAcceptableException } from "@nestjs/common";
-import { Account, LearnerProfile } from "@app/database/entities";
+import { Account, Bucket, LearnerProfile } from "@app/database/entities";
 import { FirebaseAuthService } from "@app/shared-modules/firebase";
 import { AuthHelper } from "./auth.helper";
 import { generate as otpGenerator } from "otp-generator";
 import { RedisService } from "@app/shared-modules/redis";
 import { ActionEnum } from "@app/types/enums";
-import { IAccount, ICurrentUser } from "@app/types/interfaces";
+import { ICurrentUser } from "@app/types/interfaces";
 import { EntityNotFoundError } from "typeorm";
 import { generateOTPConfig } from "../../config";
 import { NovuService } from "@app/shared-modules/novu";
 import { APPLE_PROVIDER, RESET_PASSWORD_WORKFLOW, VERIFY_EMAIL_WORKFLOW } from "@app/types/constants";
 import { AdditionalInfo } from "@app/types/dtos";
+import { BucketService } from "../bucket/bucket.service";
 
 @Injectable()
 export class AuthService {
@@ -20,7 +21,8 @@ export class AuthService {
     private readonly firebaseService: FirebaseAuthService,
     private readonly redisService: RedisService,
     private readonly authHelper: AuthHelper,
-    private readonly novuService: NovuService
+    private readonly novuService: NovuService,
+    private readonly bucketService: BucketService
   ) {}
 
   async registerUser(email: string, password: string) {
@@ -38,28 +40,53 @@ export class AuthService {
   async loginWithProvider(credential: string, provider: string, additionalInfo: AdditionalInfo) {
     try {
       const firebaseUser = await this.firebaseService.verifyOAuthCredential(credential, provider);
+
       if (provider === APPLE_PROVIDER && additionalInfo) {
         firebaseUser.fullName = additionalInfo?.fullName;
       }
 
       const { email } = firebaseUser;
-      let dbUser: IAccount = await Account.findOne({
+      let dbUser: Account = await Account.findOne({
         where: { email },
       });
       if (!dbUser) {
         const generatedPassword = otpGenerator(8, generateOTPConfig);
         await this.firebaseService.linkWithProvider(firebaseUser.idToken, firebaseUser.email, generatedPassword);
         dbUser = await Account.createAccount(
-          { email, providerId: firebaseUser.localId, username: email, fullName: firebaseUser.fullName },
+          {
+            email,
+            providerId: firebaseUser.localId,
+            username: firebaseUser.displayName,
+            fullName: firebaseUser.fullName,
+          },
           true
         );
       } else if (!dbUser.learnerProfileId) {
         await this.firebaseService.setEmailVerifed(dbUser.providerId);
         dbUser.learnerProfile = await LearnerProfile.createNewProfile();
-        dbUser = await Account.save({ ...dbUser, fullName: firebaseUser.fullName }, { reload: true });
+        dbUser = await Account.save({ ...dbUser }, { reload: true });
       }
-      const claims: ICurrentUser = { userId: dbUser.id, profileId: dbUser.learnerProfileId, role: dbUser.role };
-      const accessToken = await this.firebaseService.generateCustomToken(dbUser.providerId, claims);
+
+      const currentUser: ICurrentUser = { userId: dbUser.id, profileId: dbUser.learnerProfileId, role: dbUser.role };
+
+      if (!dbUser.avatarId && firebaseUser?.photoUrl) {
+        const isSuccess = await this.bucketService.uploadAvatarFromLink(
+          `avatar-${dbUser.id}`,
+          firebaseUser.photoUrl,
+          currentUser
+        );
+
+        if (isSuccess) {
+          const bucket = await Bucket.findOne({
+            where: {
+              name: `avatar-${dbUser.id}`,
+            },
+          });
+          dbUser.avatarId = bucket?.id;
+          await dbUser.save();
+        }
+      }
+      const accessToken = await this.firebaseService.generateCustomToken(dbUser.providerId, currentUser);
       return this.authHelper.buildTokenResponse(accessToken, firebaseUser.refreshToken);
     } catch (error) {
       this.logger.error(error);
