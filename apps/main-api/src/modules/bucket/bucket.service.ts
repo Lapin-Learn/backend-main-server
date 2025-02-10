@@ -16,6 +16,9 @@ import { AccountRoleEnum, BucketPermissionsEnum, BucketUploadStatusEnum } from "
 import _ from "lodash";
 import { AxiosInstance } from "axios";
 import { genericHttpConsumer } from "@app/utils/axios";
+import { createExpressMulterFile } from "@app/utils/audio";
+import * as tmp from "tmp";
+import * as fs from "fs";
 
 @Injectable()
 export class BucketService {
@@ -195,5 +198,24 @@ export class BucketService {
     }
     await this.uploadConfirmation(user, { id: presignedUrl.id });
     return true;
+  }
+
+  async uploadAvatarFromLink(fileName: string, url: string, user: ICurrentUser) {
+    try {
+      const response = await this.httpService.get(url, {
+        method: "GET",
+        responseType: "arraybuffer",
+      });
+      const tempFile = tmp.fileSync({ postfix: ".jpg" });
+      fs.writeFileSync(tempFile.name, response.data);
+
+      const file = createExpressMulterFile(tempFile.name, fileName, "image/jpeg");
+      const status = await this.uploadFile(fileName, file, user);
+      tempFile.removeCallback();
+      return status;
+    } catch (err) {
+      this.logger.error(err);
+      return false;
+    }
   }
 }
