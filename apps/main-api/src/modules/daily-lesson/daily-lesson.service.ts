@@ -69,7 +69,7 @@ export class DailyLessonService {
         if (!band) {
           where.bandScore = currentProcess.bandScore;
         } else if (BandScoreOrder.indexOf(currentProcess.bandScore) < BandScoreOrder.indexOf(band)) {
-          throw new BadRequestException("This band is unavailable for you");
+          throw new BadRequestException("The lesson of this band score level is unavailable to you");
         } else {
           where.bandScore = band;
         }
@@ -80,16 +80,22 @@ export class DailyLessonService {
         order: { order: "ASC" },
       });
 
+      let totalLearningDuration = 0;
       const lessonsProcess = lessons.map((lesson) => {
         lesson.id === currentProcess?.currentLessonId ? (lesson["isCurrent"] = true) : (lesson["isCurrent"] = false);
         const lessonProcess = currentProcess?.xp.find((l) => l.lessonId === lesson.id);
-        lesson["xp"] = !_.isNil(lessonProcess) ? lessonProcess.xp : 0;
+        if (!_.isNil(lessonProcess)) {
+          lesson["xp"] = lessonProcess.xp;
+          totalLearningDuration += lessonProcess.duration;
+        } else {
+          lesson["xp"] = 0;
+        }
         return lesson;
       });
 
       return {
         lessons: lessonsProcess,
-        totalLearningDuration: currentProcess?.xp.reduce((acc, cur) => acc + cur.duration, 0) || 0,
+        totalLearningDuration,
       };
     } catch (error) {
       this.logger.error(error);

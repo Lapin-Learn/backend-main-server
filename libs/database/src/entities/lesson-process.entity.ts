@@ -104,7 +104,6 @@ export class LessonProcess extends BaseEntity implements ILessonProcess {
       const nextBandScore = NextBandScoreMap.get(this.bandScore);
       if (totalXP >= currentRequiredBandScore.requireXP && nextBandScore) {
         this.bandScore = nextBandScore;
-        this.xp = [];
       }
 
       await this.save();

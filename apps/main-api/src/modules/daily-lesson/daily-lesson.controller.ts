@@ -1,15 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  ParseEnumPipe,
-  ParseIntPipe,
-  Post,
-  Query,
-  UseGuards,
-  ValidationPipe,
-} from "@nestjs/common";
+import { Body, Controller, Get, Param, ParseIntPipe, Post, Query, UseGuards, ValidationPipe } from "@nestjs/common";
 import { DailyLessonService } from "./daily-lesson.service";
 import { ApiBearerAuth, ApiBody, ApiOperation, ApiParam, ApiQuery, ApiTags } from "@nestjs/swagger";
 import { CompleteLessonDto, QueryQuestionTypesDto } from "@app/types/dtos";
@@ -43,8 +32,8 @@ export class DailyLessonController {
   @Get("question-types/:id/lessons")
   async getLessonsByQuestionType(
     @Param("id", ParseIntPipe) id: number,
-    @Query("band", new ParseEnumPipe(BandScoreEnum)) band: BandScoreEnum,
-    @CurrentUser() learner: ICurrentUser
+    @CurrentUser() learner: ICurrentUser,
+    @Query("band") band?: BandScoreEnum
   ) {
     return this.dailyLessonService.getLessonsInQuestionTypeOfLearner(id, learner.profileId, band);
   }
