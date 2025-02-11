@@ -1,6 +1,10 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import { UserService } from "../user.service";
 import { FirebaseAuthService } from "@app/shared-modules/firebase";
+import { BucketService } from "../../bucket/bucket.service";
+import { ConfigService } from "@nestjs/config";
+import { S3_PROVIDER_NAME } from "../../bucket/test/constants/s3-provider.const";
+import { S3 } from "@aws-sdk/client-s3";
 
 describe("UserService", () => {
   let service: UserService;
@@ -9,6 +13,17 @@ describe("UserService", () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UserService,
+        BucketService,
+        {
+          provide: ConfigService,
+          useValue: {
+            get: jest.fn(),
+          },
+        },
+        {
+          provide: S3_PROVIDER_NAME,
+          useFactory: () => S3,
+        },
         {
           provide: FirebaseAuthService,
           useValue: {
