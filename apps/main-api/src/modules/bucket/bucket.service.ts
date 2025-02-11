@@ -196,6 +196,7 @@ export class BucketService {
       return false;
     }
     await this.uploadConfirmation(user, { id: presignedUrl.id });
+    fs.unlinkSync(file.path); // Remove file after upload
     return true;
   }
 }
