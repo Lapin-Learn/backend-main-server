@@ -40,39 +40,41 @@ export class AuthService {
   async loginWithProvider(credential: string, provider: string, additionalInfo: AdditionalInfo) {
     try {
       const firebaseUser = await this.firebaseService.verifyOAuthCredential(credential, provider);
+      const user = await this.firebaseService.getUser(firebaseUser.localId);
 
-      if (provider === APPLE_PROVIDER && additionalInfo) {
-        firebaseUser.fullName = additionalInfo?.fullName;
-      }
-
-      const { email } = firebaseUser;
+      const { email } = user;
       let dbUser: Account = await Account.findOne({
         where: { email },
       });
+
       if (!dbUser) {
         const generatedPassword = otpGenerator(8, generateOTPConfig);
-        await this.firebaseService.linkWithProvider(firebaseUser.idToken, firebaseUser.email, generatedPassword);
-        dbUser = await Account.createAccount(
-          {
-            email,
-            providerId: firebaseUser.localId,
-            username: firebaseUser.displayName,
-            fullName: firebaseUser.fullName,
-          },
-          true
-        );
-      } else if (!dbUser.learnerProfileId) {
-        await this.firebaseService.setEmailVerifed(dbUser.providerId);
-        dbUser.learnerProfile = await LearnerProfile.createNewProfile();
-        dbUser = await Account.save({ ...dbUser }, { reload: true });
+        await this.firebaseService.linkWithProvider(firebaseUser.idToken, user.email, generatedPassword);
+        dbUser = Account.create({
+          email,
+          providerId: user.uid,
+          username: user.displayName,
+          fullName: user.displayName,
+        });
       }
+
+      if (dbUser && !dbUser.learnerProfileId) {
+        dbUser.learnerProfileId = (await LearnerProfile.createNewProfile()).id;
+      }
+
+      if (provider === APPLE_PROVIDER && additionalInfo && !dbUser.fullName) {
+        dbUser.fullName = additionalInfo.fullName;
+        dbUser.username = additionalInfo.fullName;
+      }
+
+      dbUser = await Account.save({ ...dbUser });
 
       const currentUser: ICurrentUser = { userId: dbUser.id, profileId: dbUser.learnerProfileId, role: dbUser.role };
 
-      if (!dbUser.avatarId && firebaseUser?.photoUrl) {
+      if (!dbUser.avatarId && user.photoURL) {
         const isSuccess = await this.bucketService.uploadAvatarFromLink(
           `avatar-${dbUser.id}`,
-          firebaseUser.photoUrl,
+          user.photoURL,
           currentUser
         );
 
@@ -83,9 +85,10 @@ export class AuthService {
             },
           });
           dbUser.avatarId = bucket?.id;
-          await dbUser.save();
         }
+        dbUser = await Account.save({ ...dbUser });
       }
+
       const accessToken = await this.firebaseService.generateCustomToken(dbUser.providerId, currentUser);
       return this.authHelper.buildTokenResponse(accessToken, firebaseUser.refreshToken);
     } catch (error) {
