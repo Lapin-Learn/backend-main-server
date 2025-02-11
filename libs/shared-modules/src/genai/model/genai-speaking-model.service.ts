@@ -1,41 +1,9 @@
 import { GenAIModelAbstract } from "@app/types/abstracts";
-import { GoogleGenerativeAI, ResponseSchema, SchemaType } from "@google/generative-ai";
+import { ResponseSchemaGenerateSpeakingTest } from "@app/types/zods";
 
-export class GenAISpeakingModel extends GenAIModelAbstract {
-  constructor(readonly genAIManager: GoogleGenerativeAI) {
-    super(genAIManager);
-  }
-
-  getSchema(): ResponseSchema {
-    const schema: ResponseSchema = {
-      type: SchemaType.ARRAY,
-      description: "A generated IELTS speaking test for three parts.",
-      items: {
-        type: SchemaType.OBJECT,
-        description: "Details of a specific part of the IELTS speaking test.",
-        properties: {
-          heading: {
-            type: SchemaType.STRING,
-            description: "The heading or topic of the IELTS speaking test part 2 only.",
-          },
-          part: {
-            type: SchemaType.NUMBER,
-            description: `The part number of the IELTS speaking test (1, 2, or 3). 
-              Part 2 should be returned as a few-shot example.
-              Part 1 and Part 3 should be returned as a list of questions about 3-4 questions.`,
-          },
-          content: {
-            type: SchemaType.ARRAY,
-            description: "A string array containing the questions or content generated for this part.",
-            items: {
-              type: SchemaType.STRING,
-            },
-          },
-        },
-        required: ["part", "content"],
-      },
-    };
-    return schema;
+export class GenAISpeakingModel extends GenAIModelAbstract<typeof ResponseSchemaGenerateSpeakingTest> {
+  getSchema() {
+    return ResponseSchemaGenerateSpeakingTest;
   }
 
   getSystemInstruction(): string {
