@@ -84,6 +84,16 @@ export class FirebaseAuthService {
     }
   }
 
+  async getUser(uid: string) {
+    try {
+      const auth = getAuth(this.app);
+      return auth.getUser(uid);
+    } catch (err) {
+      this.logger.error(err);
+      throw err;
+    }
+  }
+
   async verifyCustomToken(token: string) {
     try {
       const idToken = await this.getIdToken(token);

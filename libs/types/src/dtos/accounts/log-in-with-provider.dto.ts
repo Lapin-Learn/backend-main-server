@@ -2,6 +2,7 @@ import { IsNotEmpty, IsOptional, IsString, ValidateNested } from "class-validato
 import { ApiProperty } from "@nestjs/swagger";
 
 export class AdditionalInfo {
+  @IsOptional()
   @IsString()
   fullName: string;
 }
