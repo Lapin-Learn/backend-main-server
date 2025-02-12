@@ -52,6 +52,7 @@
     "@redis/client": "^1.6.0",
     "@types/lodash": "^4.17.7",
     "@types/otp-generator": "^4.0.2",
+    "@types/tmp": "^0.2.6",
     "@types/uuid": "^10.0.0",
     "ai": "^4.1.24",
     "axios": "^1.7.3",
