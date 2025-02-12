@@ -18,3 +18,4 @@ export * from "./required-credential-evaluating.constant";
 export * from "./finished-status-group.constant";
 export * from "./mission-provider.constant";
 export * from "./public-key.constant";
+export * from "./band-score-order.constant";

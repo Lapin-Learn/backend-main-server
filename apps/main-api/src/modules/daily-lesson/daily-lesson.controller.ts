@@ -2,7 +2,7 @@ import { Body, Controller, Get, Param, ParseIntPipe, Post, Query, UseGuards, Val
 import { DailyLessonService } from "./daily-lesson.service";
 import { ApiBearerAuth, ApiBody, ApiOperation, ApiParam, ApiQuery, ApiTags } from "@nestjs/swagger";
 import { CompleteLessonDto, QueryQuestionTypesDto } from "@app/types/dtos";
-import { AccountRoleEnum, SkillEnum } from "@app/types/enums";
+import { AccountRoleEnum, BandScoreEnum, SkillEnum } from "@app/types/enums";
 import { FirebaseJwtAuthGuard } from "../../guards";
 import { ApiDefaultResponses, CurrentUser, Roles } from "../../decorators";
 import { ICurrentUser } from "@app/types/interfaces";
@@ -30,8 +30,18 @@ export class DailyLessonController {
   @ApiParam({ name: "id", description: "Question type id", type: Number })
   @ApiDefaultResponses()
   @Get("question-types/:id/lessons")
-  async getLessonsByQuestionType(@Param("id", ParseIntPipe) id: number, @CurrentUser() learner: ICurrentUser) {
-    return this.dailyLessonService.getLessonsInQuestionTypeOfLearner(id, learner.profileId);
+  async getLessonsByQuestionType(
+    @Param("id", ParseIntPipe) id: number,
+    @CurrentUser() learner: ICurrentUser,
+    @Query("band") band?: BandScoreEnum
+  ) {
+    return this.dailyLessonService.getLessonsInQuestionTypeOfLearner(id, learner.profileId, band);
+  }
+
+  @ApiOperation({ summary: "Get list band score base on current user band score of question type" })
+  @Get("question-types/:id/band-scores")
+  async getListBandScore(@Param("id", ParseIntPipe) id: number, @CurrentUser() learner: ICurrentUser) {
+    return this.dailyLessonService.getListLessonBandScore(id, learner.profileId);
   }
 
   @ApiOperation({ summary: "Complete a lesson" })
