@@ -53,8 +53,8 @@ export class AuthService {
         dbUser = Account.create({
           email,
           providerId: user.uid,
-          username: user.displayName,
-          fullName: user.displayName,
+          username: user.displayName ?? "",
+          fullName: user.displayName ?? "",
         });
       }
 
