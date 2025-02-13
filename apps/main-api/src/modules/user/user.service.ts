@@ -7,11 +7,15 @@ import { CreateUserDto, UpdateAccountByAdminDto, UpdateAccountDto } from "@app/t
 import { EntityNotFoundError } from "typeorm";
 import { IAccount, ICurrentUser } from "@app/types/interfaces";
 import { OK_RESPONSE } from "@app/types/constants";
+import { BucketService } from "../bucket/bucket.service";
 
 @Injectable()
 export class UserService {
   private readonly logger = new Logger(this.constructor.name);
-  constructor(private readonly firebaseService: FirebaseAuthService) {}
+  constructor(
+    private readonly firebaseService: FirebaseAuthService,
+    private readonly bucketService: BucketService
+  ) {}
 
   async createUserAccount(data: CreateUserDto) {
     try {
@@ -163,8 +167,10 @@ export class UserService {
   async deleteAccount(user: ICurrentUser) {
     try {
       const dbUser = await Account.findOneOrFail({ where: { id: user.userId } });
+      const { avatarId } = dbUser;
       await this.firebaseService.deleteFirebaseAccount(dbUser.providerId);
-      await Account.save({ ...dbUser, email: dbUser.email + dbUser.providerId });
+      await Account.save({ ...dbUser, email: dbUser.email + dbUser.providerId, avatarId: null });
+      await this.bucketService.deleteFile(user, avatarId);
       await Account.softRemove(dbUser);
       return OK_RESPONSE;
     } catch (error) {

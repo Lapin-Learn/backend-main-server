@@ -1,27 +1,24 @@
 import { SkillTest, SkillTestSession } from "@app/database";
 import { GenAIWritingScoreModel } from "@app/shared-modules/genai";
-import { GENAI_FILE_MANAGER, GENAI_MANAGER } from "@app/types/constants";
 import { TestSessionStatusEnum } from "@app/types/enums";
 import { IAIWritingQuestion, ICurrentUser } from "@app/types/interfaces";
-import { GoogleGenerativeAI } from "@google/generative-ai";
-import { GoogleAIFileManager } from "@google/generative-ai/server";
-import { BadRequestException, Inject, Injectable, Logger } from "@nestjs/common";
-import * as tmp from "tmp";
-import * as fs from "fs";
+import { BadRequestException, Injectable, Logger } from "@nestjs/common";
 import { InfoTextResponseDto, WritingEvaluation } from "@app/types/dtos/simulated-tests";
 import { plainToInstance } from "class-transformer";
 import { validate } from "class-validator";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
+import { ConfigService } from "@nestjs/config";
+import { UserContent } from "ai";
 
 @Injectable()
 export class AIWritingService {
   private readonly logger = new Logger(AIWritingService.name);
   private genAIWritingScoreModel: GenAIWritingScoreModel;
 
-  constructor(
-    @Inject(GENAI_MANAGER) private readonly genAIManager: GoogleGenerativeAI,
-    @Inject(GENAI_FILE_MANAGER) private readonly genAIFileManager: GoogleAIFileManager
-  ) {
-    this.genAIWritingScoreModel = new GenAIWritingScoreModel(this.genAIManager);
+  constructor(private readonly configService: ConfigService) {
+    this.genAIWritingScoreModel = new GenAIWritingScoreModel(
+      createGoogleGenerativeAI({ apiKey: this.configService.get("GEMINI_API_KEY") }).languageModel("gemini-exp-1206")
+    );
   }
 
   async generateScore(sessionId: number, info: InfoTextResponseDto[]) {
@@ -41,30 +38,6 @@ export class AIWritingService {
       const part1ImgRegex = part1Question?.content.match(/<img[^>]+src=['"]([^'"]+)['"]/);
       const part1ImgUrl = part1ImgRegex ? part1ImgRegex[1] : null;
 
-      let uploadResult = null;
-
-      if (part1ImgUrl) {
-        const imgResponse = await fetch(part1ImgUrl);
-        const imgBuffer = await imgResponse.arrayBuffer();
-
-        const mimeType = imgResponse.headers.get("Content-Type") || "image/jpeg";
-        const extension = mimeType === "image/png" ? ".png" : ".jpeg";
-
-        const tmpFile = tmp.fileSync({ postfix: extension });
-        const tmpFilePath = tmpFile.name;
-
-        try {
-          fs.writeFileSync(tmpFilePath, Buffer.from(imgBuffer));
-
-          // Upload the file
-          uploadResult = await this.genAIFileManager.uploadFile(tmpFilePath, {
-            mimeType,
-          });
-        } finally {
-          tmpFile.removeCallback(); // Ensure cleanup
-        }
-      }
-
       const part1Answer = info.find((item) => item.questionNo === 1)?.answer || "";
       const part2Answer = info.find((item) => item.questionNo === 2)?.answer || "";
 
@@ -76,17 +49,26 @@ export class AIWritingService {
         note: "the attached image belongs to part 1 question",
       };
 
-      const plainResponse = await this.genAIWritingScoreModel.generateContent([
-        JSON.stringify(contentPayload),
-        uploadResult
-          ? {
-              fileData: {
-                fileUri: uploadResult.file.uri,
-                mimeType: uploadResult.file.mimeType,
-              },
-            }
-          : undefined,
-      ]);
+      const userContent: UserContent = [
+        {
+          type: "text",
+          text: JSON.stringify(contentPayload),
+        },
+      ];
+
+      if (part1ImgUrl) {
+        const imgResponse = await fetch(part1ImgUrl);
+        const imgBuffer = await imgResponse.arrayBuffer();
+        const mimeType = imgResponse.headers.get("Content-Type") || "image/jpeg";
+
+        userContent.push({
+          type: "file",
+          data: imgBuffer,
+          mimeType: mimeType,
+        });
+      }
+
+      const plainResponse = await this.genAIWritingScoreModel.generateContent(userContent);
 
       const response = plainToInstance(WritingEvaluation, plainResponse as object[]);
       for (const r of response) {

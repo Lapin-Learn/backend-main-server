@@ -1,13 +1,13 @@
 import { Instruction, LearnerProfile, Lesson, LessonProcess, LessonRecord, QuestionType } from "@app/database";
 import { MileStonesObserver } from "@app/shared-modules/observers";
 import { MissionSubject, LearnerProfileSubject } from "@app/shared-modules/subjects";
-import { LEARNER_SUBJECT_FACTORY, MISSION_SUBJECT_FACTORY } from "@app/types/constants";
+import { BandScoreOrder, LEARNER_SUBJECT_FACTORY, MISSION_SUBJECT_FACTORY } from "@app/types/constants";
 import { CompleteLessonDto } from "@app/types/dtos";
 import { BandScoreEnum, SkillEnum } from "@app/types/enums";
 import { ICurrentUser, IInstruction } from "@app/types/interfaces";
 import { BadRequestException, Inject, Injectable, Logger } from "@nestjs/common";
 import _ from "lodash";
-import { EntityNotFoundError, QueryFailedError } from "typeorm";
+import { EntityNotFoundError, FindOptionsWhere, QueryFailedError } from "typeorm";
 
 @Injectable()
 export class DailyLessonService {
@@ -50,7 +50,7 @@ export class DailyLessonService {
     }
   }
 
-  async getLessonsInQuestionTypeOfLearner(questionTypeId: number, learnerProfileId: string) {
+  async getLessonsInQuestionTypeOfLearner(questionTypeId: number, learnerProfileId: string, band?: BandScoreEnum) {
     try {
       const currentProcess = await LessonProcess.findOne({
         where: {
@@ -59,21 +59,43 @@ export class DailyLessonService {
         },
       });
 
+      const where: FindOptionsWhere<Lesson> = {
+        questionTypeId,
+      };
+
+      if (!currentProcess) {
+        where.bandScore = BandScoreEnum.PRE_IELTS;
+      } else {
+        if (!band) {
+          where.bandScore = currentProcess.bandScore;
+        } else if (BandScoreOrder.indexOf(currentProcess.bandScore) < BandScoreOrder.indexOf(band)) {
+          throw new BadRequestException("The lesson of this band score level is unavailable to you");
+        } else {
+          where.bandScore = band;
+        }
+      }
+
       const lessons = await Lesson.find({
-        where: { questionTypeId, bandScore: currentProcess?.bandScore || BandScoreEnum.PRE_IELTS },
+        where,
         order: { order: "ASC" },
       });
 
+      let totalLearningDuration = 0;
       const lessonsProcess = lessons.map((lesson) => {
         lesson.id === currentProcess?.currentLessonId ? (lesson["isCurrent"] = true) : (lesson["isCurrent"] = false);
         const lessonProcess = currentProcess?.xp.find((l) => l.lessonId === lesson.id);
-        lesson["xp"] = !_.isNil(lessonProcess) ? lessonProcess.xp : 0;
+        if (!_.isNil(lessonProcess)) {
+          lesson["xp"] = lessonProcess.xp;
+          totalLearningDuration += lessonProcess.duration;
+        } else {
+          lesson["xp"] = 0;
+        }
         return lesson;
       });
 
       return {
         lessons: lessonsProcess,
-        totalLearningDuration: currentProcess?.xp.reduce((acc, cur) => acc + cur.duration, 0) || 0,
+        totalLearningDuration,
       };
     } catch (error) {
       this.logger.error(error);
@@ -148,6 +170,19 @@ export class DailyLessonService {
         throw new BadRequestException("Lesson not found");
       }
       throw new BadRequestException(error);
+    }
+  }
+
+  async getListLessonBandScore(questionTypeId: number, learnerProfileId: string) {
+    try {
+      const currentProcess = await LessonProcess.findOne({
+        where: { learnerProfileId, questionTypeId },
+      });
+
+      return BandScoreOrder.slice(0, BandScoreOrder.indexOf(currentProcess.bandScore) + 1);
+    } catch (err) {
+      this.logger.error(err);
+      throw new BadRequestException(err);
     }
   }
 }

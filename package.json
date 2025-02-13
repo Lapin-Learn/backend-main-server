@@ -25,6 +25,9 @@
     "downgrade": "npx typeorm-ts-node-commonjs migration:revert -d apps/main-api/typeorm.config.ts"
   },
   "dependencies": {
+    "@ai-sdk/google": "^1.1.10",
+    "@ai-sdk/openai": "^1.1.9",
+    "@ai-sdk/provider": "^1.0.7",
     "@aws-sdk/client-s3": "^3.627.0",
     "@aws-sdk/s3-request-presigner": "^3.627.0",
     "@commitlint/cli": "^19.3.0",
@@ -49,14 +52,15 @@
     "@redis/client": "^1.6.0",
     "@types/lodash": "^4.17.7",
     "@types/otp-generator": "^4.0.2",
+    "@types/tmp": "^0.2.6",
     "@types/uuid": "^10.0.0",
+    "ai": "^4.1.24",
     "axios": "^1.7.3",
     "bcrypt": "^5.1.1",
     "bullmq": "^5.34.5",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
     "crypto": "^1.0.1",
-    "diff-match-patch": "^1.0.5",
     "dotenv": "^16.4.5",
     "express": "^4.21.1",
     "firebase-admin": "^12.3.0",
@@ -78,7 +82,8 @@
     "tmp": "^0.2.3",
     "typeorm": "^0.3.20",
     "uuid": "^10.0.0",
-    "winston": "^3.17.0"
+    "winston": "^3.17.0",
+    "zod": "^3.24.1"
   },
   "devDependencies": {
     "@nestjs/cli": "^10.0.0",

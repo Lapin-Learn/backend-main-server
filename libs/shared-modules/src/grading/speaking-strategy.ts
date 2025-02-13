@@ -1,4 +1,4 @@
-import * as tmp from "tmp";
+import tmp, { FileResult } from "tmp";
 import * as fs from "fs";
 
 import { Queue } from "bullmq";
@@ -56,8 +56,7 @@ export class EvaluateSpeaking implements IGradingStrategy {
 
       return { userResponses: this.userResponses, speakingAudio };
     } finally {
-      mergedTempFile.removeCallback();
-      inputFilePaths.forEach((file: any) => file.removeCallback());
+      inputFilePaths.forEach((file: FileResult) => file.removeCallback());
     }
   }
 

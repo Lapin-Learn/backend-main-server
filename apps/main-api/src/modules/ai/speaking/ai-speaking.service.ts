@@ -1,13 +1,6 @@
-import { GENAI_FILE_MANAGER, GENAI_MANAGER } from "@app/types/constants";
-import { GoogleGenerativeAI } from "@google/generative-ai";
-import { GoogleAIFileManager } from "@google/generative-ai/server";
-import { BadRequestException, Inject, Injectable, Logger } from "@nestjs/common";
-import * as tmp from "tmp";
-import * as fs from "fs";
-import path from "path";
-import DiffMatchPatch from "diff-match-patch";
+import { BadRequestException, Injectable, Logger } from "@nestjs/common";
 import { GenAISpeakingModel } from "@app/shared-modules/genai/model/genai-speaking-model.service";
-import { GenAISpeakingIPAModel, GenAISpeakingScoreModel } from "@app/shared-modules/genai";
+import { GenAISpeakingScoreModel } from "@app/shared-modules/genai";
 import { ICurrentUser } from "@app/types/interfaces";
 import { SkillTest, SkillTestSession } from "@app/database";
 import { InfoSpeakingResponseDto, SpeakingEvaluation } from "@app/types/dtos/simulated-tests";
@@ -17,26 +10,24 @@ import { AxiosInstance } from "axios";
 import { genericHttpConsumer } from "@app/utils/axios";
 import { Blob } from "buffer";
 import { ConfigService } from "@nestjs/config";
-
-const PUNCTUATION = "/[.,/#!$%^&*;:{}=-_`~()]/g";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
+import { UserContent } from "ai";
 
 @Injectable()
 export class AISpeakingService {
   private readonly logger = new Logger(AISpeakingService.name);
   private genAISpeakingModel: GenAISpeakingModel;
   private genAISpeakingScoreEvaluationModel: GenAISpeakingScoreModel;
-  private genAISpeechToIPAModel: GenAISpeakingIPAModel;
   private readonly httpService: AxiosInstance;
   private readonly EVALUATION_SERVICE_API: string = "";
 
-  constructor(
-    @Inject(GENAI_MANAGER) private readonly genAIManager: GoogleGenerativeAI,
-    @Inject(GENAI_FILE_MANAGER) private readonly genAIFileManager: GoogleAIFileManager,
-    private readonly configService: ConfigService
-  ) {
-    this.genAISpeakingModel = new GenAISpeakingModel(this.genAIManager);
-    this.genAISpeakingScoreEvaluationModel = new GenAISpeakingScoreModel(this.genAIManager);
-    this.genAISpeechToIPAModel = new GenAISpeakingIPAModel(this.genAIManager);
+  constructor(private readonly configService: ConfigService) {
+    this.genAISpeakingModel = new GenAISpeakingModel(
+      createGoogleGenerativeAI({ apiKey: this.configService.get("GEMINI_API_KEY") }).languageModel("gemini-exp-1206")
+    );
+    this.genAISpeakingScoreEvaluationModel = new GenAISpeakingScoreModel(
+      createGoogleGenerativeAI({ apiKey: this.configService.get("GEMINI_API_KEY") }).languageModel("gemini-exp-1206")
+    );
     this.httpService = genericHttpConsumer();
     this.EVALUATION_SERVICE_API = this.configService.get("EVALUATION_SERVICE_API");
   }
@@ -49,6 +40,7 @@ export class AISpeakingService {
         (
           sum: number,
           part: {
+            heading: string;
             part: string;
             content: string[];
           }
@@ -70,18 +62,10 @@ export class AISpeakingService {
 
   async generateScore(
     sessionId: number,
-    file: Express.Multer.File,
+    downloadedUrl: URL,
     info: InfoSpeakingResponseDto[]
   ): Promise<SpeakingEvaluation[]> {
-    let geminiFileName = "";
-
     try {
-      const uploadResult = await this.genAIFileManager.uploadFile(file.filename, {
-        mimeType: file.mimetype,
-        displayName: file.originalname,
-      });
-      geminiFileName = uploadResult.file.name;
-
       // Get current evaluation
       const existedSession = await SkillTestSession.findOneOrFail({
         where: { id: sessionId },
@@ -118,23 +102,27 @@ export class AISpeakingService {
         "speakingData": ${JSON.stringify(info)}
       }. `;
 
-      // Generate content using the AI model
-      const plainEvaluations: SpeakingEvaluation[] = await this.genAISpeakingScoreEvaluationModel.generateContent([
-        prompt,
+      const userContent: UserContent = [
         {
-          fileData: {
-            fileUri: uploadResult.file.uri,
-            mimeType: file.mimetype,
-          },
+          type: "text",
+          text: prompt,
         },
-      ]);
+        {
+          type: "file",
+          data: downloadedUrl,
+          mimeType: "audio/mpeg",
+        },
+      ];
+
+      // Generate content using the AI model
+      const plainEvaluations = (await this.genAISpeakingScoreEvaluationModel.generateContent(
+        userContent
+      )) as SpeakingEvaluation[];
 
       return plainToInstance(SpeakingEvaluation, plainEvaluations);
     } catch (error) {
       this.logger.error(error);
       throw error;
-    } finally {
-      this.genAIFileManager.deleteFile(geminiFileName);
     }
   }
 
@@ -152,7 +140,7 @@ export class AISpeakingService {
     try {
       const formData = new FormData();
       const newBlob = new Blob([file.buffer]);
-      formData.append("file", newBlob);
+      formData.append("file", newBlob as globalThis.Blob);
 
       formData.append("original", original);
       const response = await this.httpService.post(this.EVALUATION_SERVICE_API, formData, {
@@ -165,120 +153,5 @@ export class AISpeakingService {
       this.logger.error(err);
       throw new BadRequestException(err);
     }
-  }
-
-  async generateIpaEvaluation(file: Express.Multer.File, original: string) {
-    // Create a temporary file with automatic cleanup
-    const tempFile = tmp.fileSync({ postfix: path.extname(file.originalname) });
-
-    try {
-      // Write the uploaded file buffer to the temp file
-      fs.writeFileSync(tempFile.name, file.buffer);
-
-      // Upload file using the file manager
-      const uploadResult = await this.genAIFileManager.uploadFile(tempFile.name, {
-        mimeType: file.mimetype,
-        displayName: file.originalname,
-      });
-
-      // Generate content using the AI model
-      const speechIPAResult = await this.genAISpeechToIPAModel.generateContent([
-        "Convert speech to IPA",
-        {
-          fileData: {
-            fileUri: uploadResult.file.uri,
-            mimeType: file.mimetype,
-          },
-        },
-      ]);
-
-      const originalIPAResult = await this.genAISpeechToIPAModel.generateContent([
-        "Convert speech to IPA",
-        {
-          text: original,
-        },
-      ]);
-
-      const speechIPA = speechIPAResult.ipa;
-      const originalIPA = originalIPAResult.ipa;
-
-      const matchingBlocks = this.getMatchingBlocks(speechIPA, originalIPA);
-      const mappedStringArray = originalIPA.split("")?.map((c: string) => {
-        if (c === " ") return " ";
-        if (c.match(PUNCTUATION)) return "1";
-        return "0";
-      });
-
-      for (const block of matchingBlocks) {
-        const { start2, length } = block;
-        for (let i = start2; i < start2 + length; i++)
-          if (mappedStringArray[i] !== " ") {
-            mappedStringArray[i] = "1";
-          }
-      }
-
-      const accuracy = Math.floor(
-        (mappedStringArray.filter((c: string) => c === "1" || c === " ").length / mappedStringArray.length) * 100
-      );
-
-      const wordSplits = mappedStringArray.join("").split(" ");
-      const correctLetters = this.evaluateWords(wordSplits);
-
-      return {
-        original_ipa_transcript: originalIPA,
-        voice_ipa_transcript: speechIPA,
-        pronunciation_accuracy: accuracy,
-        correct_letters: correctLetters,
-      };
-    } catch (error) {
-      this.logger.error(error);
-      throw new BadRequestException(error);
-    }
-  }
-
-  getMatchingBlocks(src: string, dest: string) {
-    const dmp = new DiffMatchPatch();
-    const diffs = dmp.diff_main(src, dest);
-    dmp.diff_cleanupSemantic(diffs);
-
-    let index1 = 0;
-    let index2 = 0;
-    const matchingBlocks = [];
-
-    for (const diff of diffs) {
-      const [type, value] = diff;
-      if (type === 0) {
-        // Matching block
-        matchingBlocks.push({
-          start1: index1, // Start index in text1
-          start2: index2, // Start index in text2
-          length: value.length, // Length of the match
-        });
-      }
-
-      // Update indices based on operation type
-      if (type !== 1) index1 += value.length; // Skip "insert" for text1
-      if (type !== -1) index2 += value.length; // Skip "delete" for text2
-    }
-
-    return matchingBlocks;
-  }
-
-  evaluateWords(wordSplits: string[]) {
-    const result = []; // Store results (0, 1, or 2)
-
-    for (const word of wordSplits) {
-      const correct = word.split("").filter((char) => char === "1").length;
-
-      if (correct === word.length) {
-        result.push(2); // All '1's
-      } else if (correct >= Math.round(word.length / 2)) {
-        result.push(1); // At least half are '1's
-      } else {
-        result.push(0); // Less than half are '1's
-      }
-    }
-
-    return result;
   }
 }
