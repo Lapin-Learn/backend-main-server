@@ -1,24 +1,50 @@
 import { Type } from "class-transformer";
-import { ValidateNested, IsEnum } from "class-validator";
-import { CriterialEvaluation } from "./genai-shared-evaluation.dto";
+import { ValidateNested, IsEnum, IsNumber, Min, Max, IsString, IsArray } from "class-validator";
 import { GenAIPartEnum } from "@app/types/enums";
+
+class ErrorDetail {
+  @IsString()
+  error: string;
+
+  @IsString()
+  correction: string;
+
+  @IsString()
+  explanation: string;
+
+  @IsArray()
+  @IsString({ each: true })
+  highlight: string[];
+}
+
+class WritingCriterialEvaluation {
+  @IsNumber()
+  @Min(0)
+  @Max(9)
+  score: number;
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ErrorDetail)
+  evaluate: ErrorDetail[];
+}
 
 export class WritingCriteriaDto {
   @ValidateNested()
-  @Type(() => CriterialEvaluation)
-  CC: CriterialEvaluation;
+  @Type(() => WritingCriterialEvaluation)
+  CC: WritingCriterialEvaluation;
 
   @ValidateNested()
-  @Type(() => CriterialEvaluation)
-  LR: CriterialEvaluation;
+  @Type(() => WritingCriterialEvaluation)
+  LR: WritingCriterialEvaluation;
 
   @ValidateNested()
-  @Type(() => CriterialEvaluation)
-  GRA: CriterialEvaluation;
+  @Type(() => WritingCriterialEvaluation)
+  GRA: WritingCriterialEvaluation;
 
   @ValidateNested()
-  @Type(() => CriterialEvaluation)
-  TR: CriterialEvaluation;
+  @Type(() => WritingCriterialEvaluation)
+  TR: WritingCriterialEvaluation;
 
   getOverallScore() {
     const scores = [this.CC?.score || 0, this.LR?.score || 0, this.GRA?.score || 0, this.TR?.score || 0];

@@ -17,7 +17,9 @@ export class AIWritingService {
 
   constructor(private readonly configService: ConfigService) {
     this.genAIWritingScoreModel = new GenAIWritingScoreModel(
-      createGoogleGenerativeAI({ apiKey: this.configService.get("GEMINI_API_KEY") }).languageModel("gemini-exp-1206")
+      createGoogleGenerativeAI({ apiKey: this.configService.get("GEMINI_API_KEY") }).languageModel(
+        "gemini-2.0-pro-exp-02-05"
+      )
     );
   }
 
@@ -41,30 +43,19 @@ export class AIWritingService {
       const part1Answer = info.find((item) => item.questionNo === 1)?.answer || "";
       const part2Answer = info.find((item) => item.questionNo === 2)?.answer || "";
 
-      const contentPayload = {
-        part1Question: part1Question?.content || "",
-        part1Answer: part1Answer,
-        part2Question: part2Question?.content || "",
-        part2Answer: part2Answer,
-        note: "the attached image belongs to part 1 question",
-      };
+      const contentPayload = `Part 1: ${part1Question.content}\n\n${part1Answer}\n\nPart 2: ${part2Question.content}\n\n${part2Answer}`;
 
       const userContent: UserContent = [
         {
           type: "text",
-          text: JSON.stringify(contentPayload),
+          text: contentPayload,
         },
       ];
 
       if (part1ImgUrl) {
-        const imgResponse = await fetch(part1ImgUrl);
-        const imgBuffer = await imgResponse.arrayBuffer();
-        const mimeType = imgResponse.headers.get("Content-Type") || "image/jpeg";
-
         userContent.push({
-          type: "file",
-          data: imgBuffer,
-          mimeType: mimeType,
+          type: "image",
+          image: part1ImgUrl,
         });
       }
 

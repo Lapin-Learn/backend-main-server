@@ -23,10 +23,14 @@ export class AISpeakingService {
 
   constructor(private readonly configService: ConfigService) {
     this.genAISpeakingModel = new GenAISpeakingModel(
-      createGoogleGenerativeAI({ apiKey: this.configService.get("GEMINI_API_KEY") }).languageModel("gemini-exp-1206")
+      createGoogleGenerativeAI({ apiKey: this.configService.get("GEMINI_API_KEY") }).languageModel(
+        "gemini-2.0-pro-exp-02-05"
+      )
     );
     this.genAISpeakingScoreEvaluationModel = new GenAISpeakingScoreModel(
-      createGoogleGenerativeAI({ apiKey: this.configService.get("GEMINI_API_KEY") }).languageModel("gemini-exp-1206")
+      createGoogleGenerativeAI({ apiKey: this.configService.get("GEMINI_API_KEY") }).languageModel(
+        "gemini-2.0-pro-exp-02-05"
+      )
     );
     this.httpService = genericHttpConsumer();
     this.EVALUATION_SERVICE_API = this.configService.get("EVALUATION_SERVICE_API");

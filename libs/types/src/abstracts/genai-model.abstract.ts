@@ -4,7 +4,7 @@ import { generateObject, UserContent } from "ai";
 import { z, ZodSchema } from "zod";
 
 export abstract class GenAIModelAbstract<T extends ZodSchema<any>> implements IGenAIModelAbstract {
-  constructor(private readonly model: LanguageModelV1) {}
+  constructor(protected readonly model: LanguageModelV1) {}
 
   async generateContent(userContent: UserContent = ""): Promise<z.infer<T>> {
     const { object } = await generateObject({
