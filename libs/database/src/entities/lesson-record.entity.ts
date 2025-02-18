@@ -56,7 +56,7 @@ export class LessonRecord extends BaseEntity implements ILessonRecord {
 
   static async getTotalDurationOfLearnDailyLesson(profileId: string) {
     return await this.createQueryBuilder("lesson_records")
-      .select("SUM(lesson_records.duration)", "totalDuration")
+      .select("COALESCE(SUM(lesson_records.duration), 0)", "totalDuration")
       .where("DATE(lesson_records.created_at) = CURRENT_DATE")
       .andWhere("lesson_records.learner_profile_id = :profileId", { profileId })
       .getRawOne();
