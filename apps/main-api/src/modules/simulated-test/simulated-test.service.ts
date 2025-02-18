@@ -32,13 +32,14 @@ import {
   MISSION_SUBJECT_FACTORY,
   PUSH_SPEAKING_FILE_QUEUE,
   FINISHED_STATUSES,
+  LEARNER_SUBJECT_FACTORY,
 } from "@app/types/constants";
 import { plainToInstance } from "class-transformer";
 import { InjectQueue } from "@nestjs/bullmq";
 import { Queue } from "bullmq";
 import { ITestCollection, ICurrentUser, IGradingStrategy, IBucket } from "@app/types/interfaces";
 import { MileStonesObserver } from "@app/shared-modules/observers";
-import { MissionSubject } from "@app/shared-modules/subjects";
+import { LearnerProfileSubject, MissionSubject } from "@app/shared-modules/subjects";
 
 @Injectable()
 export class SimulatedTestService {
@@ -51,7 +52,9 @@ export class SimulatedTestService {
     @InjectQueue(EVALUATE_WRITING_QUEUE) private writingQueue: Queue,
     @InjectQueue(PUSH_SPEAKING_FILE_QUEUE) private pushFileQueue: Queue,
     @Inject(MISSION_SUBJECT_FACTORY)
-    private readonly missionSubjectFactory: (observer: MileStonesObserver) => MissionSubject
+    private readonly missionSubjectFactory: (observer: MileStonesObserver) => MissionSubject,
+    @Inject(LEARNER_SUBJECT_FACTORY)
+    private readonly learnerSubjectFactory: (observer: MileStonesObserver) => LearnerProfileSubject
   ) {}
   async getCollectionsWithSimulatedTest(offset: number, limit: number, profileId: string) {
     try {
@@ -366,6 +369,9 @@ export class SimulatedTestService {
         const learnerProfile = await LearnerProfile.findOne({ where: { id: learner.profileId } });
         const missionSubject = this.missionSubjectFactory(this.observer);
         await missionSubject.checkMissionProgress(learnerProfile);
+
+        const learnerSubject = this.learnerSubjectFactory(this.observer);
+        await learnerSubject.checkProfileChange(learnerProfile);
         const milestones = this.observer.getMileStones();
         return milestones;
       }
