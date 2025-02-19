@@ -45,9 +45,9 @@ export class RandomGiftItemEffect implements IItemEffectService {
     const random = Math.random();
     switch (true) {
       case random < 0.5: // 50%
-        return this.getRandomCarrots(80, 150);
+        return this.getRandomCarrots(8, 15);
       case random < 0.8: // 30%
-        return this.getRandomCarrots(151, 200);
+        return this.getRandomCarrots(16, 20);
       default: // 20%
         return this.getRandomItem();
     }

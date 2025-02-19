@@ -126,6 +126,7 @@ export class SimulatedTestController {
   @ApiOperation({ summary: "Get a skill test content to render question to learner" })
   @ApiParam({ name: "id", type: Number, required: true })
   @ApiQuery({ name: "part", type: Number, required: true })
+  @PublicRoute()
   @Get("skill-tests/:id")
   async getPassageContents(@Param("id", ParseIntPipe) skillTestId: number, @Query("part", ParseIntPipe) part: number) {
     return this.simulatedTestService.getSkillTestContent(skillTestId, part);
