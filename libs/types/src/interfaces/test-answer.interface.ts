@@ -16,7 +16,7 @@ export class ExactValidation extends TestAnswerValidation {
   }
 
   validate(input: string): boolean {
-    this.preprocess();
+    this.valid = this.preprocess();
     return this.valid === input;
   }
 }
@@ -25,11 +25,11 @@ export class VariantValidation extends TestAnswerValidation {
   variants: string[];
 
   preprocess() {
-    this.variants.map((variant) => (_.isNil(variant) ? "" : variant.toLowerCase().trim().replace(/\s+/g, " ")));
+    return this.variants.map((variant) => (_.isNil(variant) ? "" : variant.toLowerCase().trim().replace(/\s+/g, " ")));
   }
 
   validate(input: string): boolean {
-    this.preprocess();
+    this.variants = this.preprocess();
     return this.variants.includes(input);
   }
 }
