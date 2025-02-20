@@ -19,9 +19,9 @@ export function createExpressMulterFile(
     buffer: fileBuffer,
     size: fileBuffer.length,
     stream: Readable.from(fileBuffer),
-    destination: null,
+    destination: undefined,
     filename: tempFilePath,
-    path: tempFilePath,
+    path: undefined,
   };
 }
 

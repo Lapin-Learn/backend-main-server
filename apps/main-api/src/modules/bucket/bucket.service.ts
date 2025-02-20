@@ -187,7 +187,7 @@ export class BucketService {
       permission: BucketPermissionsEnum.PUBLIC,
     };
     const presignedUrl = await this.getPresignedUploadUrl(user, uploadedFile);
-    const res = await this.httpService.put(presignedUrl.url, file.buffer, {
+    const res = await this.httpService.put(presignedUrl.url, Buffer.from(file.buffer), {
       headers: {
         "Content-Type": file.mimetype,
       },
