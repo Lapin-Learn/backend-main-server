@@ -40,4 +40,14 @@ export class Blog extends BaseEntity implements IBlog {
   @OneToOne(() => Bucket, { eager: true })
   @JoinColumn({ name: "thumbnail_id", referencedColumnName: "id" })
   readonly thumbnail: IBucket;
+
+  // Static methods
+  static async getBlogs(offset: number, limit: number) {
+    return this.createQueryBuilder("blogs")
+      .leftJoinAndSelect("blogs.thumbnail", "thumbnail")
+      .orderBy("blogs.createdAt", "DESC")
+      .skip(offset)
+      .take(limit)
+      .getMany();
+  }
 }

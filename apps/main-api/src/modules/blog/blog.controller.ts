@@ -1,4 +1,15 @@
-import { Body, Controller, Get, Post, UploadedFile, UseGuards, UseInterceptors } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  DefaultValuePipe,
+  Get,
+  ParseIntPipe,
+  Post,
+  Query,
+  UploadedFile,
+  UseGuards,
+  UseInterceptors,
+} from "@nestjs/common";
 import { BlogService } from "./blog.service";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { CreateBlogDto } from "@app/types/dtos/blogs";
@@ -12,7 +23,7 @@ export class BlogController {
   constructor(private readonly blogService: BlogService) {}
 
   @UseGuards(FirebaseJwtAuthGuard)
-  @Roles(AccountRoleEnum.LEARNER)
+  @Roles(AccountRoleEnum.ADMIN)
   @Post()
   @UseInterceptors(FileInterceptor("file"))
   createBlog(@Body() dto: CreateBlogDto, @UploadedFile() file: Express.Multer.File, @CurrentUser() user: ICurrentUser) {
@@ -25,7 +36,10 @@ export class BlogController {
   }
 
   @Get()
-  getAllBlogs() {
-    return this.blogService.getAllBlogs();
+  getAllBlogs(
+    @Query("offset", new DefaultValuePipe(0), ParseIntPipe) offset: number,
+    @Query("limit", new DefaultValuePipe(10), ParseIntPipe) limit: number
+  ) {
+    return this.blogService.getAllBlogs(offset, limit);
   }
 }

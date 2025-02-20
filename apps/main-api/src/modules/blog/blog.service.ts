@@ -12,16 +12,20 @@ export class BlogService {
 
   async createBlog(dto: CreateBlogDto, file: Express.Multer.File, user: ICurrentUser) {
     try {
-      const data = await this.bucketService.uploadFile(file.originalname, file, user);
+      if (!file) {
+        throw new BadRequestException("File is required");
+      }
 
-      if (data === false) {
+      const fileUploadResult = await this.bucketService.uploadFile(file.originalname, file, user);
+
+      if (fileUploadResult === false) {
         throw new Error("Error uploading file");
       }
 
       const blog = await Blog.save({
         title: dto.title,
         content: dto.content,
-        thumbnailId: data.id,
+        thumbnailId: fileUploadResult.id,
       });
 
       return blog;
@@ -40,9 +44,15 @@ export class BlogService {
     }
   }
 
-  async getAllBlogs() {
+  async getAllBlogs(offset: number, limit: number) {
     try {
-      return Blog.find();
+      const total = await Blog.count();
+      const blogs = await Blog.getBlogs(offset, limit);
+
+      return {
+        total,
+        items: blogs,
+      };
     } catch (error) {
       this.logger.error(error);
       throw new BadRequestException(error);
