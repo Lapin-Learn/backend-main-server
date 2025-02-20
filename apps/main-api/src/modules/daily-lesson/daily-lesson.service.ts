@@ -23,18 +23,32 @@ export class DailyLessonService {
   async getQuestionTypesProgressOfLearner(skill: SkillEnum, learnerProfileId: string) {
     try {
       const questionTypes = await QuestionType.getQuestionTypeProgressOfLearner(skill, learnerProfileId);
-      return questionTypes.map((questionType) => {
-        const { lessonProcesses, ...rest } = questionType;
-        const currentProcess = lessonProcesses[0]; //Expect only one process of a question type
-        const totalLearningXP = currentProcess?.xp.reduce((acc, cur) => acc + cur.xp, 0) || 0;
-        return {
-          ...rest,
-          progress: {
-            bandScore: currentProcess?.bandScore || BandScoreEnum.PRE_IELTS,
-            totalLearningXP,
-          },
-        };
-      });
+      return Promise.all(
+        questionTypes.map(async (questionType) => {
+          const { lessonProcesses, ...rest } = questionType;
+          const currentProcess = lessonProcesses[0]; //Expect only one process of a question type
+          let totalLearningXP = 0;
+          let currentBandScore = BandScoreEnum.PRE_IELTS;
+          if (currentProcess) {
+            currentBandScore = currentProcess.bandScore;
+            const lessonsOfBand = await Lesson.find({
+              where: { bandScore: currentBandScore, questionTypeId: questionType.id },
+              select: {
+                id: true,
+              },
+            });
+            const filteredXP = currentProcess.xp.filter((p) => lessonsOfBand.find((l) => l.id === p.lessonId));
+            totalLearningXP = filteredXP.reduce((acc, cur) => acc + cur.xp, 0) || 0;
+          }
+          return {
+            ...rest,
+            progress: {
+              bandScore: currentProcess?.bandScore || BandScoreEnum.PRE_IELTS,
+              totalLearningXP,
+            },
+          };
+        })
+      );
     } catch (error) {
       this.logger.error(error);
       throw new BadRequestException(error);
