@@ -21,7 +21,7 @@ export class SpeakingFileConsumer extends WorkerHost {
       }: { speakingAudio: Express.Multer.File; sessionId: number; currentUser: ICurrentUser } = job.data;
       const fileName = `${SPEAKING_FILE_PREFIX}-${sessionId}`;
       const uploaded = await this.bucketService.uploadFile(fileName, speakingAudio, currentUser);
-      if (uploaded !== true) {
+      if (uploaded === false) {
         throw new Error("Error uploading speaking file");
       }
       return;
