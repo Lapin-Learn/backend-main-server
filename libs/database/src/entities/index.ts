@@ -28,3 +28,4 @@ export * from "./skill_test_answers.entity";
 export * from "./skill-test-records.entity";
 export * from "./transaction.entity";
 export * from "./payos-transaction.entity";
+export * from "./blog.entity";
