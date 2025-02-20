@@ -100,7 +100,16 @@ export class LessonProcess extends BaseEntity implements ILessonProcess {
         (require) => require.bandScore === this.bandScore
       );
 
-      const totalXP = this.xp.reduce((acc, cur) => acc + cur.xp, 0);
+      const lessonsOfBand = await Lesson.find({
+        where: { bandScore: this.bandScore, questionTypeId: this.questionTypeId },
+        select: {
+          id: true,
+        },
+      });
+
+      const filteredXP = this.xp.filter((x) => lessonsOfBand.find((l) => l.id === x.lessonId));
+
+      const totalXP = filteredXP.reduce((acc, cur) => acc + cur.xp, 0);
       const nextBandScore = NextBandScoreMap.get(this.bandScore);
       if (totalXP >= currentRequiredBandScore.requireXP && nextBandScore) {
         this.bandScore = nextBandScore;
