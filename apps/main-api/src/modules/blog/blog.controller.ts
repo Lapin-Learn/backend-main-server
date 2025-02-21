@@ -3,7 +3,9 @@ import {
   Controller,
   DefaultValuePipe,
   Get,
+  Param,
   ParseIntPipe,
+  ParseUUIDPipe,
   Post,
   Query,
   UploadedFile,
@@ -13,16 +15,26 @@ import {
 import { BlogService } from "./blog.service";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { CreateBlogDto } from "@app/types/dtos/blogs";
-import { FirebaseJwtAuthGuard } from "../../guards";
-import { CurrentUser, Roles } from "../../decorators";
+import { FirebaseJwtAuthGuard, RoleGuard } from "../../guards";
+import { ApiDefaultResponses, ApiPaginatedResponse, CurrentUser, Roles } from "../../decorators";
 import { AccountRoleEnum } from "@app/types/enums";
 import { ICurrentUser } from "@app/types/interfaces";
+import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiQuery, ApiTags } from "@nestjs/swagger";
+import { PaginationInterceptor } from "@app/utils/interceptors";
 
+@ApiTags("Blogs")
+@ApiBearerAuth()
+@ApiDefaultResponses()
 @Controller("blogs")
 export class BlogController {
   constructor(private readonly blogService: BlogService) {}
 
-  @UseGuards(FirebaseJwtAuthGuard)
+  @ApiOperation({ summary: "Create a post" })
+  @ApiConsumes("multipart/form-data")
+  @ApiBody({
+    type: CreateBlogDto,
+  })
+  @UseGuards(FirebaseJwtAuthGuard, RoleGuard)
   @Roles(AccountRoleEnum.ADMIN)
   @Post()
   @UseInterceptors(FileInterceptor("file"))
@@ -30,11 +42,17 @@ export class BlogController {
     return this.blogService.createBlog(dto, file, user);
   }
 
+  @ApiOperation({ summary: "Create a post" })
   @Get(":id")
-  getBlogById(id: string) {
+  getBlogById(@Param("id", ParseUUIDPipe) id: string) {
     return this.blogService.getBlogById(id);
   }
 
+  @ApiOperation({ summary: "Get all posts" })
+  @ApiQuery({ name: "offset", type: Number, required: false })
+  @ApiQuery({ name: "limit", type: Number, required: false })
+  @ApiPaginatedResponse(CreateBlogDto)
+  @UseInterceptors(PaginationInterceptor)
   @Get()
   getAllBlogs(
     @Query("offset", new DefaultValuePipe(0), ParseIntPipe) offset: number,
