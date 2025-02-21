@@ -67,4 +67,12 @@ export class DailyLessonController {
   async getInstructionsByQuestionType(@Param("id", ParseIntPipe) id: number) {
     return this.dailyLessonService.getInstructionsOfQuestionType(id);
   }
+
+  @ApiOperation({ summary: "Get questions for jump band test" })
+  @ApiDefaultResponses()
+  @ApiParam({ name: "id", description: "Question type id", type: Number })
+  @Get("question-types/:id/band-upgrade-questions")
+  async getJumpBandQuestions(@Param("id", ParseIntPipe) id: number, @CurrentUser() currentUser: ICurrentUser) {
+    return this.dailyLessonService.getJumpBandQuestions(id, currentUser);
+  }
 }
