@@ -6,9 +6,9 @@ import { BadRequestException, Injectable, Logger } from "@nestjs/common";
 import { InfoTextResponseDto, WritingEvaluation } from "@app/types/dtos/simulated-tests";
 import { plainToInstance } from "class-transformer";
 import { validate } from "class-validator";
-import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { ConfigService } from "@nestjs/config";
 import { UserContent } from "ai";
+import { createOpenAI } from "@ai-sdk/openai";
 
 @Injectable()
 export class AIWritingService {
@@ -17,9 +17,7 @@ export class AIWritingService {
 
   constructor(private readonly configService: ConfigService) {
     this.genAIWritingScoreModel = new GenAIWritingScoreModel(
-      createGoogleGenerativeAI({ apiKey: this.configService.get("GEMINI_API_KEY") }).languageModel(
-        "gemini-2.0-pro-exp-02-05"
-      )
+      createOpenAI({ apiKey: this.configService.get("OPENAI_API_KEY") }).languageModel("gpt-4o")
     );
   }
 
@@ -38,7 +36,7 @@ export class AIWritingService {
       const part2Question = (skillTest?.partsContent?.[1] || {}) as IAIWritingQuestion;
 
       const part1ImgRegex = part1Question?.content.match(/<img[^>]+src=['"]([^'"]+)['"]/);
-      const part1ImgUrl = part1ImgRegex ? part1ImgRegex[1] : null;
+      const part1ImgUrl = part1ImgRegex ? new URL(part1ImgRegex[1]) : null;
 
       const part1Answer = info.find((item) => item.questionNo === 1)?.answer || "";
       const part2Answer = info.find((item) => item.questionNo === 2)?.answer || "";
@@ -61,7 +59,7 @@ export class AIWritingService {
 
       const plainResponse = await this.genAIWritingScoreModel.generateContent(userContent);
 
-      const response = plainToInstance(WritingEvaluation, plainResponse as object[]);
+      const response = plainToInstance(WritingEvaluation, plainResponse.result as object[]);
       for (const r of response) {
         const errs = await validate(r);
         if (errs.length > 0) {

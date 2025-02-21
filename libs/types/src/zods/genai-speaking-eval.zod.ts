@@ -5,17 +5,19 @@ const CriteriaSchema = z.object({
   evaluate: z.string().describe("Detailed feedback in Vietnamese"),
 });
 
-const ResponseSchemaSpeakingEvaluation = z.array(
-  z.object({
-    part: z.enum(["1", "2", "overall"]).describe("'1', '2' or 'overall'"),
-    criterias: z.object({
-      FC: CriteriaSchema.describe("Fluency and Coherence"),
-      LR: CriteriaSchema.describe("Lexical Resource"),
-      GRA: CriteriaSchema.describe("Grammatical Range and Accuracy"),
-      P: CriteriaSchema.describe("Pronunciation"),
-    }),
-  })
-);
+const ResponseSchemaSpeakingEvaluation = z.object({
+  result: z.array(
+    z.object({
+      part: z.enum(["1", "2", "overall"]).describe("'1', '2' or 'overall'"),
+      criterias: z.object({
+        FC: CriteriaSchema.describe("Fluency and Coherence"),
+        LR: CriteriaSchema.describe("Lexical Resource"),
+        GRA: CriteriaSchema.describe("Grammatical Range and Accuracy"),
+        P: CriteriaSchema.describe("Pronunciation"),
+      }),
+    })
+  ),
+});
 
 type TResponseSchemaSpeakingEvaluation = z.infer<typeof ResponseSchemaSpeakingEvaluation>;
 
