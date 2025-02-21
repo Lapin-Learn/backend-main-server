@@ -23,6 +23,8 @@ import { AIModule } from "../ai/ai.module";
 import { BullModule } from "@nestjs/bullmq";
 import { PaymentModule } from "../payment/payment.module";
 import { WORKER_ATTEMPTS } from "@app/types/constants";
+import { BlogModule } from "../blog/blog.module";
+
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -68,6 +70,7 @@ import { WORKER_ATTEMPTS } from "@app/types/constants";
     SimulatedTestModule,
     AIModule,
     PaymentModule,
+    BlogModule,
   ],
   controllers: [MainApiController],
   providers: [
