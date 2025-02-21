@@ -1,4 +1,12 @@
-import { Instruction, LearnerProfile, Lesson, LessonProcess, LessonRecord, QuestionType } from "@app/database";
+import {
+  Instruction,
+  LearnerProfile,
+  Lesson,
+  LessonProcess,
+  LessonRecord,
+  Question,
+  QuestionType,
+} from "@app/database";
 import { MileStonesObserver } from "@app/shared-modules/observers";
 import { MissionSubject, LearnerProfileSubject } from "@app/shared-modules/subjects";
 import { BandScoreOrder, LEARNER_SUBJECT_FACTORY, MISSION_SUBJECT_FACTORY } from "@app/types/constants";
@@ -158,13 +166,19 @@ export class DailyLessonService {
 
       const learnerProfileSubject = this.learnerSubjectFactory(this.mileStonesObserver);
       await learnerProfileSubject.checkProfileChange(learner);
-      await learnerProfileSubject.checkAfterFinishLesson(
-        learner,
-        result.bonusXP,
-        dto.duration,
-        dto.lessonId,
-        currentLesson.questionTypeId
-      );
+
+      if (dto.isJumpBand) {
+        const correctPercentage = (dto.correctAnswers * 100) / (dto.correctAnswers + dto.wrongAnswers);
+        await learnerProfileSubject.checkDoneJumpBandTest(learner, correctPercentage, currentLesson);
+      } else {
+        await learnerProfileSubject.checkAfterFinishLesson(
+          learner,
+          result.bonusXP,
+          dto.duration,
+          dto.lessonId,
+          currentLesson.questionTypeId
+        );
+      }
 
       const missionSubject = this.missionSubjectFactory(this.mileStonesObserver);
       await missionSubject.checkMissionProgress(learner);
@@ -194,6 +208,73 @@ export class DailyLessonService {
       });
 
       return BandScoreOrder.slice(0, BandScoreOrder.indexOf(currentProcess.bandScore) + 1);
+    } catch (err) {
+      this.logger.error(err);
+      throw new BadRequestException(err);
+    }
+  }
+
+  async getJumpBandQuestions(questionTypeId: number, currentUser: ICurrentUser) {
+    try {
+      let currentBandScore = BandScoreEnum.PRE_IELTS;
+      let requiredPercentage = 0;
+      const questionTypeProcess = await LessonProcess.findOne({
+        where: { questionTypeId, learnerProfileId: currentUser.profileId },
+        select: { id: true, bandScore: true, questionTypeId: true },
+        relations: {
+          questionType: true,
+        },
+      });
+
+      if (questionTypeProcess) {
+        currentBandScore = questionTypeProcess.bandScore;
+        requiredPercentage = questionTypeProcess.questionType.bandScoreRequires.find(
+          (r) => r.bandScore === currentBandScore
+        ).requireXP;
+      } else {
+        const questionTypeInfo = await QuestionType.findOne({
+          where: { id: questionTypeId },
+          select: { id: true, bandScoreRequires: true },
+        });
+        requiredPercentage = questionTypeInfo.bandScoreRequires.find(
+          (r) => r.bandScore === currentBandScore
+        ).jumpBandPercentage;
+      }
+
+      const lessons = await Lesson.find({
+        where: { questionTypeId, bandScore: currentBandScore },
+        order: {
+          order: "DESC",
+        },
+        relations: {
+          questionToLessons: {
+            question: true,
+          },
+        },
+      });
+
+      if (!lessons || lessons.length === 0) {
+        return "This band do not have any questions yet";
+      }
+
+      const questions = lessons.flatMap((lesson) => lesson.questionToLessons.map((ql) => ql.question));
+      const totalQuestions = questions.length;
+      let requiredQuestions = Math.floor(totalQuestions * requiredPercentage);
+      requiredQuestions = requiredQuestions > 10 ? 10 : requiredQuestions;
+      requiredQuestions = requiredQuestions === 0 && totalQuestions > 0 ? 1 : requiredQuestions;
+
+      const shuffleArray = (array: Question[]) => {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+      };
+
+      const shuffledQuestions = shuffleArray([...questions]);
+      const selectedQuestions = shuffledQuestions.slice(0, requiredQuestions);
+
+      return { questions: selectedQuestions, lastLessonId: lessons[0].id };
     } catch (err) {
       this.logger.error(err);
       throw new BadRequestException(err);

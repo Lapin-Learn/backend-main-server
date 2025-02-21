@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsInt, Min } from "class-validator";
+import { IsBoolean, IsInt, IsOptional, Min } from "class-validator";
 
 export class CompleteLessonDto {
   @IsInt({ message: "Lesson ID must be an integer" })
@@ -29,4 +29,8 @@ export class CompleteLessonDto {
     example: 60,
   })
   duration: number; // in seconds
+
+  @IsOptional()
+  @IsBoolean({ message: "Jump band process must be boolean" })
+  isJumpBand: boolean = false;
 }
