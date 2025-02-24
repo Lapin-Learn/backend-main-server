@@ -2,7 +2,7 @@ import { BadRequestException, Injectable, Logger } from "@nestjs/common";
 import { GenAISpeakingModel } from "@app/shared-modules/genai/model/genai-speaking-model.service";
 import { GenAISpeakingScoreModel } from "@app/shared-modules/genai";
 import { ICurrentUser } from "@app/types/interfaces";
-import { SkillTest, SkillTestSession } from "@app/database";
+import { SimulatedIeltsTest, SkillTest, SkillTestSession } from "@app/database";
 import { InfoSpeakingResponseDto, SpeakingEvaluation } from "@app/types/dtos/simulated-tests";
 import { plainToInstance } from "class-transformer";
 import { CreateSkillTestDto } from "@app/types/dtos";
@@ -10,8 +10,8 @@ import { AxiosInstance } from "axios";
 import { genericHttpConsumer } from "@app/utils/axios";
 import { Blob } from "buffer";
 import { ConfigService } from "@nestjs/config";
-import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { UserContent } from "ai";
+import { createOpenAI } from "@ai-sdk/openai";
 
 @Injectable()
 export class AISpeakingService {
@@ -23,10 +23,10 @@ export class AISpeakingService {
 
   constructor(private readonly configService: ConfigService) {
     this.genAISpeakingModel = new GenAISpeakingModel(
-      createGoogleGenerativeAI({ apiKey: this.configService.get("GEMINI_API_KEY") }).languageModel("gemini-exp-1206")
+      createOpenAI({ apiKey: this.configService.get("OPENAI_API_KEY") }).languageModel("gpt-4o")
     );
     this.genAISpeakingScoreEvaluationModel = new GenAISpeakingScoreModel(
-      createGoogleGenerativeAI({ apiKey: this.configService.get("GEMINI_API_KEY") }).languageModel("gemini-exp-1206")
+      createOpenAI({ apiKey: this.configService.get("OPENAI_API_KEY") }).languageModel("gpt-4o-audio-preview")
     );
     this.httpService = genericHttpConsumer();
     this.EVALUATION_SERVICE_API = this.configService.get("EVALUATION_SERVICE_API");
@@ -34,7 +34,11 @@ export class AISpeakingService {
 
   async generateQuestion(dto: CreateSkillTestDto) {
     try {
-      const result = await this.genAISpeakingModel.generateContent();
+      // Validate simulated test
+      await SimulatedIeltsTest.findOneOrFail({ where: { id: dto.testId } });
+
+      const rawResult = await this.genAISpeakingModel.generateContent();
+      const result = rawResult.result;
       if (!result || result.length === 0) throw new Error("Invalid generated format.");
       const totalQuestions = result?.reduce(
         (
@@ -115,9 +119,8 @@ export class AISpeakingService {
       ];
 
       // Generate content using the AI model
-      const plainEvaluations = (await this.genAISpeakingScoreEvaluationModel.generateContent(
-        userContent
-      )) as SpeakingEvaluation[];
+      const plainEvaluations = (await this.genAISpeakingScoreEvaluationModel.generateContent(userContent))
+        .result as SpeakingEvaluation[];
 
       return plainToInstance(SpeakingEvaluation, plainEvaluations);
     } catch (error) {

@@ -6,9 +6,9 @@ import { BadRequestException, Injectable, Logger } from "@nestjs/common";
 import { InfoTextResponseDto, WritingEvaluation } from "@app/types/dtos/simulated-tests";
 import { plainToInstance } from "class-transformer";
 import { validate } from "class-validator";
-import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { ConfigService } from "@nestjs/config";
 import { UserContent } from "ai";
+import { createOpenAI } from "@ai-sdk/openai";
 
 @Injectable()
 export class AIWritingService {
@@ -17,7 +17,7 @@ export class AIWritingService {
 
   constructor(private readonly configService: ConfigService) {
     this.genAIWritingScoreModel = new GenAIWritingScoreModel(
-      createGoogleGenerativeAI({ apiKey: this.configService.get("GEMINI_API_KEY") }).languageModel("gemini-exp-1206")
+      createOpenAI({ apiKey: this.configService.get("OPENAI_API_KEY") }).languageModel("gpt-4o")
     );
   }
 
@@ -36,41 +36,30 @@ export class AIWritingService {
       const part2Question = (skillTest?.partsContent?.[1] || {}) as IAIWritingQuestion;
 
       const part1ImgRegex = part1Question?.content.match(/<img[^>]+src=['"]([^'"]+)['"]/);
-      const part1ImgUrl = part1ImgRegex ? part1ImgRegex[1] : null;
+      const part1ImgUrl = part1ImgRegex ? new URL(part1ImgRegex[1]) : null;
 
       const part1Answer = info.find((item) => item.questionNo === 1)?.answer || "";
       const part2Answer = info.find((item) => item.questionNo === 2)?.answer || "";
 
-      const contentPayload = {
-        part1Question: part1Question?.content || "",
-        part1Answer: part1Answer,
-        part2Question: part2Question?.content || "",
-        part2Answer: part2Answer,
-        note: "the attached image belongs to part 1 question",
-      };
+      const contentPayload = `Part 1: ${part1Question.content}\n\n${part1Answer}\n\nPart 2: ${part2Question.content}\n\n${part2Answer}`;
 
       const userContent: UserContent = [
         {
           type: "text",
-          text: JSON.stringify(contentPayload),
+          text: contentPayload,
         },
       ];
 
       if (part1ImgUrl) {
-        const imgResponse = await fetch(part1ImgUrl);
-        const imgBuffer = await imgResponse.arrayBuffer();
-        const mimeType = imgResponse.headers.get("Content-Type") || "image/jpeg";
-
         userContent.push({
-          type: "file",
-          data: imgBuffer,
-          mimeType: mimeType,
+          type: "image",
+          image: part1ImgUrl,
         });
       }
 
       const plainResponse = await this.genAIWritingScoreModel.generateContent(userContent);
 
-      const response = plainToInstance(WritingEvaluation, plainResponse as object[]);
+      const response = plainToInstance(WritingEvaluation, plainResponse.result as object[]);
       for (const r of response) {
         const errs = await validate(r);
         if (errs.length > 0) {
