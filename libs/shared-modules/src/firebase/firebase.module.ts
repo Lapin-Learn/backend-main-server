@@ -16,7 +16,7 @@ import { FIREBASE_APP_PROVIDER } from "@app/types/constants";
         const options: AppOptions = {
           credential: cert({
             projectId: configService.get("FIREBASE_ADMIN_PROJECT_ID"),
-            privateKey: configService.get("FIREBASE_ADMIN_PRIVATE_KEY"),
+            privateKey: configService.get("FIREBASE_ADMIN_PRIVATE_KEY")?.replace(/\\n/g, "\n"),
             clientEmail: configService.get("FIREBASE_ADMIN_CLIENT_EMAIL"),
           }),
         };
