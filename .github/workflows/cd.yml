@@ -55,12 +55,14 @@ jobs:
 
   deploy-staging:
     name: Deploy Staging
+    needs: push-image
     if: github.ref != 'refs/heads/main'
     uses: Lapin-Learn/backend-main-server/.github/workflows/deploy-staging.yml@develop
     secrets: inherit
 
   deploy-prod:
     name: Deploy Production
+    needs: push-image
     if: github.ref == 'refs/heads/main'
     uses: Lapin-Learn/backend-main-server/.github/workflows/deploy-prod.yml@main
     secrets: inherit
