@@ -2,10 +2,6 @@ name: Deploy To Production environment
 
 on:
   workflow_call:
-    inputs:
-      branch:
-        required: true
-        type: string
 
 jobs:
   deploy:
