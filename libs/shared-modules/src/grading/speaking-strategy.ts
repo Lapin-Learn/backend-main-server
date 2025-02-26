@@ -57,6 +57,7 @@ export class EvaluateSpeaking implements IGradingStrategy {
       return { userResponses: this.userResponses, speakingAudio };
     } finally {
       inputFilePaths.forEach((file: FileResult) => file.removeCallback());
+      mergedTempFile.removeCallback();
     }
   }
 

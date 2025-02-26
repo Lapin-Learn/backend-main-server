@@ -393,7 +393,10 @@ export class SimulatedTestService {
         },
       });
 
-      if (session.status === TestSessionStatusEnum.FINISHED || session.status === TestSessionStatusEnum.CANCELED) {
+      if (
+        session.status !== TestSessionStatusEnum.NOT_EVALUATED &&
+        session.status !== TestSessionStatusEnum.EVALUATION_FAILED
+      ) {
         throw new BadRequestException(`Session is already ${session.status}`);
       }
 

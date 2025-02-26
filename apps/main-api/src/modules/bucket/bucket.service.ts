@@ -187,8 +187,7 @@ export class BucketService {
       permission: BucketPermissionsEnum.PUBLIC,
     };
     const presignedUrl = await this.getPresignedUploadUrl(user, uploadedFile);
-    const fsBuffer = fs.readFileSync(file.path);
-    const res = await this.httpService.put(presignedUrl.url, fsBuffer, {
+    const res = await this.httpService.put(presignedUrl.url, Buffer.from(file.buffer), {
       headers: {
         "Content-Type": file.mimetype,
       },
@@ -197,9 +196,8 @@ export class BucketService {
       this.logger.error("Error upload file: ", res.data);
       return false;
     }
-    await this.uploadConfirmation(user, { id: presignedUrl.id });
-    fs.unlinkSync(file.path); // Remove file after upload
-    return true;
+    const data = await this.uploadConfirmation(user, { id: presignedUrl.id });
+    return data;
   }
 
   async uploadAvatarFromLink(fileName: string, url: string, user: ICurrentUser) {
@@ -212,7 +210,8 @@ export class BucketService {
       fs.writeFileSync(tempFile.name, response.data);
 
       const file = createExpressMulterFile(tempFile.name, fileName, "image/jpeg");
-      const status = await this.uploadFile(fileName, file, user);
+      const uploadResult = await this.uploadFile(fileName, file, user);
+      const status = uploadResult !== false;
       tempFile.removeCallback();
       return status;
     } catch (err) {
