@@ -1,0 +1,23 @@
+name: Deploy to staging environment
+
+on:
+  workflow_call:
+    inputs:
+      branch:
+        required: true
+        type: string
+    secrets: inherit
+
+jobs:
+  deploy:
+    name: Trigger Portainer Webhook
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - name: Workflow Webhook Action
+        uses: distributhor/workflow-webhook@v3.0.7
+        with:
+          webhook_url: ${{secrets.WEBHOOK_URL}}?IMAGE_TAG=${{VARS.STAGE}}-${{github.sha}}
+          verbose: false
+          max_time: 360
+          verify_ssl: false
