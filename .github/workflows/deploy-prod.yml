@@ -14,6 +14,7 @@ jobs:
         with:
           repository: Lapin-Learn/infrastructure
           token: ${{ secrets.PRIVATE_TOKEN }}
+          fetch-depth: 0
 
       - name: Modify Image Tag
         run: |
@@ -22,8 +23,9 @@ jobs:
 
       - name: Commit and Push Changes
         run: |
+          NEW_IMAGE_TAG=${{VARS.STAGE}}-${{ github.sha }}
           git config --global user.name "Quan0308"
           git config --global user.email "bddquan@gmail.com"
           git add k8s/be-deployment.yml
-          git commit -m "chore: Update backend deployment image to $NEW_IMAGE_TAG"
+          git commit -m "chore: Update backend deployment image with tag $NEW_IMAGE_TAG"
           git push origin main
