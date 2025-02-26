@@ -1,22 +1,21 @@
-name: Push image
+name: CD
 
 on:
   workflow_dispatch:
+
 jobs:
-  deploy-image:
-    name: push server image
+  push-image:
+    name: Push Image To Docker Registry
     runs-on: ubuntu-latest
 
     environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
 
     steps:
-      # Step 1: Checkout repository
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # Step 2: Set up Docker
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
         with:
@@ -47,13 +46,21 @@ jobs:
         with:
           context: ./
           file: ./docker/Dockerfile.service
-          builder: ${{ steps.buildx.outputs.name }}
-          # build-args: |
-          #   PRIVATE_TOKEN=${{secrets.PRIVATE_TOKEN}}
-          #   STAGE=${{VARS.STAGE}}
           push: true
           tags: |
             ${{ secrets.DOCKER_USERNAME }}/backend-main-server:${{VARS.STAGE}}-${{github.sha}}
             ${{ secrets.DOCKER_USERNAME }}/backend-main-server:${{VARS.STAGE}}-latest
           cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/backend-main-server:cache
           cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/backend-main-server:cache,mode=max
+
+  deploy-staging:
+    name: Deploy Staging
+    if: github.ref != 'refs/heads/main'
+    uses: Lapin-Learn/backend-main-server/.github/workflows/deploy-staging.yml@develop
+    secrets: inherit
+
+  deploy-prod:
+    name: Deploy Production
+    if: github.ref == 'refs/heads/main'
+    uses: Lapin-Learn/backend-main-server/.github/workflows/deploy-prod.yml@main
+    secrets: inherit
