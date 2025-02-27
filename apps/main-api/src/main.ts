@@ -43,15 +43,17 @@ async function bootstrap() {
   app.useGlobalInterceptors(new ExceptionHandlerInterceptor());
   app.useGlobalPipes(ThrowFirstErrorValidationPipe);
 
-  const config = new DocumentBuilder()
-    .setTitle("Lapin learn")
-    .setDescription("Lapin learn API description")
-    .setVersion("1.0")
-    .addBearerAuth()
-    .build();
+  if (process.env.NODE_ENV !== "production") {
+    const config = new DocumentBuilder()
+      .setTitle("Lapin learn")
+      .setDescription("Lapin learn API description")
+      .setVersion("1.0")
+      .addBearerAuth()
+      .build();
 
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup("api", app, document);
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup("api", app, document);
+  }
 
   const port = process.env.PORT || 3000;
   await app.listen(port);
