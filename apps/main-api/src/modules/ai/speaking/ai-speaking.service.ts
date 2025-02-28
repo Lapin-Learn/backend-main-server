@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, Logger } from "@nestjs/common";
+import { BadRequestException, HttpStatus, Injectable, Logger } from "@nestjs/common";
 import { GenAISpeakingModel } from "@app/shared-modules/genai/model/genai-speaking-model.service";
 import { GenAISpeakingScoreModel } from "@app/shared-modules/genai";
 import { ICurrentUser } from "@app/types/interfaces";
@@ -146,12 +146,16 @@ export class AISpeakingService {
       formData.append("file", newBlob as globalThis.Blob);
 
       formData.append("original", original);
+      this.logger.log("Call to AI service: ", this.EVALUATION_SERVICE_API);
       const response = await this.httpService.post(this.EVALUATION_SERVICE_API, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
       });
-      return response.data;
+
+      this.logger.log("response: ", response);
+      if (response.status === HttpStatus.OK) return response.data;
+      return null;
     } catch (err) {
       this.logger.error(err);
       throw new BadRequestException(err);
