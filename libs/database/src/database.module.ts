@@ -24,6 +24,9 @@ const subscribers = (Object.keys(dbSubscribers) as Array<keyof typeof dbSubscrib
         entities,
         subscribers,
         logging: configService.get("NODE_ENV") === "development",
+        ssl: {
+          rejectUnauthorized: false,
+        },
       }),
       inject: [ConfigService],
     }),
