@@ -50,7 +50,7 @@ export class SkillTestSessionSubscriber implements EntitySubscriberInterface<Ski
               }
             }
           }
-        } else if (skillTest.skill === SkillEnum.SPEAKING) {
+        } else if (skillTest.skill === SkillEnum.SPEAKING && results && results.length) {
           const evaluations = plainToInstance(SpeakingEvaluation, results as object[]);
           if (evaluations) {
             const overallEvaluation: SpeakingCriteriaDto = evaluations.find(
@@ -69,7 +69,7 @@ export class SkillTestSessionSubscriber implements EntitySubscriberInterface<Ski
               }
             }
           }
-        } else if (skillTest.skill === SkillEnum.WRITING) {
+        } else if (skillTest.skill === SkillEnum.WRITING && results && results.length) {
           const evaluations = plainToInstance(WritingEvaluation, results as object[]);
           if (evaluations) {
             const overallEvaluation: WritingCriteriaDto = evaluations.find(

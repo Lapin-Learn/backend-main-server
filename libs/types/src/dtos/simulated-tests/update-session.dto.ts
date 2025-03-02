@@ -18,6 +18,8 @@ export class InfoSpeakingResponseDto {
   @IsOptional()
   @IsNumber()
   timeStamp: number;
+
+  transcript: string;
 }
 
 export class InfoTextResponseDto {
