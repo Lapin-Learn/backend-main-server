@@ -3,6 +3,7 @@ import { BuyItemDto } from "@app/types/dtos";
 import { ICurrentUser, IItem } from "@app/types/interfaces";
 import { BadRequestException, Injectable, Logger } from "@nestjs/common";
 import { ItemName } from "@app/types/enums";
+import { OK_RESPONSE } from "@app/types/constants";
 
 @Injectable()
 export class ShopService {
@@ -56,18 +57,19 @@ export class ShopService {
       const inventoryItem = await ProfileItem.findOne({
         where: { profileId: user.profileId, itemId: item.id },
       });
-      const updatedInventoryItem = await ProfileItem.save({
+
+      await ProfileItem.save({
         ...inventoryItem,
         itemId: item.id,
         profileId: user.profileId,
         quantity: inventoryItem?.quantity + dto.quantity || dto.quantity,
       });
       await LearnerProfile.save({
-        ...learner,
+        id: learner.id,
         carrots: learner.carrots - totalPrice,
       });
 
-      return updatedInventoryItem;
+      return OK_RESPONSE;
     } catch (error) {
       this.logger.error(error);
       throw new BadRequestException(error);
