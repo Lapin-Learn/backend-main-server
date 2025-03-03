@@ -5,11 +5,19 @@ import { PayOSService } from "./payos.service";
 import { PaymentWebhookController } from "./payment-webhook.controller";
 import { DatabaseModule } from "@app/database";
 import { ConfigService, ConfigModule } from "@nestjs/config";
-import { PAYOS_INSTANCE } from "@app/types/constants";
+import { PAYMENT_CRON_JOB, PAYOS_INSTANCE } from "@app/types/constants";
 import PayOS from "@payos/node";
+import { PaymentProcessor } from "./payment.processor";
+import { BullModule } from "@nestjs/bullmq";
 
 @Module({
-  imports: [ConfigModule, DatabaseModule],
+  imports: [
+    ConfigModule,
+    BullModule.registerQueue({
+      name: PAYMENT_CRON_JOB,
+    }),
+    DatabaseModule,
+  ],
   providers: [
     {
       provide: PAYOS_INSTANCE,
@@ -24,6 +32,7 @@ import PayOS from "@payos/node";
     },
     PaymentService,
     PayOSService,
+    PaymentProcessor,
   ],
   controllers: [PaymentController, PaymentWebhookController],
 })
