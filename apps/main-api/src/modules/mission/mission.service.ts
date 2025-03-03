@@ -72,7 +72,7 @@ export class MissionService {
   }
 
   // Remove and update mission at midnight GMT+7
-  @Cron("15 0 * * *", {
+  @Cron("0 0 * * *", {
     timeZone: "Asia/Saigon",
   })
   async handleUpdateMission() {

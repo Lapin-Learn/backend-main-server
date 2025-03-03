@@ -123,7 +123,15 @@ export class PaymentService {
     timeZone: VN_TIME_ZONE,
   }) // 12AM every day
   async revokeExpiredTransactions() {
-    await this.paymentQueue.add(REVOKE_EXPIRED_TRANSACTION_JOB, {});
+    await this.paymentQueue.add(
+      REVOKE_EXPIRED_TRANSACTION_JOB,
+      {},
+      {
+        jobId: REVOKE_EXPIRED_TRANSACTION_JOB,
+        removeOnComplete: true,
+        attempts: 1,
+      }
+    );
   }
 
   public async cancelListOfTransactions(

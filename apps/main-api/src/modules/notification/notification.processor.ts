@@ -6,7 +6,9 @@ import { Job } from "bullmq";
 import { FirebaseMessagingService } from "@app/shared-modules/firebase";
 import { LearnerProfile, NotificationToken } from "@app/database";
 
-@Processor(NOTIFICATION_CRON_JOB)
+@Processor(NOTIFICATION_CRON_JOB, {
+  concurrency: 1,
+})
 export class NotificationProcessor extends WorkerHost {
   private readonly logger = new Logger(NotificationProcessor.name);
   constructor(

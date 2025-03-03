@@ -61,7 +61,15 @@ export class StreakService {
     timeZone: VN_TIME_ZONE,
   })
   async resetStreak() {
-    await this.streakQueue.add(RESET_STREAK_JOB, {});
+    await this.streakQueue.add(
+      RESET_STREAK_JOB,
+      {},
+      {
+        jobId: RESET_STREAK_JOB,
+        removeOnComplete: true,
+        attempts: 1,
+      }
+    );
   }
 
   // Remind about missing streak at 20:00 GMT+7
@@ -70,7 +78,15 @@ export class StreakService {
     timeZone: VN_TIME_ZONE,
   })
   async remindAboutMissingStreak() {
-    await this.streakQueue.add(REMIND_ABOUT_MISSING_STREAK_JOB, {});
+    await this.streakQueue.add(
+      REMIND_ABOUT_MISSING_STREAK_JOB,
+      {},
+      {
+        jobId: REMIND_ABOUT_MISSING_STREAK_JOB,
+        removeOnComplete: true,
+        attempts: 1,
+      }
+    );
   }
 
   // Remind missing streak at 15:00 GMT+7
@@ -79,7 +95,15 @@ export class StreakService {
     timeZone: VN_TIME_ZONE,
   })
   async remindMissingStreak() {
-    await this.streakQueue.add(REMIND_MISSING_STREAK_JOB, {});
+    await this.streakQueue.add(
+      REMIND_MISSING_STREAK_JOB,
+      {},
+      {
+        jobId: REMIND_MISSING_STREAK_JOB,
+        removeOnComplete: true,
+        attempts: 1,
+      }
+    );
   }
 
   // Remind streak milestone at 8:00 GMT+7
@@ -88,6 +112,14 @@ export class StreakService {
     timeZone: VN_TIME_ZONE,
   })
   async remindStreakMileStone() {
-    await this.streakQueue.add(REMIND_STREAK_MILESTONE_JOB, {});
+    await this.streakQueue.add(
+      REMIND_STREAK_MILESTONE_JOB,
+      {},
+      {
+        jobId: REMIND_STREAK_MILESTONE_JOB,
+        removeOnComplete: true,
+        attempts: 1,
+      }
+    );
   }
 }

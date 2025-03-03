@@ -32,6 +32,14 @@ export class NotificationService {
   }) // 9PM every day
   // @Cron("*/2 * * * *") // Every 2 minutes, just for testing
   async sendRemindStreakNotification() {
-    await this.notificationQueue.add(REMIND_STREAK_NOTIFICATION_JOB, {});
+    await this.notificationQueue.add(
+      REMIND_STREAK_NOTIFICATION_JOB,
+      {},
+      {
+        jobId: REMIND_STREAK_NOTIFICATION_JOB,
+        removeOnComplete: true,
+        attempts: 1,
+      }
+    );
   }
 }
