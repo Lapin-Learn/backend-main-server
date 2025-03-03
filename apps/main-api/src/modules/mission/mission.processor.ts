@@ -6,7 +6,9 @@ import { Logger } from "@nestjs/common";
 import { Job } from "bullmq";
 import moment from "moment-timezone";
 
-@Processor(MISSION_CRON_JOB)
+@Processor(MISSION_CRON_JOB, {
+  concurrency: 1,
+})
 export class MissionProcessor extends WorkerHost {
   private readonly logger = new Logger(MissionProcessor.name);
   constructor() {

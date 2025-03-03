@@ -72,10 +72,18 @@ export class MissionService {
   }
 
   // Remove and update mission at midnight GMT+7
-  @Cron("0 0 * * *", {
+  @Cron("15 0 * * *", {
     timeZone: "Asia/Saigon",
   })
   async handleUpdateMission() {
-    await this.missionQueue.add(UPDATE_MISSION_JOB, {});
+    await this.missionQueue.add(
+      UPDATE_MISSION_JOB,
+      {},
+      {
+        jobId: UPDATE_MISSION_JOB,
+        removeOnComplete: true,
+        attempts: 1,
+      }
+    );
   }
 }
