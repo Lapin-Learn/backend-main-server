@@ -5,16 +5,19 @@ import { PayOSService } from "./payos.service";
 import { CreatePaymentLinkDto } from "@app/types/dtos/payment";
 import { PaymentCancellationReasonEnum, PaymentStatusEnum } from "@app/types/enums";
 import { Transaction, UnitOfWorkService } from "@app/database";
-import { EXPIRED_TIME, VN_TIME_ZONE } from "@app/types/constants";
+import { EXPIRED_TIME, PAYMENT_CRON_JOB, REVOKE_EXPIRED_TRANSACTION_JOB, VN_TIME_ZONE } from "@app/types/constants";
 import { Cron } from "@nestjs/schedule";
 import moment from "moment-timezone";
+import { InjectQueue } from "@nestjs/bullmq";
+import { Queue } from "bullmq";
 
 @Injectable()
 export class PaymentService {
   private readonly logger = new Logger(this.constructor.name);
   constructor(
     private readonly payOSService: PayOSService,
-    private readonly unitOfWork: UnitOfWorkService
+    private readonly unitOfWork: UnitOfWorkService,
+    @InjectQueue(PAYMENT_CRON_JOB) private readonly paymentQueue: Queue
   ) {}
 
   async createPaymentTransaction(data: CreatePaymentLinkDto, userId: string) {
@@ -120,21 +123,10 @@ export class PaymentService {
     timeZone: VN_TIME_ZONE,
   }) // 12AM every day
   async revokeExpiredTransactions() {
-    try {
-      const expiredTransactions = await Transaction.getExpiredTransactions();
-      if (expiredTransactions.length > 0) {
-        const { fulfilled, rejected } = await this.cancelListOfTransactions(
-          expiredTransactions,
-          PaymentCancellationReasonEnum.EXPIRED
-        );
-        this.logger.log(`Revoked ${fulfilled} transactions, ${rejected} transactions failed`);
-      }
-    } catch (error) {
-      this.logger.error(error);
-    }
+    await this.paymentQueue.add(REVOKE_EXPIRED_TRANSACTION_JOB, {});
   }
 
-  private async cancelListOfTransactions(
+  public async cancelListOfTransactions(
     transactions: Transaction[],
     cancellationReason: PaymentCancellationReasonEnum
   ) {
