@@ -9,7 +9,9 @@ import { Logger } from "@nestjs/common";
 import { LearnerProfile, SkillTestSession } from "@app/database";
 import { TestSessionStatusEnum } from "@app/types/enums";
 
-@Processor(EVALUATE_WRITING_QUEUE)
+@Processor(EVALUATE_WRITING_QUEUE, {
+  concurrency: 1,
+})
 export class AIWritingConsumer extends WorkerHost {
   private readonly logger = new Logger(AIWritingConsumer.name);
   constructor(private readonly aiWritingService: AIWritingService) {
