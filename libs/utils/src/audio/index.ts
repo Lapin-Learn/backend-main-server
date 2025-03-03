@@ -1,5 +1,6 @@
 import ffmpeg from "fluent-ffmpeg";
 import * as fs from "fs";
+import * as tmp from "tmp";
 
 import { Logger } from "@nestjs/common";
 import { Readable } from "stream";
@@ -82,5 +83,34 @@ export async function getAudioMetadata(filePath: string): Promise<{ start_time: 
         });
       }
     });
+  });
+}
+
+export async function convertToMp3(buffer: Buffer, mimetype: string): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    const inputFile = tmp.fileSync({ postfix: mimetype });
+    const outputFile = tmp.fileSync({ postfix: ".mp3" });
+
+    fs.writeFileSync(inputFile.name, buffer);
+
+    ffmpeg(inputFile.name)
+      .toFormat("mp3")
+      .on("error", (err) => {
+        console.error("FFmpeg error:", err);
+        reject(err);
+      })
+      .on("end", async () => {
+        try {
+          const outputBuffer = fs.readFileSync(outputFile.name);
+
+          inputFile.removeCallback();
+          outputFile.removeCallback();
+
+          resolve(outputBuffer);
+        } catch (cleanupError) {
+          reject(cleanupError);
+        }
+      })
+      .save(outputFile.name);
   });
 }

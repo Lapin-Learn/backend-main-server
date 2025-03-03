@@ -33,6 +33,7 @@ import {
   PUSH_SPEAKING_FILE_QUEUE,
   FINISHED_STATUSES,
   LEARNER_SUBJECT_FACTORY,
+  GET_AUDIO_TRANSCRIPT,
 } from "@app/types/constants";
 import { plainToInstance } from "class-transformer";
 import { InjectQueue } from "@nestjs/bullmq";
@@ -51,6 +52,7 @@ export class SimulatedTestService {
     @InjectQueue(EVALUATE_SPEAKING_QUEUE) private speakingQueue: Queue,
     @InjectQueue(EVALUATE_WRITING_QUEUE) private writingQueue: Queue,
     @InjectQueue(PUSH_SPEAKING_FILE_QUEUE) private pushFileQueue: Queue,
+    @InjectQueue(GET_AUDIO_TRANSCRIPT) private getTranscriptQueue: Queue,
     @Inject(MISSION_SUBJECT_FACTORY)
     private readonly missionSubjectFactory: (observer: MileStonesObserver) => MissionSubject,
     @Inject(LEARNER_SUBJECT_FACTORY)
@@ -364,6 +366,10 @@ export class SimulatedTestService {
       }
 
       await SkillTestSession.save({ id: sessionId, ...sessionData, responses: responseInfo });
+      await this.getTranscriptQueue.add(GET_AUDIO_TRANSCRIPT, {
+        sessionId,
+        audioFiles: additionalResources,
+      });
 
       if (FINISHED_STATUSES.includes(sessionData.status)) {
         const learnerProfile = await LearnerProfile.findOne({ where: { id: learner.profileId } });
