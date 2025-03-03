@@ -12,6 +12,7 @@ import { Blob } from "buffer";
 import { ConfigService } from "@nestjs/config";
 import { UserContent } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
+import { convertToMp3 } from "@app/utils/audio";
 
 @Injectable()
 export class AISpeakingService {
@@ -159,6 +160,33 @@ export class AISpeakingService {
     } catch (err) {
       this.logger.error(err);
       throw new BadRequestException(err);
+    }
+  }
+
+  async getAudioTranscripts(files: Array<Express.Multer.File>) {
+    try {
+      let transcripts: string[] = [];
+      transcripts = await Promise.all(
+        files.map(async (file) => {
+          const mp3Buffer = await convertToMp3(Buffer.from(file.buffer), file.mimetype.split("/")[1]);
+          const formData = new FormData();
+          formData.append("file", new Blob([mp3Buffer]), "audio.mp3");
+          formData.append("model", "whisper-1");
+          const response = await this.httpService.post("https://api.openai.com/v1/audio/transcriptions", formData, {
+            headers: {
+              Authorization: `Bearer ${this.configService.get("OPENAI_API_KEY")}`,
+              "Content-Type": "multipart/form-data",
+            },
+          });
+
+          if (response.status === HttpStatus.OK) return response.data.text;
+          return "";
+        })
+      );
+      return transcripts;
+    } catch (err) {
+      this.logger.error(err);
+      throw err;
     }
   }
 }

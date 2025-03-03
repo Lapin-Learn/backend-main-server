@@ -4,7 +4,12 @@ import { SimulatedTestController } from "./simulated-test.controller";
 import { BucketModule } from "../bucket/bucket.module";
 import { GradingModule } from "@app/shared-modules/grading";
 import { BullModule } from "@nestjs/bullmq";
-import { EVALUATE_SPEAKING_QUEUE, EVALUATE_WRITING_QUEUE, PUSH_SPEAKING_FILE_QUEUE } from "@app/types/constants";
+import {
+  EVALUATE_SPEAKING_QUEUE,
+  EVALUATE_WRITING_QUEUE,
+  GET_AUDIO_TRANSCRIPT,
+  PUSH_SPEAKING_FILE_QUEUE,
+} from "@app/types/constants";
 import { RedisModule } from "@app/shared-modules/redis";
 import { SimulatedTestReportController } from "./simulated-test-report.controller";
 import { SessionController } from "./session.controller";
@@ -26,6 +31,9 @@ import { SpeakingFileConsumer } from "./speaking-file.processor";
       },
       {
         name: PUSH_SPEAKING_FILE_QUEUE,
+      },
+      {
+        name: GET_AUDIO_TRANSCRIPT,
       }
     ),
     BucketModule,

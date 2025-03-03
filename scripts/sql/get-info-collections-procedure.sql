@@ -36,6 +36,7 @@ BEGIN
             st.id test_id,
             CASE
                 WHEN COUNT(t.id) = 0 THEN 'not_started'
+                WHEN COUNT(ls.skill_test_id) = 0 THEN 'not_started'
                 WHEN COUNT(t.id) = COUNT(ls.skill_test_id)
                      AND COUNT(NULLIF(ls.band_score, NULL)) = COUNT(ls.skill_test_id)
                 THEN 'done'
