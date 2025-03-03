@@ -63,19 +63,33 @@ export class EvaluateSpeaking implements IGradingStrategy {
 
   async evaluateBandScore() {
     if (this.evaluateSpeakingqueue)
-      await this.evaluateSpeakingqueue.add(this.jobEvaluateSpeakingName, {
-        sessionId: this.sessionId,
-        userResponse: this.userResponses,
-      });
+      await this.evaluateSpeakingqueue.add(
+        this.jobEvaluateSpeakingName,
+        {
+          sessionId: this.sessionId,
+          userResponse: this.userResponses,
+        },
+        {
+          jobId: this.jobEvaluateSpeakingName,
+          removeOnComplete: true,
+        }
+      );
   }
 
   async pushSpeakingFile(speakingAudio: Express.Multer.File, currentUser: ICurrentUser) {
     if (this.pushSpeakingFileQueue)
-      await this.pushSpeakingFileQueue.add(this.jobPushSpeakingFileName, {
-        sessionId: this.sessionId,
-        speakingAudio,
-        currentUser,
-      });
+      await this.pushSpeakingFileQueue.add(
+        this.jobPushSpeakingFileName,
+        {
+          sessionId: this.sessionId,
+          speakingAudio,
+          currentUser,
+        },
+        {
+          jobId: this.jobEvaluateSpeakingName,
+          removeOnComplete: true,
+        }
+      );
   }
 
   getResults() {

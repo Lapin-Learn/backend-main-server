@@ -17,7 +17,9 @@ import { TestSessionStatusEnum } from "@app/types/enums";
 import { BucketService } from "../../bucket/bucket.service";
 import { ICurrentUser } from "@app/types/interfaces";
 
-@Processor(EVALUATE_SPEAKING_QUEUE)
+@Processor(EVALUATE_SPEAKING_QUEUE, {
+  concurrency: 1,
+})
 export class AISpeakingConsumer extends WorkerHost {
   private readonly logger: Logger = new Logger(this.constructor.name);
   constructor(

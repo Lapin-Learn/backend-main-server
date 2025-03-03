@@ -6,7 +6,9 @@ import { Transaction } from "@app/database";
 import { PaymentService } from "./payment.service";
 import { Job } from "bullmq";
 
-@Processor(PAYMENT_CRON_JOB)
+@Processor(PAYMENT_CRON_JOB, {
+  concurrency: 1,
+})
 export class PaymentProcessor extends WorkerHost {
   private readonly logger = new Logger(PaymentProcessor.name);
   constructor(private readonly paymentService: PaymentService) {

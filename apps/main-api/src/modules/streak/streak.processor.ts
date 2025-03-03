@@ -22,7 +22,9 @@ import { Job } from "bullmq";
 import moment from "moment-timezone";
 import { In } from "typeorm";
 
-@Processor(STREAK_CRON_JOB)
+@Processor(STREAK_CRON_JOB, {
+  concurrency: 1,
+})
 export class StreakProcessor extends WorkerHost {
   private readonly logger = new Logger(StreakProcessor.name);
   constructor(private readonly novuService: NovuService) {
