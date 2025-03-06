@@ -317,6 +317,10 @@ export class SimulatedTestService {
         relations: { skillTest: true },
       });
 
+      if (sessionStatus === TestSessionStatusEnum.CANCELED) {
+        throw new BadRequestException(`session was already canceled`);
+      }
+
       if (FINISHED_STATUSES.includes(sessionStatus)) {
         throw new BadRequestException(`session was already ${sessionStatus}`);
       }
@@ -366,12 +370,14 @@ export class SimulatedTestService {
       }
 
       await SkillTestSession.save({ id: sessionId, ...sessionData, responses: responseInfo });
-      await this.getTranscriptQueue.add(GET_AUDIO_TRANSCRIPT, {
-        sessionId,
-        audioFiles: additionalResources,
-      });
 
       if (FINISHED_STATUSES.includes(sessionData.status)) {
+        if (skillTest.skill === SkillEnum.SPEAKING)
+          await this.getTranscriptQueue.add(GET_AUDIO_TRANSCRIPT, {
+            sessionId,
+            audioFiles: additionalResources,
+          });
+
         const learnerProfile = await LearnerProfile.findOne({ where: { id: learner.profileId } });
         const missionSubject = this.missionSubjectFactory(this.observer);
         await missionSubject.checkMissionProgress(learnerProfile);

@@ -29,6 +29,7 @@ export class MissionProcessor extends WorkerHost {
 
     // Check if today is the first day of month
     const isFirstDayOfMonth = moment().tz(VN_TIME_ZONE).date() === 1;
+    console.log("moment: ", moment().tz(VN_TIME_ZONE));
 
     // Random mission
     const randomDailyQuests = await Quest.randAndFind(IntervalTypeEnum.DAILY, 3);
@@ -37,11 +38,10 @@ export class MissionProcessor extends WorkerHost {
 
     // Save all random missions as global missions
     // Quantity is random between 2 and 5
-    randomQuests.map((q) => {
-      Mission.save({
-        type: q.type,
-        questId: q.id,
-      });
+    randomQuests.map(async (q) => {
+      const newMission = Mission.create({ type: q.type, questId: q.id });
+      console.log("new Mission: ", newMission);
+      await newMission.save();
     });
 
     return randomQuests;
