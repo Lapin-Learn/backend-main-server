@@ -29,7 +29,7 @@ export class MissionProcessor extends WorkerHost {
 
     // Check if today is the first day of month
     const isFirstDayOfMonth = moment().tz(VN_TIME_ZONE).date() === 1;
-    console.log("moment: ", moment().tz(VN_TIME_ZONE));
+    console.log("current moment: ", moment().tz(VN_TIME_ZONE));
 
     // Random mission
     const randomDailyQuests = await Quest.randAndFind(IntervalTypeEnum.DAILY, 3);
