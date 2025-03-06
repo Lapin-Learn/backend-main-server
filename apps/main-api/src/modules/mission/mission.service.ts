@@ -5,7 +5,7 @@ import { MissionHelper } from "./mission.helper";
 import { Cron } from "@nestjs/schedule";
 import { ProfileMissionProgressStatusEnum } from "@app/types/enums";
 import { InjectQueue } from "@nestjs/bullmq";
-import { MISSION_CRON_JOB, UPDATE_MISSION_JOB } from "@app/types/constants";
+import { MISSION_CRON_JOB, UPDATE_MISSION_JOB, VN_TIME_ZONE } from "@app/types/constants";
 import { Queue } from "bullmq";
 
 @Injectable()
@@ -20,6 +20,7 @@ export class MissionService {
   async getMissions(user: ICurrentUser) {
     try {
       const missions = await Mission.getMissions();
+      console.log("log missions: ", missions);
       const missionProgress = await ProfileMissionProgress.getMissionProgresses(user.profileId);
       return this.missionHelper.buildMissionsResponseData(missionProgress, missions);
     } catch (error) {
@@ -73,7 +74,7 @@ export class MissionService {
 
   // Remove and update mission at midnight GMT+7
   @Cron("0 0 * * *", {
-    timeZone: "Asia/Saigon",
+    timeZone: VN_TIME_ZONE,
   })
   async handleUpdateMission() {
     await this.missionQueue.add(
