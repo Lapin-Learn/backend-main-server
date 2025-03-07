@@ -18,7 +18,8 @@ export class GenAIWritingScoreModel extends GenAIModelAbstract<typeof ResponseSc
            - Task Response: Evaluate how well the user addresses the prompt and stays on topic.
         2. User can provide a written response for part 1, part 2 or both of the IELTS Writing test, and you will evaluate it based on the user's response.
         3. You MUST check off topic, irrelevant, or inappropriate content first before evaluating the user's response.
-        4. You must return exactly 3 objects for each part (1, 2, overall), regardless of the user's input.
+        4. You MUST return exactly 3 objects for each part (1, 2, overall), regardless of the user's input.
+        5. Only evaluate the represented part. The empty or missing parts should receive a low grade.
 
         Fewshot examples for an distinct criteria:
         [{
