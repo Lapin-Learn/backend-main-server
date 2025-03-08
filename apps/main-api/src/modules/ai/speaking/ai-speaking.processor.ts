@@ -13,7 +13,7 @@ import { EvaluateSpeakingData } from "@app/types/dtos/simulated-tests";
 import { getConstraints } from "@app/utils/pipes";
 import { Logger } from "@nestjs/common";
 import { Account, Bucket, LearnerProfile, SkillTestSession } from "@app/database";
-import { TestSessionStatusEnum } from "@app/types/enums";
+import { GenAIPartEnum, TestSessionStatusEnum } from "@app/types/enums";
 import { BucketService } from "../../bucket/bucket.service";
 import { ICurrentUser } from "@app/types/interfaces";
 
@@ -65,10 +65,14 @@ export class AISpeakingConsumer extends WorkerHost {
         }
       }
 
+      const estimatedBandScore = evaluations
+        ?.find((item) => item.part === GenAIPartEnum.OVERALL)
+        ?.criterias.getOverallScore();
+
       await SkillTestSession.save({
         id: sessionId,
         results: evaluations,
-        estimatedBandScore: evaluations[evaluations.length - 1].criterias.getOverallScore(),
+        estimatedBandScore,
         status: TestSessionStatusEnum.FINISHED,
       });
 
