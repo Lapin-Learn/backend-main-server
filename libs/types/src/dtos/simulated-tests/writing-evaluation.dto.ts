@@ -61,4 +61,7 @@ export class WritingEvaluation {
   @ValidateNested()
   @Type(() => WritingCriteriaDto)
   criterias: WritingCriteriaDto;
+
+  // No need to validate this field
+  lang: "vi" | "en" | undefined;
 }

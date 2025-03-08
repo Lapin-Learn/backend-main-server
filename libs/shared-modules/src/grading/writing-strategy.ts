@@ -19,10 +19,18 @@ export class EvaluateWriting implements IGradingStrategy {
 
   async evaluateBandScore() {
     if (this.queue)
-      await this.queue.add(this.jobName, {
-        sessionId: this.sessionId,
-        userResponse: this.userResponses,
-      });
+      await this.queue.add(
+        this.jobName,
+        {
+          sessionId: this.sessionId,
+          userResponse: this.userResponses,
+        },
+        {
+          jobId: this.jobName,
+          removeOnComplete: true,
+          removeOnFail: true,
+        }
+      );
   }
 
   getResults() {

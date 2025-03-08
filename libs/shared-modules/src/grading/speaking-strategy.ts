@@ -72,6 +72,7 @@ export class EvaluateSpeaking implements IGradingStrategy {
         {
           jobId: this.jobEvaluateSpeakingName,
           removeOnComplete: true,
+          removeOnFail: true,
         }
       );
   }
@@ -88,6 +89,7 @@ export class EvaluateSpeaking implements IGradingStrategy {
         {
           jobId: this.jobEvaluateSpeakingName,
           removeOnComplete: true,
+          removeOnFail: true,
         }
       );
   }

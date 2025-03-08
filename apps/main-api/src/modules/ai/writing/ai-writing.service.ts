@@ -1,6 +1,6 @@
 import { SkillTest, SkillTestSession } from "@app/database";
-import { GenAIWritingScoreModel } from "@app/shared-modules/genai";
-import { TestSessionStatusEnum } from "@app/types/enums";
+import { GenAITranslateWritingScoreModel, GenAIWritingScoreModel } from "@app/shared-modules/genai";
+import { GenAIPartEnum, TestSessionStatusEnum } from "@app/types/enums";
 import { IAIWritingQuestion, ICurrentUser } from "@app/types/interfaces";
 import { BadRequestException, Injectable, Logger } from "@nestjs/common";
 import { InfoTextResponseDto, WritingEvaluation } from "@app/types/dtos/simulated-tests";
@@ -14,9 +14,14 @@ import { createOpenAI } from "@ai-sdk/openai";
 export class AIWritingService {
   private readonly logger = new Logger(AIWritingService.name);
   private genAIWritingScoreModel: GenAIWritingScoreModel;
+  private genAITranslateWritingScoreModel: GenAITranslateWritingScoreModel;
 
   constructor(private readonly configService: ConfigService) {
     this.genAIWritingScoreModel = new GenAIWritingScoreModel(
+      createOpenAI({ apiKey: this.configService.get("OPENAI_API_KEY") }).languageModel("gpt-4o")
+    );
+
+    this.genAITranslateWritingScoreModel = new GenAITranslateWritingScoreModel(
       createOpenAI({ apiKey: this.configService.get("OPENAI_API_KEY") }).languageModel("gpt-4o")
     );
   }
@@ -67,11 +72,38 @@ export class AIWritingService {
         }
       }
 
-      const estimatedBandScore = response?.find((item) => item.part === "overall")?.criterias.getOverallScore();
+      const estimatedBandScore = response
+        ?.find((item) => item.part === GenAIPartEnum.OVERALL)
+        ?.criterias.getOverallScore();
+
+      // Translate the AI response to English
+      const translateUserContent: UserContent = [
+        {
+          type: "text",
+          text: JSON.stringify(plainResponse?.result),
+        },
+      ];
+
+      const translatedResponse = await this.genAITranslateWritingScoreModel.generateContent(translateUserContent);
+      const englishResponse = plainToInstance(WritingEvaluation, translatedResponse.result as object[]);
+      for (const r of englishResponse) {
+        const errs = await validate(r);
+        if (errs.length > 0) {
+          this.logger.error("validation fail: ", errs);
+        }
+      }
+
+      englishResponse.forEach((item) => {
+        item.lang = "en";
+      });
+
+      response.forEach((item) => {
+        item.lang = "vi";
+      });
 
       await SkillTestSession.save({
         id: sessionId,
-        results: response ? response : null,
+        results: response && englishResponse ? [...response, ...englishResponse] : null,
         estimatedBandScore,
         status: TestSessionStatusEnum.FINISHED,
       });
