@@ -1,6 +1,6 @@
 import { BadRequestException, HttpStatus, Injectable, Logger } from "@nestjs/common";
 import { GenAISpeakingModel } from "@app/shared-modules/genai/model/genai-speaking-model.service";
-import { GenAISpeakingScoreModel } from "@app/shared-modules/genai";
+import { GenAISpeakingScoreModel, GenAITranslateSpeakingScoreModel } from "@app/shared-modules/genai";
 import { ICurrentUser } from "@app/types/interfaces";
 import { SimulatedIeltsTest, SkillTest, SkillTestSession } from "@app/database";
 import { InfoSpeakingResponseDto, SpeakingEvaluation } from "@app/types/dtos/simulated-tests";
@@ -13,12 +13,14 @@ import { ConfigService } from "@nestjs/config";
 import { UserContent } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
 import { convertToMp3 } from "@app/utils/audio";
+import { validate } from "class-validator";
 
 @Injectable()
 export class AISpeakingService {
   private readonly logger = new Logger(AISpeakingService.name);
   private genAISpeakingModel: GenAISpeakingModel;
   private genAISpeakingScoreEvaluationModel: GenAISpeakingScoreModel;
+  private genAITranslateSpeakingScoreModel: GenAITranslateSpeakingScoreModel;
   private readonly httpService: AxiosInstance;
   private readonly EVALUATION_SERVICE_API: string = "";
 
@@ -28,6 +30,9 @@ export class AISpeakingService {
     );
     this.genAISpeakingScoreEvaluationModel = new GenAISpeakingScoreModel(
       createOpenAI({ apiKey: this.configService.get("OPENAI_API_KEY") }).languageModel("gpt-4o-audio-preview")
+    );
+    this.genAITranslateSpeakingScoreModel = new GenAITranslateSpeakingScoreModel(
+      createOpenAI({ apiKey: this.configService.get("OPENAI_API_KEY") }).languageModel("gpt-4o")
     );
     this.httpService = genericHttpConsumer();
     this.EVALUATION_SERVICE_API = this.configService.get("EVALUATION_SERVICE_API");
@@ -81,12 +86,12 @@ export class AISpeakingService {
         select: ["partsContent"],
       });
 
-      const { parts } = existedSession;
+      const { partsContent: parts } = skillTest;
 
       const questions = [];
 
-      for (const part of parts) {
-        questions.push(skillTest.partsContent[part - 1]);
+      for (const part of parts as any[]) {
+        questions.push(...(part?.content || []));
       }
 
       const prompt = `
@@ -123,7 +128,40 @@ export class AISpeakingService {
       const plainEvaluations = (await this.genAISpeakingScoreEvaluationModel.generateContent(userContent))
         .result as SpeakingEvaluation[];
 
-      return plainToInstance(SpeakingEvaluation, plainEvaluations);
+      const response = plainToInstance(SpeakingEvaluation, plainEvaluations);
+      for (const r of response) {
+        const errs = await validate(r);
+        if (errs.length > 0) {
+          this.logger.error("validation fail: ", errs);
+        }
+      }
+
+      // Translate the AI response to English
+      const translateUserContent: UserContent = [
+        {
+          type: "text",
+          text: JSON.stringify(response),
+        },
+      ];
+
+      const translatedResponse = await this.genAITranslateSpeakingScoreModel.generateContent(translateUserContent);
+      const englishResponse = plainToInstance(SpeakingEvaluation, translatedResponse.result as object[]);
+      for (const r of englishResponse) {
+        const errs = await validate(r);
+        if (errs.length > 0) {
+          this.logger.error("validation fail: ", errs);
+        }
+      }
+
+      englishResponse.forEach((item) => {
+        item.lang = "en";
+      });
+
+      response.forEach((item) => {
+        item.lang = "vi";
+      });
+
+      return [...response, ...englishResponse];
     } catch (error) {
       this.logger.error(error);
       throw error;
@@ -170,7 +208,7 @@ export class AISpeakingService {
         files.map(async (file) => {
           const mp3Buffer = await convertToMp3(Buffer.from(file.buffer), file.mimetype.split("/")[1]);
           const formData = new FormData();
-          formData.append("file", new Blob([mp3Buffer]), "audio.mp3");
+          formData.append("file", new Blob([mp3Buffer]) as globalThis.Blob, "audio.mp3");
           formData.append("model", "whisper-1");
           const response = await this.httpService.post("https://api.openai.com/v1/audio/transcriptions", formData, {
             headers: {

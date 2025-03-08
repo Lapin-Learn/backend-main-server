@@ -36,4 +36,7 @@ export class SpeakingEvaluation {
   @ValidateNested()
   @Type(() => SpeakingCriteriaDto)
   criterias: SpeakingCriteriaDto;
+
+  // No need to validate this field
+  lang: "vi" | "en" | undefined;
 }

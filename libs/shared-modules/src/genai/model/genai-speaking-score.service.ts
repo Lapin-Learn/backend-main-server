@@ -19,6 +19,10 @@ export class GenAISpeakingScoreModel extends GenAIModelAbstract<typeof ResponseS
         3. Use users' previous feedback to adapt and improve your evaluation (if available).
         4. The evaluate field should be in Vietnamese. The remaining objects should be in English.
         5. You must return exactly 3 objects for each part (1, 2, overall), regardless of the user's input.
+        6. You MUST check off topic, irrelevant, or inappropriate content first before evaluating the user's response.
+        
+        Fewshot examples for an distinct criteria:
+        evaluate: "Bài nói hoàn toàn lạc đề."
         `;
   }
 }
