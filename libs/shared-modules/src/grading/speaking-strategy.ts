@@ -4,7 +4,7 @@ import * as fs from "fs";
 import { Queue } from "bullmq";
 import { ICurrentUser, IGradingStrategy } from "@app/types/interfaces";
 import { InfoSpeakingResponseDto } from "@app/types/dtos/simulated-tests";
-import { createExpressMulterFile, mergeAudioFiles } from "@app/utils/audio";
+import { convertToMp3, createExpressMulterFile, mergeAudioFiles } from "@app/utils/audio";
 import { EVALUATE_SPEAKING_QUEUE, PUSH_SPEAKING_FILE_QUEUE } from "@app/types/constants";
 
 export class EvaluateSpeaking implements IGradingStrategy {
@@ -30,8 +30,9 @@ export class EvaluateSpeaking implements IGradingStrategy {
   async getResponseWithTimeStampAudio(speakingFiles: Array<Express.Multer.File>) {
     const inputFilePaths = await Promise.all(
       speakingFiles.map(async (file) => {
+        const mp3Buffer = await convertToMp3(file.buffer, file.mimetype.split("/")[1]);
         const tempFile = tmp.fileSync({ postfix: ".mp3" });
-        fs.writeFileSync(tempFile.name, Buffer.from(file.buffer));
+        fs.writeFileSync(tempFile.name, mp3Buffer);
         return tempFile;
       })
     );
