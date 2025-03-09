@@ -329,8 +329,13 @@ export class SimulatedTestService {
       if (status === TestSessionStatusEnum.FINISHED) {
         const { response } = sessionData;
         responseInfo = response.info.sort(
-          (a: InfoSpeakingResponseDto | InfoTextResponseDto, b: InfoSpeakingResponseDto | InfoTextResponseDto) =>
-            a.questionNo - b.questionNo
+          (a: InfoSpeakingResponseDto | InfoTextResponseDto, b: InfoSpeakingResponseDto | InfoTextResponseDto) => {
+            if (a instanceof InfoSpeakingResponseDto && b instanceof InfoSpeakingResponseDto) {
+              if (a.partNo === b.partNo) return a.questionNo - b.questionNo;
+              else return a.partNo - b.partNo;
+            }
+            return a.questionNo - b.questionNo;
+          }
         );
 
         if (response instanceof SpeakingResponseDto) {
