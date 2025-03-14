@@ -8,7 +8,7 @@ const CriteriaSchema = z.object({
 const ResponseSchemaSpeakingEvaluation = z.object({
   result: z.array(
     z.object({
-      part: z.enum(["1", "2", "overall"]).describe("'1', '2' or 'overall'"),
+      part: z.enum(["1", "2", "3", "overall"]).describe("'1', '2', '3' or 'overall'"),
       criterias: z.object({
         FC: CriteriaSchema.describe("Fluency and Coherence"),
         LR: CriteriaSchema.describe("Lexical Resource"),

@@ -20,7 +20,6 @@ export class MissionService {
   async getMissions(user: ICurrentUser) {
     try {
       const missions = await Mission.getMissions();
-      console.log("log missions: ", missions);
       const missionProgress = await ProfileMissionProgress.getMissionProgresses(user.profileId);
       return this.missionHelper.buildMissionsResponseData(missionProgress, missions);
     } catch (error) {
