@@ -7,6 +7,7 @@ import * as dbSubscribers from "./subscribers";
 import { BucketSubscriber } from "./subscribers/bucket.subscriber";
 import { BucketService } from "apps/main-api/src/modules/bucket/bucket.service";
 import { UnitOfWorkService } from "./unit-of-work.service";
+import { RedisModule } from "@app/shared-modules/redis";
 
 const entities = (Object.keys(dbEntities) as Array<keyof typeof dbEntities>).map((key) => dbEntities[key]);
 const subscribers = (Object.keys(dbSubscribers) as Array<keyof typeof dbSubscribers>).map((key) => dbSubscribers[key]);
@@ -28,6 +29,7 @@ const subscribers = (Object.keys(dbSubscribers) as Array<keyof typeof dbSubscrib
       }),
       inject: [ConfigService],
     }),
+    RedisModule,
   ],
   providers: [BucketSubscriber, BucketService, UnitOfWorkService],
   exports: [UnitOfWorkService],
