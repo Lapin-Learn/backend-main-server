@@ -19,6 +19,9 @@ import { genericHttpConsumer } from "@app/utils/axios";
 import fs from "fs";
 import { createExpressMulterFile } from "@app/utils/audio";
 import * as tmp from "tmp";
+import { RedisService } from "@app/shared-modules/redis";
+import { FILE_ID_URL } from "@app/types/constants";
+import { getKeysFromTemplate } from "@app/utils/keys";
 
 @Injectable()
 export class BucketService {
@@ -28,6 +31,7 @@ export class BucketService {
 
   constructor(
     @InjectS3() private readonly s3: S3,
+    private readonly redisService: RedisService,
     private readonly configService: ConfigService
   ) {
     this.bucketName = this.configService.get("BUCKET_NAME");
@@ -69,6 +73,14 @@ export class BucketService {
         throw new UnauthorizedException("Unauthorized access");
       }
 
+      let signedUrl = "";
+      const key = getKeysFromTemplate(FILE_ID_URL, { fileId });
+
+      signedUrl = await this.redisService.get(key);
+      if (signedUrl) {
+        return signedUrl;
+      }
+
       const command = new GetObjectCommand({
         Bucket: this.bucketName,
         Key: fileId,
@@ -76,7 +88,9 @@ export class BucketService {
         ...objRequest,
       });
 
-      return await getSignedUrl(this.s3, command, { expiresIn: 3600 });
+      signedUrl = await getSignedUrl(this.s3, command, { expiresIn: 3600 });
+      await this.redisService.set(key, signedUrl, 3300);
+      return signedUrl;
     } catch (error) {
       this.logger.error(error);
       throw new BadRequestException(error);
@@ -169,13 +183,25 @@ export class BucketService {
       if (_.isNil(entity.id)) {
         return null;
       }
+
+      const key = getKeysFromTemplate(FILE_ID_URL, { fileId: entity.id });
+
+      let signedUrl: string;
+      signedUrl = await this.redisService.get(key);
+
+      if (signedUrl) {
+        return signedUrl;
+      }
+
       const command = new GetObjectCommand({
         Bucket: this.bucketName,
         Key: entity.id,
         ResponseContentDisposition: `inline; filename=${entity.name}`,
       });
 
-      return await getSignedUrl(this.s3, command, { expiresIn: 3600 });
+      signedUrl = await getSignedUrl(this.s3, command, { expiresIn: 3600 });
+      await this.redisService.set(key, signedUrl, 3300);
+      return signedUrl;
     } catch (error) {
       this.logger.error(error);
       throw new BadRequestException(error);

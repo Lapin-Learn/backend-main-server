@@ -10,6 +10,8 @@ import { admin, createMockBucket, expert, learner } from "./mocks";
 import { BadRequestException } from "@nestjs/common";
 import { BucketPermissionsEnum, BucketUploadStatusEnum } from "@app/types/enums";
 import { mockDeletedValue } from "./mocks/deleted-value.mock";
+import { RedisService } from "@app/shared-modules/redis";
+import MockRedisService from "@app/shared-modules/redis/__mocks__/redis.service";
 
 describe("BucketService", () => {
   let bucketService: BucketService;
@@ -27,6 +29,10 @@ describe("BucketService", () => {
         {
           provide: S3_PROVIDER_NAME,
           useFactory: () => S3,
+        },
+        {
+          provide: RedisService,
+          useClass: MockRedisService,
         },
       ],
     }).compile();
