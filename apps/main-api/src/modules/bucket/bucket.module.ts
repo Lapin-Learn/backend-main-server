@@ -4,6 +4,7 @@ import { S3Module } from "nestjs-s3";
 import { BucketController } from "./bucket.controller";
 import { BucketService } from "./bucket.service";
 import { DatabaseModule } from "@app/database";
+import { RedisModule } from "@app/shared-modules/redis";
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { DatabaseModule } from "@app/database";
       }),
     }),
     DatabaseModule,
+    RedisModule,
   ],
   controllers: [BucketController],
   providers: [BucketService],

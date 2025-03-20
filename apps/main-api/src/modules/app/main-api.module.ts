@@ -32,12 +32,15 @@ import { BlogModule } from "../blog/blog.module";
       rootPath: join(__dirname, "public"),
       exclude: ["/api"],
     }),
-    ThrottlerModule.forRoot([
-      {
-        ttl: 30000,
-        limit: 120,
-      },
-    ]),
+    ThrottlerModule.forRootAsync({
+      useFactory: async (configService: ConfigService) => [
+        {
+          ttl: configService.get("TTL") || 60000,
+          limit: configService.get("LIMIT") || 10000,
+        },
+      ],
+      inject: [ConfigService],
+    }),
     BullModule.forRootAsync({
       useFactory: async (configService: ConfigService) => ({
         connection: {

@@ -7,6 +7,8 @@ import { ConfigService } from "@nestjs/config";
 import { learner, mockPresignedUrl } from "./mocks";
 import { BadRequestException } from "@nestjs/common";
 import { Bucket } from "@app/database";
+import { RedisService } from "@app/shared-modules/redis";
+import MockRedisService from "@app/shared-modules/redis/__mocks__/redis.service";
 
 jest.mock("../bucket.service");
 describe("BucketController", () => {
@@ -28,6 +30,10 @@ describe("BucketController", () => {
         {
           provide: S3_PROVIDER_NAME,
           useFactory: () => S3,
+        },
+        {
+          provide: RedisService,
+          useClass: MockRedisService,
         },
       ],
     }).compile();

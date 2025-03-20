@@ -5,6 +5,8 @@ import { ConfigService } from "@nestjs/config";
 import { S3_PROVIDER_NAME } from "../bucket/test/constants/s3-provider.const";
 import { S3 } from "@aws-sdk/client-s3";
 import { BucketService } from "../bucket/bucket.service";
+import { RedisService } from "@app/shared-modules/redis";
+import MockRedisService from "@app/shared-modules/redis/__mocks__/redis.service";
 
 describe("UserService", () => {
   let service: UserService;
@@ -24,7 +26,10 @@ describe("UserService", () => {
           provide: S3_PROVIDER_NAME,
           useFactory: () => S3,
         },
-
+        {
+          provide: RedisService,
+          useClass: MockRedisService,
+        },
         {
           provide: FirebaseAuthService,
           useValue: {
