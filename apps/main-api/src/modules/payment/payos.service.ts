@@ -71,6 +71,13 @@ export class PayOSService {
     try {
       const manager = this.unitOfWork.getManager();
       const cancelLinkResponse = await this.payOS.cancelPaymentLink(orderId, cancellationReason);
+      if (
+        cancelLinkResponse.status === PaymentStatusEnum.CANCELLED.toUpperCase() &&
+        !cancelLinkResponse.cancellationReason
+      ) {
+        cancelLinkResponse.cancellationReason = cancellationReason;
+        cancelLinkResponse.canceledAt = new Date().toISOString();
+      }
       const transaction = await manager.findOne(PayOSTransaction, { where: { transactionId: orderId } });
 
       // Upsert payos transaction's metadata
