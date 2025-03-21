@@ -51,6 +51,7 @@ const avatar: IBucket = {
   createdAt: new Date(),
   updatedAt: new Date(),
   uploadStatus: BucketUploadStatusEnum.UPLOADED,
+  url: "https://google.com",
 };
 
 export const userStub = (): IAccount => {

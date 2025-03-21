@@ -283,9 +283,7 @@ export class SimulatedTestService {
             const fileName = `${SPEAKING_FILE_PREFIX}-${sessionId}`;
             const bucket = await Bucket.findOne({ where: { name: fileName, owner: learner.userId } });
             if (bucket) {
-              session["resource"] = await this.bucketService.getPresignedDownloadUrl(learner, bucket.id, {
-                ResponseCacheControl: "pulic, max-age=31536000",
-              });
+              session["resource"] = bucket.url;
             }
           }
           delete session.skillTest.skillTestAnswer;

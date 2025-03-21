@@ -11,6 +11,7 @@ export const createMockBucket = (overrides: Partial<Bucket> = {}): Bucket => ({
   createdAt: new Date(),
   updatedAt: new Date(),
   uploadStatus: BucketUploadStatusEnum.PENDING,
+  url: "https://google.com",
 
   hasId: jest.fn(),
   save: jest.fn().mockResolvedValue(this),

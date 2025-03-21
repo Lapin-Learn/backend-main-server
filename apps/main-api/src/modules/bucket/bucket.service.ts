@@ -3,13 +3,7 @@ import { BadRequestException, HttpStatus, Injectable, Logger, UnauthorizedExcept
 import { ConfigService } from "@nestjs/config";
 import { InjectS3, S3 } from "nestjs-s3";
 import { Bucket } from "@app/database/entities";
-import {
-  DeleteObjectCommand,
-  GetObjectCommand,
-  GetObjectRequest,
-  HeadObjectCommand,
-  PutObjectCommand,
-} from "@aws-sdk/client-s3";
+import { DeleteObjectCommand, GetObjectCommand, HeadObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { IBucket, ICurrentUser } from "@app/types/interfaces";
 import { AccountRoleEnum, BucketPermissionsEnum, BucketUploadStatusEnum } from "@app/types/enums";
@@ -57,7 +51,7 @@ export class BucketService {
     }
   }
 
-  async getPresignedDownloadUrl(user: ICurrentUser, fileId: string, objRequest: Partial<GetObjectRequest> = null) {
+  async getPresignedDownloadUrl(user: ICurrentUser, fileId: string) {
     try {
       const data = await Bucket.findOne({ where: { id: fileId } });
 
@@ -73,24 +67,7 @@ export class BucketService {
         throw new UnauthorizedException("Unauthorized access");
       }
 
-      let signedUrl = "";
-      const key = getKeysFromTemplate(FILE_ID_URL, { fileId });
-
-      signedUrl = await this.redisService.get(key);
-      if (signedUrl) {
-        return signedUrl;
-      }
-
-      const command = new GetObjectCommand({
-        Bucket: this.bucketName,
-        Key: fileId,
-        ResponseContentDisposition: `inline; filename=${data.name}`,
-        ...objRequest,
-      });
-
-      signedUrl = await getSignedUrl(this.s3, command, { expiresIn: 3600 });
-      await this.redisService.set(key, signedUrl, 3300);
-      return signedUrl;
+      return data.url;
     } catch (error) {
       this.logger.error(error);
       throw new BadRequestException(error);
@@ -144,6 +121,9 @@ export class BucketService {
 
       data.uploadStatus = BucketUploadStatusEnum.UPLOADED;
       await data.save();
+
+      const cachedKeyUrl = getKeysFromTemplate(FILE_ID_URL, { fileId: data.id });
+      await this.redisService.delete(cachedKeyUrl);
 
       return { id: data.id, name: data.name };
     } catch (error) {
