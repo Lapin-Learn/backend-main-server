@@ -1,0 +1,16 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug Main API",
+      "runtimeArgs": ["--nolazy", "-r", "ts-node/register", "-r", "tsconfig-paths/register"],
+      "args": ["${workspaceFolder}/apps/main-api/src/main.ts"], // Entry point for the app
+      "cwd": "${workspaceFolder}", // Root of the monorepo
+      "sourceMaps": true,
+      "envFile": "${workspaceFolder}/apps/main-api/.env", // Environment file for the app
+      "outFiles": ["${workspaceFolder}/dist/apps/main-api/**/*.js"] // Compiled output for the app
+    }
+  ]
+}

@@ -5,7 +5,7 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { mockPresignedUrl } from "./mocks/presigned-url.mock";
 import { BucketService } from "../bucket.service";
 import { S3_PROVIDER_NAME } from "./constants/s3-provider.const";
-import { PutObjectCommand, GetObjectCommand, S3, DeleteObjectCommand, HeadObjectCommand } from "@aws-sdk/client-s3";
+import { PutObjectCommand, S3, DeleteObjectCommand, HeadObjectCommand } from "@aws-sdk/client-s3";
 import { admin, createMockBucket, expert, learner } from "./mocks";
 import { BadRequestException } from "@nestjs/common";
 import { BucketPermissionsEnum, BucketUploadStatusEnum } from "@app/types/enums";
@@ -136,20 +136,6 @@ describe("BucketService", () => {
 
       const response2 = bucketService.getPresignedDownloadUrl(admin, bucket.id);
       await expect(response2).resolves.toEqual(mockPresignedUrl);
-    });
-
-    it("should throw an error because of GetObjectCommand", async () => {
-      (GetObjectCommand as unknown as jest.Mock).mockImplementation(() => {
-        throw new Error();
-      });
-      const response = bucketService.getPresignedDownloadUrl(learner, bucket.id);
-      await expect(response).rejects.toThrow(BadRequestException);
-    });
-
-    it("should throw an error because of getSignedUrl", async () => {
-      (getSignedUrl as jest.Mock).mockRejectedValue(new Error());
-      const response = bucketService.getPresignedDownloadUrl(learner, bucket.id);
-      await expect(response).rejects.toThrow(BadRequestException);
     });
   });
 

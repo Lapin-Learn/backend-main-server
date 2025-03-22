@@ -42,4 +42,6 @@ export class Bucket extends BaseEntity implements IBucket {
     nullable: false,
   })
   uploadStatus: BucketUploadStatusEnum;
+
+  url: string;
 }
