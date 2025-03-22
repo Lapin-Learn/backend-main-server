@@ -9,4 +9,5 @@ export interface IBucket {
   createdAt: Date;
   updatedAt: Date;
   uploadStatus: BucketUploadStatusEnum;
+  url: string;
 }

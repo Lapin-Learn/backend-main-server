@@ -12,20 +12,15 @@ import { plainToInstance } from "class-transformer";
 import { EvaluateSpeakingData } from "@app/types/dtos/simulated-tests";
 import { getConstraints } from "@app/utils/pipes";
 import { Logger } from "@nestjs/common";
-import { Account, Bucket, LearnerProfile, SkillTestSession } from "@app/database";
+import { Bucket, LearnerProfile, SkillTestSession } from "@app/database";
 import { GenAIPartEnum, TestSessionStatusEnum } from "@app/types/enums";
-import { BucketService } from "../../bucket/bucket.service";
-import { ICurrentUser } from "@app/types/interfaces";
 
 @Processor(EVALUATE_SPEAKING_QUEUE, {
   concurrency: 1,
 })
 export class AISpeakingConsumer extends WorkerHost {
   private readonly logger: Logger = new Logger(this.constructor.name);
-  constructor(
-    private readonly aiSpeakingService: AISpeakingService,
-    private readonly bucketService: BucketService
-  ) {
+  constructor(private readonly aiSpeakingService: AISpeakingService) {
     super();
   }
 
@@ -44,20 +39,8 @@ export class AISpeakingConsumer extends WorkerHost {
       const bucket = await Bucket.findOneOrFail({
         where: { name: fileName },
       });
-      const account = await Account.findOneOrFail({
-        where: { id: bucket.owner },
-        relations: {
-          learnerProfile: true,
-        },
-      });
-      const currentUser: ICurrentUser = {
-        profileId: account.learnerProfileId,
-        userId: account.id,
-        role: account.role,
-      };
-      const downloadedUrl = await this.bucketService.getPresignedDownloadUrl(currentUser, bucket.id);
 
-      const evaluations = await this.aiSpeakingService.generateScore(sessionId, new URL(downloadedUrl), userResponse);
+      const evaluations = await this.aiSpeakingService.generateScore(sessionId, new URL(bucket.url), userResponse);
       for (const evaluation of evaluations) {
         const errors = await validate(evaluation);
         if (errors.length > 0) {
