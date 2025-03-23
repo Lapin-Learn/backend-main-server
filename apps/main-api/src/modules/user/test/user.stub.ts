@@ -4,6 +4,7 @@ import {
   IAccount,
   IActivity,
   IBucket,
+  ICurrentUser,
   ILearnerProfile,
   ILessonProcess,
   ILessonRecord,
@@ -25,7 +26,7 @@ const streak: IStreak = {
   updatedAt: new Date(),
   lastDateGainNewStreak: new Date(),
 };
-const learnerProfile: ILearnerProfile = {
+export const learnerProfile: ILearnerProfile = {
   id: uuidv4(),
   rank: RankEnum.BRONZE,
   levelId: level.id,
@@ -70,5 +71,13 @@ export const userStub = (): IAccount => {
     updatedAt: new Date(),
     learnerProfile: learnerProfile,
     avatar: avatar,
+  };
+};
+
+export const currentUserStub = (): ICurrentUser => {
+  return {
+    profileId: "",
+    userId: uuidv4(),
+    role: AccountRoleEnum.LEARNER,
   };
 };
