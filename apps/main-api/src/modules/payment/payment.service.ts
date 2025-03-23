@@ -37,14 +37,12 @@ export class PaymentService {
         this.cancelListOfTransactions(pendingTransactions, PaymentCancellationReasonEnum.DUPLICATED);
       }
 
-      const newTransaction = await this.unitOfWork.getManager().save(
-        Transaction.create({
-          accountId: userId,
-          status: PaymentStatusEnum.PENDING,
-          amount,
-          items,
-        })
-      );
+      const newTransaction = await this.unitOfWork.getManager().save(Transaction, {
+        accountId: userId,
+        status: PaymentStatusEnum.PENDING,
+        amount,
+        items,
+      });
 
       const request: IPayOSRequestLink = {
         orderCode: newTransaction.id,
@@ -135,7 +133,7 @@ export class PaymentService {
   }
 
   public async cancelListOfTransactions(
-    transactions: Transaction[],
+    transactions: Partial<Transaction>[],
     cancellationReason: PaymentCancellationReasonEnum
   ) {
     let rejected = 0;
