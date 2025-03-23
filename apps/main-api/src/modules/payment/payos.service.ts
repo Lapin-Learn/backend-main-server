@@ -36,14 +36,13 @@ export class PayOSService {
       }
 
       // Save new payos transaction
-      const newTransaction = PayOSTransaction.create({
+      await manager.save({
         id: paymentLinkResponse.paymentLinkId,
         transactionId: request.orderCode,
         amount: request.amount,
         status: PaymentStatusEnum.PENDING,
         metadata: paymentLinkResponse,
       });
-      await manager.save(newTransaction);
 
       return paymentLinkResponse;
     } catch (error) {
@@ -112,15 +111,13 @@ export class PayOSService {
       // Upsert payos transaction's metadata
       const currentTrans = await manager.findOne(PayOSTransaction, { where: { id: paymentLinkId } });
       if (!currentTrans) {
-        const trans = PayOSTransaction.create({
+        await manager.save({
           id: paymentLinkId,
           transactionId: orderCode,
           amount,
           status: this.SUCCESS_CODE == code ? PaymentStatusEnum.PAID : PaymentStatusEnum.ERROR,
           metadata: verifiedData,
         });
-
-        await manager.save(trans);
       } else {
         currentTrans.status = this.SUCCESS_CODE == code ? PaymentStatusEnum.PAID : PaymentStatusEnum.ERROR;
         currentTrans.metadata = verifiedData;

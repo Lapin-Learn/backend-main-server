@@ -61,7 +61,11 @@ export class Transaction extends BaseEntity implements ITransaction {
   @JoinColumn({ name: "id", referencedColumnName: "transactionId" })
   payosTransaction: PayOSTransaction;
 
-  static async getTransactionHistory(accountId: string, offset: number, limit: number) {
+  static async getTransactionHistory(
+    accountId: string,
+    offset: number,
+    limit: number
+  ): Promise<{ transactions: Partial<ITransaction>[]; total: number }> {
     const queryBuilder = this.createQueryBuilder("transaction")
       .leftJoin("transaction.payosTransaction", "payos_transaction")
       .addSelect([
