@@ -1,7 +1,7 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import { PayOSService } from "./payos.service";
 import { ConfigService } from "@nestjs/config";
-import { UnitOfWorkService } from "@app/database";
+import { PayOSTransaction, UnitOfWorkService } from "@app/database";
 import { OK_RESPONSE, PAYOS_INSTANCE } from "@app/types/constants";
 import { PaymentStatusEnum } from "@app/types/enums";
 import PayOS from "@payos/node";
@@ -94,6 +94,7 @@ describe("PayOSService", () => {
 
       expect(mockPayOS.createPaymentLink).toHaveBeenCalledWith(mockRequest);
       expect(mockManager.save).toHaveBeenCalledWith(
+        PayOSTransaction,
         expect.objectContaining({
           id: "link-123",
           transactionId: 123,
@@ -211,6 +212,7 @@ describe("PayOSService", () => {
 
       expect(mockPayOS.verifyPaymentWebhookData).toHaveBeenCalledWith(mockWebhookData);
       expect(mockManager.save).toHaveBeenCalledWith(
+        PayOSTransaction,
         expect.objectContaining({
           id: "link-123",
           transactionId: 123,

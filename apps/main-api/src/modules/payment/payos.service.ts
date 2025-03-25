@@ -36,7 +36,7 @@ export class PayOSService {
       }
 
       // Save new payos transaction
-      await manager.save({
+      await manager.save(PayOSTransaction, {
         id: paymentLinkResponse.paymentLinkId,
         transactionId: request.orderCode,
         amount: request.amount,
@@ -111,7 +111,7 @@ export class PayOSService {
       // Upsert payos transaction's metadata
       const currentTrans = await manager.findOne(PayOSTransaction, { where: { id: paymentLinkId } });
       if (!currentTrans) {
-        await manager.save({
+        await manager.save(PayOSTransaction, {
           id: paymentLinkId,
           transactionId: orderCode,
           amount,
