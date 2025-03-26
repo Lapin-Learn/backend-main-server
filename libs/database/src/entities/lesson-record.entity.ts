@@ -104,13 +104,15 @@ export class LessonRecord extends BaseEntity implements ILessonRecord {
   }
 
   static async countDistinctLearningDaysThisMonth(learnerId: string) {
-    return this.createQueryBuilder("record")
-      .select("DISTINCT DATE(record.createdAt)", '"learningDate"')
+    const res = await this.createQueryBuilder("record")
+      .select("COUNT(DISTINCT DATE(record.createdAt))", "learningDate")
       .where("record.learnerProfileId = :learnerId", { learnerId })
       .andWhere(
         "EXTRACT(MONTH FROM record.createdAt) = EXTRACT(MONTH FROM CURRENT_DATE) and EXTRACT(YEAR FROM record.createdAt) = EXTRACT(YEAR FROM CURRENT_DATE)"
       )
-      .getCount();
+      .getRawOne();
+
+    return res?.learningDate || 0;
   }
 
   public getBonusResources(): { bonusXP: number; bonusCarrot: number } {
